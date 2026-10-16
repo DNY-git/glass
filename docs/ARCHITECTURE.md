@@ -1,7 +1,10 @@
 # ARCHITECTURE — SPORTS LOOKING GLASS
 
-Status as of 2026-10-16 (Phase 1): **only `app/__init__.py` exists.**
-Everything in the module map and directory tree below except that one file
+Status as of 2026-10-16 (Phase 2): **pipeline stages 1–2 and the domain
+layer exist** — `app/domain/` (immutable models, match collection,
+canonical state), `app/ingestion/` (stage 1 DATA), `app/validation/`
+(stage 2 VALIDATION), plus checked-in synthetic fixtures under
+`fixtures/`. Everything else in the module map and directory tree below
 is the **target/planned structure**, declared in `docs/PLAN.md` (status:
 proposed) and `docs/HANDOFF.md` Part IV. Modules are instantiated by the
 phase that needs them, never speculatively. Nothing in a planned block
@@ -12,10 +15,10 @@ below should be read as existing code.
 From HANDOFF Part IV. Each stage is a distinct module; pure statistical
 code imports no storage, no HTTP, no I/O.
 
-| # | Stage | Responsibility | Planned module |
+| # | Stage | Responsibility | Module |
 |---|-------|----------------|----------------|
-| 1 | DATA | Fixtures, loaders, provenance. | `app/ingestion/` |
-| 2 | VALIDATION | Schema and integrity checks; defects reported, not guessed around. | `app/validation/` |
+| 1 | DATA | Fixtures, loaders, provenance. | `app/ingestion/` (exists since Phase 2) |
+| 2 | VALIDATION | Schema and integrity checks; defects reported, not guessed around. | `app/validation/` (exists since Phase 2) |
 | 3 | PRE-MATCH STATE | As-of-kickoff view of the world. | `app/state/` |
 | 4 | FEATURE EXTRACTION | Chronological features computed from history with explicit cutoffs. | `app/features/` |
 | 5 | STATISTICAL MODELS | Pure computation: Poisson goal models, strength parameters, calibration. | `app/models/` |
@@ -25,9 +28,12 @@ code imports no storage, no HTTP, no I/O.
 | 9 | OUTCOME EVALUATION | Log loss, Brier, RPS against realized results, strictly chronological. | `app/evaluation/` (harness: `app/backtesting/`) |
 | 10 | MODEL IMPROVEMENT | A tuning loop protected from evaluating itself on its own tuning data. | `app/improvement/` |
 
-Cross-cutting planned modules: `app/domain/` (entities/value objects) and
-`app/storage/` (local persistence, idempotency; sqlite via stdlib, default
-backend — to be confirmed in the Phase 2 brief). `app/api/` holds thin
+Cross-cutting modules: `app/domain/` **exists since Phase 2**
+(entities/value objects) and `app/storage/` (local persistence,
+idempotency; sqlite via stdlib, default backend) was **confirmed
+deferred** by the Phase 2 brief (design decision 1) — no durable state
+is needed yet, and the proposal returns in the first brief that needs
+durable state (immutable snapshots, Phase 5+). `app/api/` holds thin
 FastAPI routers only, from Phase 5; routers contain no logic.
 
 ## Rules of separation (binding)
@@ -46,7 +52,7 @@ FastAPI routers only, from Phase 5; routers contain no logic.
   passed by the caller; no wall-clock time, environment lookups, or
   unsorted iteration inside calculations.
 
-## Target directory structure (PLANNED — from docs/PLAN.md §2)
+## Target directory structure (what exists now vs PLANNED — from docs/PLAN.md §2)
 
     lookingglass/
     ├── .opencode/               # agent suite (exists from bootstrap)
@@ -54,11 +60,11 @@ FastAPI routers only, from Phase 5; routers contain no logic.
     ├── pytest.ini               # EXISTS (Phase 1)
     ├── conftest.py              # EXISTS (Phase 1)
     ├── app/                     # the engine; ten stages as separated modules
-    │   ├── __init__.py          # EXISTS (Phase 1) — the ONLY app/ file today
-    │   ├── domain/              # PLANNED — domain models
-    │   ├── ingestion/           # PLANNED — stage 1 DATA: loaders, provenance
-    │   ├── validation/          # PLANNED — stage 2: defect reports
-    │   ├── storage/             # PLANNED — cross-cutting: local persistence
+    │   ├── __init__.py          # EXISTS (Phase 1) — engine root package
+    │   ├── domain/              # EXISTS (Phase 2) — models, collection, canonical state
+    │   ├── ingestion/           # EXISTS (Phase 2) — stage 1 DATA: loader, provenance
+    │   ├── validation/          # EXISTS (Phase 2) — stage 2: defect reports
+    │   ├── storage/             # DEFERRED (Phase 2 brief decision 1) — sqlite returns Phase 5+
     │   ├── state/               # PLANNED — stage 3: as-of-kickoff views
     │   ├── features/            # PLANNED — stage 4: versioned feature specs
     │   ├── models/              # PLANNED — stage 5: pure statistics (stdlib)
@@ -69,25 +75,31 @@ FastAPI routers only, from Phase 5; routers contain no logic.
     │   ├── evaluation/          # PLANNED — stage 9: log loss, Brier, RPS
     │   ├── improvement/         # PLANNED — stage 10: protected tuning loop
     │   └── api/                 # PLANNED (Phase 5+): thin FastAPI routers
-    ├── tests/                   # EXISTS (Phase 1): 1:1 with criteria
-    ├── fixtures/                # PLANNED (from Phase 2): small sample data
-    ├── data/                    # PLANNED (from Phase 2): git-ignored working data
+    ├── tests/                   # EXISTS (Phase 2): 24 tests, 1:1 with criteria
+    ├── fixtures/                # EXISTS (Phase 2): synthetic OpenFootball-shaped JSON
+    ├── data/                    # NOT CREATED — git-ignored working data, deferred with app/storage
     ├── scripts/health-check.sh  # EXISTS (bootstrap + Phase 1 recursion guard)
     ├── README.md                # EXISTS
     └── docs/                    # EXISTS: HANDOFF, ROADMAP, PLAN, PROGRESS-LOG,
                                  # HEALTH-LOG, ARCHITECTURE, KNOWN-LIMITATIONS,
-                                 # briefs/; DATA-SOURCES.md arrives Phase 2
+                                 # DATA-SOURCES, briefs/
 
-## Instantiation status (2026-10-16)
+## Instantiation status (2026-10-16, Phase 2)
 
 | Item | Status |
 |------|--------|
 | `app/__init__.py` | Exists — docstring only, no logic |
-| `pytest.ini`, root `conftest.py`, `tests/`, `scripts/health-check.sh` | Exists (Phase 1) |
+| `app/domain/` (models.py, collection.py) | Exists (Phase 2) — frozen dataclasses, deduplicating `MatchCollection`, `canonical_state()`, availability counts |
+| `app/ingestion/` (openfootball.py) | Exists (Phase 2) — local JSON loader, provenance (repo-relative path + sha256), idempotent import |
+| `app/validation/` (report.py, checks.py) | Exists (Phase 2) — `Defect`/`DefectReport`, pure checks; defects reported, never repaired |
+| `fixtures/openfootball/` (3 synthetic JSON files) | Exists (Phase 2) — 60 valid matches + 12-record defect sample, fictional teams, `"synthetic": true` marker |
+| `pytest.ini`, root `conftest.py`, `tests/` (6 modules, 24 tests), `scripts/health-check.sh` | Exists (Phases 1–2) |
 | `.venv/` (Python 3.12.3, pip 26.2.1, pytest 9.1.1) | Exists, git-ignored |
-| All `app/` subpackages, `fixtures/`, `data/`, API, statistics | **Do not exist — planned, phase by phase** |
+| `app/storage/`, `data/` | **Deferred** (Phase 2 brief design decision 1) — sqlite returns in the first brief needing durable state (Phase 5+) |
+| Remaining `app/` subpackages, API, statistics | **Do not exist — planned, phase by phase** |
 
-There is no data model, no statistics, no forecast, and no API in the
-repository today. `docs/DATA-SOURCES.md`, `docs/STATISTICAL-ASSUMPTIONS.md`,
-and `docs/EVALUATION.md` do not exist yet because there is no data or
-statistics to document; they arrive with the phases that introduce them.
+There is data (synthetic fixtures) but no statistics, no forecast, and no
+API in the repository today. `docs/DATA-SOURCES.md` exists (formats,
+fixture provenance, licenses); `docs/STATISTICAL-ASSUMPTIONS.md` and
+`docs/EVALUATION.md` do not exist yet because there is no statistics or
+evaluation to document; they arrive with the phases that introduce them.

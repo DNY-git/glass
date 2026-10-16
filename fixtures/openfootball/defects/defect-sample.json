@@ -1,0 +1,101 @@
+{
+  "name": "Obsidian Coast League defect sample (synthetic, planted defects)",
+  "competition": "Obsidian Coast League",
+  "season": "2024-25",
+  "synthetic": true,
+  "matches": [
+    {
+      "round": "1",
+      "date": "2024-09-01",
+      "time": "15:00",
+      "team1": "Silverpine Rovers",
+      "team2": "Coralgate Athletic",
+      "score": {"ft": [2, 1]}
+    },
+    {
+      "round": "1",
+      "date": "2024-09-01",
+      "team1": "Thistledown Wanderers",
+      "team2": "Harbourlight Comets",
+      "score": {"ft": [1, 1]},
+      "xg": {"home": 1.2, "away": 0.8}
+    },
+    {
+      "round": "2",
+      "date": "2024-09-08",
+      "time": "12:30",
+      "team1": "Emberfield Kestrels",
+      "team2": "Quarryhill Zenith",
+      "score": {"ft": [0, 2]},
+      "xg": {"home": 0.5, "away": 2.1}
+    },
+    {
+      "round": "2",
+      "date": "2024-13-40",
+      "time": "15:00",
+      "team1": "Coralgate Athletic",
+      "team2": "Thistledown Wanderers",
+      "score": {"ft": [1, 0]}
+    },
+    {
+      "round": "2",
+      "date": "2024-09-14",
+      "team2": "Harbourlight Comets",
+      "score": {"ft": [3, 3]}
+    },
+    {
+      "round": "3",
+      "date": "2024-09-14",
+      "time": "17:30",
+      "team1": "Quarryhill Zenith",
+      "team2": "Silverpine Rovers",
+      "score": {"ft": [2]}
+    },
+    {
+      "round": "3",
+      "date": "2024-09-15",
+      "team1": "Coralgate Athletic",
+      "team2": "Emberfield Kestrels",
+      "score": {"ft": [-1, 3]}
+    },
+    {
+      "round": "4",
+      "date": "2024-09-21",
+      "time": "25:99",
+      "team1": "Thistledown Wanderers",
+      "team2": "Quarryhill Zenith",
+      "score": {"ft": [1, 2]}
+    },
+    {
+      "round": "4",
+      "date": "2024-09-21",
+      "team1": "Harbourlight Comets",
+      "team2": "Coralgate Athletic",
+      "score": {"ft": [0, 0]},
+      "xg": {"home": -0.4, "away": 1.1}
+    },
+    {
+      "round": "5",
+      "date": "2024-09-28",
+      "time": "15:00",
+      "team1": "Silverpine Rovers",
+      "team2": "Emberfield Kestrels",
+      "score": {"ft": [2, 0]}
+    },
+    {
+      "round": "5",
+      "date": "2024-09-28",
+      "time": "15:00",
+      "team1": "Silverpine Rovers",
+      "team2": "Emberfield Kestrels",
+      "score": {"ft": [2, 1]}
+    },
+    {
+      "round": "5",
+      "date": "2024-09-28",
+      "team1": "Quarryhill Zenith",
+      "team2": "Thistledown Wanderers",
+      "score": {"ft": [1, 4]}
+    }
+  ]
+}

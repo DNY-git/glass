@@ -15,12 +15,18 @@ history, never the current state of this repository.
 
 ## Current state
 
-**Phase 1 (Foundation): built and reviewed; checkpoint pending.** The
-engine root package `app/` exists with a docstring only — no subpackages,
-no data, no calculations, no API yet (that is by design; see
-`docs/briefs/phase-1.md` and `docs/PLAN.md`). The local, offline,
-deterministic test loop is operational: 9 tests, all green, mapping 1:1 to
-the Phase 1 acceptance criteria. See `docs/ROADMAP.md` for phase status
+**Phase 2 (Domain and data): built and reviewed (PASS, after 3 fix
+cycles); checkpoint pending.** The domain layer exists:
+`app/domain/` (immutable models, deduplicating match collection,
+canonical serialization), `app/ingestion/` (OpenFootball-format JSON
+ingestion from local fixtures with provenance and idempotent imports),
+`app/validation/` (defect reports — defects are reported, never guessed
+around), and `fixtures/openfootball/` (small hand-authored synthetic
+fixtures with fictional teams — see `docs/DATA-SOURCES.md`). No
+statistics, no forecasts, no storage, no API yet (by design; see
+`docs/briefs/phase-2.md` and `docs/PLAN.md`). Phase 1 (Foundation) is
+committed at **45ed27e**. The local, offline, deterministic test loop is
+operational: 24 tests, all green. See `docs/ROADMAP.md` for phase status
 and `docs/PROGRESS-LOG.md` for the record.
 
 ## Requirements
@@ -62,8 +68,9 @@ From the repository root:
 .venv/bin/python -m pytest -q
 ```
 
-Verified output (2026-10-16): `9 passed in 23.15s` (runs this phase ranged
-roughly 23–46 s; the health-script test dominates — see
+Verified output (2026-10-16): `24 passed` (Phase 2 docs run: 48.96 s
+under concurrent load; recorded runs this phase range roughly 13–60 s
+depending on load — the health-script test dominates, see
 `docs/KNOWN-LIMITATIONS.md`). Zero skips, zero xfails — no test in this
 suite may use skip or xfail (constitution).
 
@@ -75,13 +82,14 @@ From the repository root:
 bash scripts/health-check.sh
 ```
 
-Verified on 2026-10-16: exit code 0; compile clean; determinism comparison
-`OK`; skips/xfails `none`; `pip check` clean ("No broken requirements
-found."). Its own pytest invocations report `6 passed, 3 deselected`:
+Verified on 2026-10-16: exit code 0; compile clean; determinism
+comparison `OK`; skips/xfails `none`; `pip check` clean ("No broken
+requirements found."). Its own pytest invocations report `21 passed, 3 deselected`:
 the script exports a `PYTEST_ADDOPTS` recursion guard so its internal
 suite runs never re-execute the tests that spawn the script; those health
-tests run in the direct suite above. Expect a few minutes — the script
-runs the suite several times internally.
+tests run in the direct suite above. Expect roughly half a minute to a
+minute — the script runs the non-health suite five times internally
+(observed 47.5 s total under concurrent load, 2026-10-16).
 
 Important: by design (no `set -e`, so one failing check cannot abort the
 sweep) the health script prints failures but still exits 0. It is a
@@ -92,14 +100,17 @@ run of `.venv/bin/python -m pytest -q` (Phase 1 criterion 10). See
 ## Repository layout (what exists now)
 
     lookingglass/
-    ├── app/                     # the engine; Phase 1: __init__.py only
-    ├── tests/                   # test_foundation.py, test_health_script.py
+    ├── app/                     # the engine; Phase 2: domain/, ingestion/,
+    │                            # validation/ (+ Phase 1 __init__.py)
+    ├── fixtures/                # synthetic OpenFootball-shaped JSON (Phase 2)
+    ├── tests/                   # 24 tests, 1:1 with acceptance criteria
     ├── scripts/health-check.sh  # mechanical health sweep
     ├── pytest.ini               # testpaths=tests, --strict-markers
     ├── conftest.py              # repo root importability for bare pytest
     ├── .venv/                   # local venv (git-ignored)
     ├── .opencode/               # agent suite and constitution
-    └── docs/                    # handoff, roadmap, plan, logs, briefs
+    └── docs/                    # handoff, roadmap, plan, logs, briefs,
+                                 # DATA-SOURCES, KNOWN-LIMITATIONS
 
 The much larger target structure (ten separated pipeline modules) is
 declared in `docs/ARCHITECTURE.md` and `docs/PLAN.md`, and is instantiated
@@ -111,6 +122,7 @@ phase by phase — never speculatively.
 - `.opencode/rule/lookingglass-constitution.md` — binding rules.
 - `docs/ROADMAP.md` — phase status.
 - `docs/ARCHITECTURE.md` — pipeline stages and module map (target marked).
+- `docs/DATA-SOURCES.md` — data formats, fixture provenance, licenses.
 - `docs/PROGRESS-LOG.md` — what was built, real test counts, checkpoint
   hashes.
 - `docs/KNOWN-LIMITATIONS.md` — the honest list, updated every phase.

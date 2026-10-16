@@ -47,7 +47,7 @@ Subpackages are created when their phase begins, never speculatively:
     │   ├── domain/              # domain models (entities/value objects)
     │   ├── ingestion/           # stage 1 DATA: loaders, provenance
     │   ├── validation/          # stage 2 VALIDATION: defect reports
-    │   ├── storage/             # cross-cutting: local persistence, idempotency
+    │   ├── storage/             # cross-cutting: local persistence — DEFERRED (Phase 2 brief decision 1)
     │   ├── state/               # stage 3 PRE-MATCH STATE: as-of-kickoff views
     │   ├── features/            # stage 4: chronological features, versioned specs
     │   ├── models/              # stage 5: pure statistics (stdlib only)
@@ -59,8 +59,8 @@ Subpackages are created when their phase begins, never speculatively:
     │   ├── improvement/         # stage 10: tuning loop (protected from itself)
     │   └── api/                 # thin FastAPI routers only (Phase 5+)
     ├── tests/                   # 1:1 with acceptance criteria per phase
-    ├── fixtures/                # small, checked-in sample data (from Phase 2)
-    ├── data/                    # git-ignored working data (from Phase 2)
+    ├── fixtures/                # small, checked-in sample data (EXISTS, Phase 2)
+    ├── data/                    # git-ignored working data (deferred with app/storage)
     ├── scripts/health-check.sh  # continuous baseline (exists)
     └── docs/                    # HANDOFF, ROADMAP, PLAN, PROGRESS-LOG,
                                  # HEALTH-LOG, briefs/, DATA-SOURCES.md,
@@ -69,8 +69,13 @@ Subpackages are created when their phase begins, never speculatively:
 Stage-to-module rule: each of the ten pipeline stages lives in its own
 module; pure statistical code (`app/models`, evaluation math) imports only
 stdlib and domain types — never storage, HTTP, or filesystem. API routers
-contain no logic. `app/storage` (sqlite via stdlib, default backend — to be
-confirmed in the Phase 2 brief) and `app/domain` are cross-cutting.
+contain no logic. `app/storage` (sqlite via stdlib, default backend) was
+confirmed **deferred** by the Phase 2 brief (design decision 1): no
+durable state was needed that phase, and the proposal returns in the
+first brief that needs durable state (immutable snapshots, Phase 5+);
+consequently `data/` is also not created yet. `app/domain` is
+cross-cutting and exists since Phase 2 (with `app/ingestion`,
+`app/validation`, and `fixtures/`).
 
 ## 3. Which dependencies are genuinely necessary?
 

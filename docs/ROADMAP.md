@@ -17,8 +17,8 @@ Developer acceptance is recorded per BLOCK, not per phase.
 
 | Phase | Name                            | Status    |
 |-------|---------------------------------|-----------|
-| 1     | Foundation                      | in progress |
-| 2     | Domain and data                 | planned   |
+| 1     | Foundation                      | committed   |
+| 2     | Domain and data                 | in progress |
 | 3     | Core statistics                 | planned   |
 | 4     | Simulation and scenarios        | planned   |
 | 5     | Forecasting API                 | planned   |
@@ -32,9 +32,18 @@ Developer acceptance is recorded per BLOCK, not per phase.
 | 13    | Consolidation and research readiness | planned |
 
 Status notes:
-- Phase 1 is built and passed independent review (PASS, 2026-10-16). It
-  becomes `committed` when the checkpoint commit hash is recorded in
-  docs/PROGRESS-LOG.md; until then it stays `in progress`.
+- Phase 1 is `committed`: checkpoint hash **45ed27e** — `phase 1:
+  foundation venv, pytest wiring, app package, health-check loop`
+  (2026-10-16, master). Built and passed independent review (PASS,
+  2026-10-16); hash recorded in docs/PROGRESS-LOG.md. Pre-commit suite
+  run: 9 passed.
+- Phase 2 is `in progress`: built and passed independent review (PASS,
+  2026-10-16, after 3 fix cycles); suite 24 passed. Checkpoint hash
+  **PENDING** — recorded by glass-git at the Phase 2 checkpoint commit,
+  which must also carry the uncommitted Phase-1 protocol records
+  (HEALTH-LOG, PROGRESS-LOG, ROADMAP — monitor finding 1). ROADMAP flips
+  to `committed` after the commit; the hash lands in
+  docs/PROGRESS-LOG.md and here per the Phase 1 convention.
 
 ## Block acceptance record
 
