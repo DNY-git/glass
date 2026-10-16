@@ -17,7 +17,7 @@ Developer acceptance is recorded per BLOCK, not per phase.
 
 | Phase | Name                            | Status    |
 |-------|---------------------------------|-----------|
-| 1     | Foundation                      | planned   |
+| 1     | Foundation                      | in progress |
 | 2     | Domain and data                 | planned   |
 | 3     | Core statistics                 | planned   |
 | 4     | Simulation and scenarios        | planned   |
@@ -30,6 +30,11 @@ Developer acceptance is recorded per BLOCK, not per phase.
 | 11    | Forecast evaluation             | planned   |
 | 12    | Integration and verification    | planned   |
 | 13    | Consolidation and research readiness | planned |
+
+Status notes:
+- Phase 1 is built and passed independent review (PASS, 2026-10-16). It
+  becomes `committed` when the checkpoint commit hash is recorded in
+  docs/PROGRESS-LOG.md; until then it stays `in progress`.
 
 ## Block acceptance record
 

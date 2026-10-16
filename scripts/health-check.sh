@@ -7,6 +7,11 @@ cd "$(dirname "$0")/.." || exit 1
 
 PY=".venv/bin/python"
 
+# Recursion guard: the health script's own pytest runs must not
+# execute the tests that spawn this script. They run in the direct
+# suite instead (pytest, from the repo root).
+export PYTEST_ADDOPTS="${PYTEST_ADDOPTS:+$PYTEST_ADDOPTS }-k 'not health_script'"
+
 if [ ! -x "$PY" ]; then
     echo "There is nothing to check yet: $PY does not exist."
     echo "This is expected before Phase 1 completes."
