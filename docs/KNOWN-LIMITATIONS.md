@@ -4,7 +4,7 @@ The honest list. Updated every phase (constitution; HANDOFF Part IX item
 13 formalizes this at Phase 13, but the discipline starts now). Nothing
 here is hidden behavior — each item is also recorded where it was found.
 
-Entry below reflects the state as of Phase 2 (Domain and data),
+Entry below reflects the state as of Phase 3 (Core statistics),
 2026-10-16.
 
 ## Phase 1
@@ -122,12 +122,83 @@ Entry below reflects the state as of Phase 2 (Domain and data),
      (`test_wall_clock_env_scan_flags_every_banned_form`) pinning every
      known banned form so detection cannot silently regress.
 
-## Not yet applicable
+## Phase 3
 
-Model-calibration, leakage, and statistical limitations are not yet
-listable: as of Phase 2 the repository contains data but **no
-calculations, no models, and no statistics** — pipeline stages 3–10 are
-unbuilt. Data provenance and format limitations are documented in
-`docs/DATA-SOURCES.md`; statistical assumptions and evaluation
-limitations will be documented in `docs/STATISTICAL-ASSUMPTIONS.md` and
-`docs/EVALUATION.md` when those subjects first exist.
+1. **In-sample estimates only — never evidence of accuracy.** Every
+   number from `app/models/` (fitted parameters, scoreline matrices,
+   outcome probabilities) is an in-sample fit on the synthetic fixture
+   pool. Convergence, normalization to 1, and plausible-looking
+   probabilities demonstrate *internal consistency* only —
+   **normalized ≠ accurate** (constitution; docs/STATISTICAL-ASSUMPTIONS.md
+   §6). Evidence begins at Phases 9 (chronological backtesting) and 11
+   (evaluation against realized results); neither has run. Until they
+   do, no number from this stage may be described as validated,
+   accurate, or beating anything.
+
+2. **Overdispersion ignored (var = mean).** The Poisson assumption
+   (variance equal to mean) understates tail probabilities of
+   high-scoring outliers and overstates the precision of fitted
+   parameters; football goal counts are commonly overdispersed, and a
+   negative-binomial alternative is the standard remedy. Explicitly
+   **deferred to Phase 11** (variance-vs-mean diagnostics alongside
+   predictive scores) — deferred, not forgotten
+   (STATISTICAL-ASSUMPTIONS §2b).
+
+3. **Draw bias of independent Poissons.** Independent home/away goal
+   draws characteristically under-represent draws — the missing
+   low-score dependence a Dixon-Coles-style correction targets.
+   Drawn scorelines will be systematically underpredicted until that
+   correction ships, which Phase 11 draw-frequency calibration must
+   justify (STATISTICAL-ASSUMPTIONS §2f).
+
+4. **Scoreline truncation bound K = 10.** Scoreline cells cover 0..10
+   goals per side (11×11); at fixture-fitted lambdas this drops at
+   most ≤ 6×10⁻⁴ of joint mass (asserted by test; the K=15 alternative
+   would drop ≤ 1.2×10⁻⁷). Dropped mass is **always reported** on the
+   matrix, never hidden; W/D/L probabilities come from analytic
+   Poisson tails and are exact under any truncation
+   (STATISTICAL-ASSUMPTIONS §4).
+
+5. **Stationarity across pooled seasons.** Both fixture seasons
+   (2024-25 + 2025-26) are pooled under a single (μ, α, β, h);
+   pooled strengths average over regimes and describe no single
+   season exactly. Each fit records the pooling it consumed in
+   provenance so the assumption is always visible
+   (STATISTICAL-ASSUMPTIONS §2e).
+
+6. **All fits consume synthetic fixtures.** The entire statistical
+   layer has only ever seen the fictional "Obsidian Coast League"
+   (6 teams, 60 matches, 156 goals). Real data may behave differently
+   — and the Phase 2 loader limitation (real-file quirks) compounds
+   this: a fit on real data is untested territory end to end.
+
+7. **Thin data is flag-not-crash, and flagged numbers are not
+   estimates to trust.** A first-matchday cutoff returns a well-formed
+   `SINGULAR_SYSTEM` result with insufficient flags attached (measured:
+   3 matches, 7 goals, all 6 teams flagged) — no crash; empty history
+   returns `NO_DATA`. But the `SINGULAR_SYSTEM` object carries the
+   last well-defined iterate: it is a **reported flag, not a fallback
+   estimate** — downstream must treat it as unusable, not as noisy
+   (STATISTICAL-ASSUMPTIONS §3, §5).
+
+8. **The 612-line hygiene test file now carries one A1-declared line.**
+   Amendment A1 to the Phase 3 brief sanctioned exactly one +1 line in
+   `tests/test_fixtures_and_hygiene.py` (the
+   `ALLOWED_APP_IMPORTS["app.models"]` entry — a dictionary-coverage
+   gap the new package would otherwise crash against); declared here
+   per the amendment. Monitor finding 2 (file size, carried from
+   Phase 2) remains carried; the file grew 611 → 612 lines and nothing
+   else in it changed.
+
+## Not yet applicable (as of Phase 3)
+
+Forecast, scenario, decision, and API limitations are not yet listable:
+pipeline stages 3–4 and 6–10 are unbuilt — there are no forecasts, no
+scenarios, and no evaluation metrics to mis-trust yet. Model-calibration
+and predictive limitations (as distinct from the in-sample assumptions
+above) arrive with Phases 9 and 11 and will be documented in
+`docs/EVALUATION.md` (which does not exist yet — there is no evaluation
+to document) and in this file. Data provenance and format limitations
+remain in `docs/DATA-SOURCES.md`; the model's statistical assumptions
+and their weaknesses are in `docs/STATISTICAL-ASSUMPTIONS.md` (exists
+since Phase 3).

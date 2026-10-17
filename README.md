@@ -15,19 +15,25 @@ history, never the current state of this repository.
 
 ## Current state
 
-**Phase 2 (Domain and data): built and reviewed (PASS, after 3 fix
-cycles); checkpoint pending.** The domain layer exists:
-`app/domain/` (immutable models, deduplicating match collection,
-canonical serialization), `app/ingestion/` (OpenFootball-format JSON
-ingestion from local fixtures with provenance and idempotent imports),
-`app/validation/` (defect reports — defects are reported, never guessed
-around), and `fixtures/openfootball/` (small hand-authored synthetic
-fixtures with fictional teams — see `docs/DATA-SOURCES.md`). No
-statistics, no forecasts, no storage, no API yet (by design; see
-`docs/briefs/phase-2.md` and `docs/PLAN.md`). Phase 1 (Foundation) is
-committed at **45ed27e**. The local, offline, deterministic test loop is
-operational: 24 tests, all green. See `docs/ROADMAP.md` for phase status
-and `docs/PROGRESS-LOG.md` for the record.
+**Phase 3 (Core statistics): built and reviewed (PASS, after 1 fix
+cycle); checkpoint pending.** Pipeline stage 5 exists: `app/models/` —
+an unpenalized Poisson goal model (`"poisson-mle-v1"`) with attack/
+defence strengths and an **estimated** home-advantage term, fitted by
+Newton-Raphson maximum likelihood inside `fit` (cutoff enforced inside
+the calculation: only matches strictly before `as_of` enter the
+likelihood), plus analytic scoreline matrices (truncation mass always
+reported) and outcome probabilities that are exact under any
+truncation. Deterministic and stdlib-only by construction; every fit
+carries its convergence status and sha256 provenance. See
+`docs/STATISTICAL-ASSUMPTIONS.md` for the model's assumptions and their
+weaknesses — every number it produces is an **in-sample estimate on
+synthetic fixtures, never evidence of accuracy**. Phases 1 (Foundation)
+and 2 (Domain and data) are committed at **45ed27e** and **1c5067b**.
+The local, offline, deterministic test loop is operational: 37 tests,
+all green. No forecasts, no scenarios, no storage, no API yet (by
+design; see `docs/briefs/phase-3.md` and `docs/PLAN.md`). See
+`docs/ROADMAP.md` for phase status and `docs/PROGRESS-LOG.md` for the
+record.
 
 ## Requirements
 
@@ -68,11 +74,13 @@ From the repository root:
 .venv/bin/python -m pytest -q
 ```
 
-Verified output (2026-10-16): `24 passed` (Phase 2 docs run: 48.96 s
-under concurrent load; recorded runs this phase range roughly 13–60 s
-depending on load — the health-script test dominates, see
-`docs/KNOWN-LIMITATIONS.md`). Zero skips, zero xfails — no test in this
-suite may use skip or xfail (constitution).
+Verified output (2026-10-16, Phase 3 docs run, clean environment —
+`env -u PYTEST_ADDOPTS .venv/bin/python -m pytest -q`):
+`37 passed in 16.27s`. Zero skips, zero xfails — no test in this suite
+may use skip or xfail (constitution). If your shell inherits a stray
+`PYTEST_ADDOPTS` (e.g. from a health-script environment), unset it as
+above so the health tests are not silently deselected; the health
+script's own inner runs deselect them on purpose (recursion guard).
 
 ## Running the health check
 
@@ -82,14 +90,16 @@ From the repository root:
 bash scripts/health-check.sh
 ```
 
-Verified on 2026-10-16: exit code 0; compile clean; determinism
-comparison `OK`; skips/xfails `none`; `pip check` clean ("No broken
-requirements found."). Its own pytest invocations report `21 passed, 3 deselected`:
-the script exports a `PYTEST_ADDOPTS` recursion guard so its internal
-suite runs never re-execute the tests that spawn the script; those health
-tests run in the direct suite above. Expect roughly half a minute to a
-minute — the script runs the non-health suite five times internally
-(observed 47.5 s total under concurrent load, 2026-10-16).
+Verified on 2026-10-16 (Phase 3): exit code 0; compile clean; determinism
+comparison `OK: 34 passed, 3 deselected`; skips/xfails `none`; `pip
+check` clean ("No broken requirements found."). Its own pytest
+invocations report `34 passed, 3 deselected`: the script exports a
+`PYTEST_ADDOPTS` recursion guard so its internal suite runs never
+re-execute the tests that spawn the script; those health tests run in
+the direct suite above. Expect roughly half a minute to a minute — the
+script runs the non-health suite five times internally (observed 14.1 s
+total idle this run; 47.5 s under concurrent load at Phase 2 — see
+`docs/KNOWN-LIMITATIONS.md`).
 
 Important: by design (no `set -e`, so one failing check cannot abort the
 sweep) the health script prints failures but still exits 0. It is a
@@ -100,17 +110,18 @@ run of `.venv/bin/python -m pytest -q` (Phase 1 criterion 10). See
 ## Repository layout (what exists now)
 
     lookingglass/
-    ├── app/                     # the engine; Phase 2: domain/, ingestion/,
-    │                            # validation/ (+ Phase 1 __init__.py)
+    ├── app/                     # the engine; Phase 3: domain/, ingestion/,
+    │                            # validation/, models/ (+ Phase 1 __init__.py)
     ├── fixtures/                # synthetic OpenFootball-shaped JSON (Phase 2)
-    ├── tests/                   # 24 tests, 1:1 with acceptance criteria
+    ├── tests/                   # 37 tests, 1:1 with acceptance criteria
     ├── scripts/health-check.sh  # mechanical health sweep
     ├── pytest.ini               # testpaths=tests, --strict-markers
     ├── conftest.py              # repo root importability for bare pytest
     ├── .venv/                   # local venv (git-ignored)
     ├── .opencode/               # agent suite and constitution
     └── docs/                    # handoff, roadmap, plan, logs, briefs,
-                                 # DATA-SOURCES, KNOWN-LIMITATIONS
+                                 # DATA-SOURCES, STATISTICAL-ASSUMPTIONS,
+                                 # KNOWN-LIMITATIONS
 
 The much larger target structure (ten separated pipeline modules) is
 declared in `docs/ARCHITECTURE.md` and `docs/PLAN.md`, and is instantiated
@@ -123,6 +134,8 @@ phase by phase — never speculatively.
 - `docs/ROADMAP.md` — phase status.
 - `docs/ARCHITECTURE.md` — pipeline stages and module map (target marked).
 - `docs/DATA-SOURCES.md` — data formats, fixture provenance, licenses.
+- `docs/STATISTICAL-ASSUMPTIONS.md` — the Poisson model's assumptions
+  and their weaknesses (Phase 3).
 - `docs/PROGRESS-LOG.md` — what was built, real test counts, checkpoint
   hashes.
 - `docs/KNOWN-LIMITATIONS.md` — the honest list, updated every phase.

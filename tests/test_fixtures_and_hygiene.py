@@ -45,6 +45,7 @@ ALLOWED_APP_IMPORTS: dict[str, set[str]] = {
     "app.domain": {"app.domain"},  # intra-package only; imports nothing outside
     "app.validation": {"app.domain", "app.validation"},
     "app.ingestion": {"app.domain", "app.validation", "app.ingestion"},
+    "app.models": {"app.domain", "app.models"},  # Phase 3: models imports stdlib + app.domain only
 }
 PURE_PACKAGES = {"app.domain", "app.validation"}
 # Criterion 12: resolved module paths that read the wall clock. Names are
