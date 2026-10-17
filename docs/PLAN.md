@@ -117,8 +117,12 @@ Enforcement: runtime code review plus planned operational checks
 Definition (constitution): identical inputs + model version + seed +
 config produce identical output. All four are recorded with each forecast.
 
-Mechanisms: all randomness flows through explicitly seeded RNG objects
-passed by the caller — no global `random`, no unseeded or implicit state;
+Mechanisms: all randomness flows through explicitly seeded RNGs — the
+caller passes an int seed and the RNG instance is constructed fresh
+inside the call (deliberate tightening of "RNG objects passed by the
+caller", Phase 4 brief decision 1: a caller-passed RNG object would make
+outputs depend on hidden caller-side stream position, the implicit state
+the constitution bans) — no global `random`, no unseeded or implicit state;
 no wall-clock time and no environment lookups inside calculations; no
 unsorted iteration inside calculations.
 

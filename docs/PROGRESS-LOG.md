@@ -122,7 +122,7 @@ No phases completed yet. (Update: Phase 1 committed at 45ed27e — 2026-10-16.)
   skipped, 0 xfailed). ROADMAP Phase 2 flips `in progress` →
   `committed` afterward (docs agent).
 
-## 2026-10-16 — Phase 3 (Core statistics) — built, reviewed PASS; checkpoint PENDING
+## 2026-10-16 — Phase 3 (Core statistics) — built, reviewed PASS; committed at a5d7f56
 
 - Built (per docs/briefs/phase-3.md, design decisions 1–12 and
   AMENDMENT A1):
@@ -208,12 +208,157 @@ No phases completed yet. (Update: Phase 1 committed at 45ed27e — 2026-10-16.)
   NO_DATA.
 - pytest unchanged: 9.1.1 (`python -m pytest --version` re-verified);
   Python 3.12.3; stdlib-only dependencies per brief.
-- Checkpoint hash: **PENDING** — no hash invented; glass-git records
-  the real hash at the Phase 3 checkpoint, then the docs agent replaces
-  PENDING here and in docs/ROADMAP.md and flips ROADMAP Phase 3
-  `in progress` → `committed`. The checkpoint carries the three
-  protocol records (docs/HEALTH-LOG.md, docs/PROGRESS-LOG.md,
-  docs/ROADMAP.md — monitor finding 1, carried from Phases 1–2
-  sweeps), the A1-declared +1 line in tests/test_fixtures_and_hygiene.py,
-  and the Phase 3 DOCS-step files (brief, STATISTICAL-ASSUMPTIONS,
-  KNOWN-LIMITATIONS, ARCHITECTURE, README).
+- Checkpoint hash: **a5d7f56** — `phase 3: poisson core statistics,
+  mle fitter with internal cutoff, scoreline matrices` (2026-10-17
+  01:06 +0100, master, 17 files, +2727/−77; recorded by glass-git at
+  the Phase 3 checkpoint). The commit carries the three protocol
+  records
+  (docs/HEALTH-LOG.md, docs/PROGRESS-LOG.md, docs/ROADMAP.md — monitor
+  finding 1, carried from Phases 1–2 sweeps), the A1-declared +1 line
+  in tests/test_fixtures_and_hygiene.py, and the Phase 3 DOCS-step
+  files (brief, STATISTICAL-ASSUMPTIONS, KNOWN-LIMITATIONS,
+  ARCHITECTURE, README). Pre-commit suite run for this checkpoint:
+  `env -u PYTEST_ADDOPTS .venv/bin/python -m pytest -q` → `37 passed
+  in 16.18s` (0 failed, 0 skipped, 0 xfailed). The docs agent then
+  replaces PENDING in docs/ROADMAP.md with a5d7f56 and flips ROADMAP
+  Phase 3 `in progress` → `committed`.
+
+## 2026-10-17 — Phase 4 (Simulation and scenarios) — built, reviewed PASS (first pass); checkpoint PENDING
+
+- Built (per docs/briefs/phase-4.md, design decisions 1–14, AMENDMENT
+  A1, AMENDMENT A2):
+  - `app/simulation/` — the cross-cutting Monte Carlo module (NOT one
+    of the ten pipeline stages): `constants.py`
+    (`SIM_VERSION = "sim-categorical-v1"`, `DEFAULT_N_SIMS = 10_000`);
+    `simulate.py` — **THE designated randomness module: the only file
+    under `app/` that imports `random`** (AST-enforced with positive +
+    negative probes in the new `tests/test_phase4_separation.py`):
+    `simulate(fitted, home, away, *, seed, n_sims=DEFAULT_N_SIMS,
+    scenario=None) -> SimulationResult` with `seed` required
+    keyword-only int (fresh `random.Random(seed)` per call —
+    instance-only, no global seeding, no unseeded instance, no
+    `hash()`/`time`/`urandom`/digest seed sources, all AST-banned),
+    `random()`-only draws (CPython sequence-stability guarantee) via a
+    factorable `(cumulative, u)` helper with an fp-epsilon
+    clamp-to-last-cell guard; categorical sampling over the
+    truncated, renormalized (K+1)² matrix built row-major from
+    `exp(log_probs)`; frozen `SimulationResult` (pinned field contract:
+    baseline + scenario echo, seed/n_sims/sim_version echoes, raw
+    counts, exact `analytic_outcome`, `mc_stderr` = simulation noise
+    only from the analytic p in the contracted expression order,
+    dropped mass, convergence/insufficient flags riding through);
+    `ValueError` on `n_sims < 1` or non-int. One behavior shipped
+    beyond the pre-build spec: `simulate` **refuses a scenario whose
+    `baseline != fitted`** (frozen-dataclass value equality) —
+    provenance-mislabeling guard, test-pinned
+    (`test_simulate_scenario_baseline_mismatch_refused_by_value_equality`).
+  - `app/scenarios/` — pipeline stage 7 SCENARIO EXPLORATION:
+    `spec.py` (frozen `TransformOp`/`Transform`/`Scenario`,
+    `build_scenario`, `MULTIPLIER_MIN = 0.5`/`MULTIPLIER_MAX = 2.0`
+    inclusive; out-of-range/NaN/inf/non-numeric multipliers are
+    `ValueError` — **never clamped**; empty label/empty transforms/
+    duplicate `(team, op)`/unknown team refused; transforms
+    canonically ordered by `(team, op, multiplier)` so shuffled inputs
+    yield field-for-field identical scenarios) and `apply.py`
+    (`ScenarioMatrix`, `scenario_matrix` — strict applicability:
+    transforms on non-playing teams and `home_advantage` ops on anyone
+    but the fixture's home side raise `ValueError`, never silently
+    inert; parameter-scale semantics `α′ = m·α`, `β′ = m·β`,
+    `h′ = m·h`; matrix echoes the BASELINE's fit flags). One scenario
+    per call — **no averaging or ensembling anywhere** (pinned public
+    surface, criterion 14). No randomness, no cell math, no
+    `FittedParams(` construction in the package (AST-enforced).
+  - `app/models/scoreline.py` (the sanctioned refactor): shared
+    `lambda_pair` and `build_scoreline_matrix` constructors extracted —
+    the ONE cell-math path; `scoreline_log_probs` and every scenario
+    matrix both delegate to them; evaluation order preserved so the
+    Phase 3 full-precision goldens stay byte-identical (**no Phase 3
+    test changed**; suite-green proof, criterion 11d).
+  - Tests (criteria 1–19 mapped 1:1, plus the +1 baseline-mismatch
+    refusal test = 20 new): `tests/test_simulation.py` (9),
+    `tests/test_scenarios.py` (7), `tests/test_phase4_separation.py`
+    (4 — random confinement with probes, RNG-discipline AST bans,
+    import allowlists for both new packages, A1 entries pinned +
+    full-tree `scan_file` clean with zero violations and no KeyError).
+  - AMENDMENT A1 (declared): `tests/test_fixtures_and_hygiene.py`
+    changed by **exactly two `ALLOWED_APP_IMPORTS` entries** —
+    `"app.scenarios"` and `"app.simulation"` (dictionary-coverage gap
+    the new packages would otherwise crash against with `KeyError`);
+    **612 → 614 lines**, nothing else in that file changed. Declared
+    per the amendment at checkpoint, review, and monitor sweep.
+  - AMENDMENT A2 (declared): `tests/test_health_script.py` changed by
+    **exactly two in-place edits** — `HEALTH_TIMEOUT_S = 120 → 300`
+    and its matching docstring figure; **105 → 105 lines**. Trip event
+    (A2 MANDATORY declaration 2, recorded verbatim): during the build,
+    under sustained external load average 10.27–10.43 (not our load),
+    the direct suite reported on two consecutive runs:
+
+        `54 passed, 3 errors`
+
+    all three errors `subprocess.TimeoutExpired` (120 s) from the
+    module-scoped fixture in `tests/test_health_script.py`. The health
+    script itself was honest: a standalone `bash scripts/health-check.sh`
+    completed every section (compile clean, determinism `OK`, skips/xfails
+    `none`, pip clean) in 2m08s = **128 s**; only the test's wall-clock
+    budget failed, no asserted property. The suite was RED until A2
+    landed (no checkpoint on red tests). The architect ruled the
+    evidence-based re-scope: 300 s = 2.34× the worst observed
+    completion; **no assertion changed** (a weakened assertion lets
+    wrong behavior pass; this lets correct behavior finish; a genuinely
+    hung script still raises `TimeoutExpired`). Explicitly not a
+    precedent — any future trip re-triggers the same clause (re-scope
+    with fresh evidence, never weaken); re-architecting the script's
+    five inner runs is Phase 10's (HANDOFF IX-10).
+- Docs (this step): `docs/STATISTICAL-ASSUMPTIONS.md` §7 updated from
+  pre-build SPECIFICATION to implemented-and-tested reality (§1–§6
+  untouched), including the new §7g provenance-refusal behavior;
+  `docs/KNOWN-LIMITATIONS.md` Phase 1 item 2 updated in place with the
+  trip and the A2 re-scope (prior measured figures never rewritten)
+  plus a new Phase 4 section (mc_stderr noise-only; version-local
+  goldens; arbitrary knobs; sign-dependence; no `out_of_range_count`;
+  A1 +2 and A2's 2 edits declared; baseline-mismatch refusal) and the
+  "Not yet applicable" section refreshed; `docs/ARCHITECTURE.md`
+  (stage 7 exists; `app/simulation/` recorded as cross-cutting, not a
+  stage); `README.md` (Phase 4, 57 tests, all three block-1 hashes);
+  `docs/ROADMAP.md` (Phase 4 `in progress`, PENDING-hash convention;
+  **Block 1 developer acceptance recorded in the block acceptance
+  record table** — the architect-flagged constitutional requirement,
+  table previously empty); `docs/PLAN.md` §5 one-line clarification
+  (seed-passing tightening, brief decision 1 — sanctioned; no other
+  PLAN change). The three protocol records (HEALTH-LOG, PROGRESS-LOG,
+  ROADMAP — monitor finding 1) and the phase brief must ride the
+  Phase 4 checkpoint commit.
+- Suite: `env -u PYTEST_ADDOPTS .venv/bin/python -m pytest -q` →
+  `57 passed in 66.48s` (0 failed, 0 skipped, 0 xfailed) — this docs
+  run; recorded range this phase ~30–66 s depending on load. 37 prior
+  tests + 20 new; criterion 20 (suite gate) verified by recorded
+  direct runs (tester, reviewer ×2, monitor-to-come).
+- Health (docs run, `bash scripts/health-check.sh`, 2026-10-17): ran
+  to completion; compile clean; inner pytest runs `54 passed, 3
+  deselected` (10.36 s and 9.45 s); skips/xfails `none`; determinism
+  `OK: 54 passed, 3 deselected`; pip check clean ("No broken
+  requirements found.").
+- Measured facts (docs agent, real runs this step): the fixed-seed
+  golden on the fixture fit reproduces exactly — `seed=20261017`,
+  `n_sims=10000` → counts `(5798, 2106, 2096)` on CPython 3.12.3
+  (version-local by policy — re-derive on interpreter change, never
+  widen); hygiene file 614 lines, health test file 105 lines
+  (both verified with `wc -l`).
+- Review history: tester verdict **PASS** (criteria 1–20) with two
+  strengthenings (F1/F2) raised and closed in-cycle; then the suite
+  went **RED** on the health-timeout trip ("54 passed, 3 errors",
+  recorded verbatim above per AMENDMENT A2's MANDATORY declaration 2);
+  AMENDMENT A2 re-scaled the timeout with evidence; re-test **PASS**;
+  reviewer verdict **PASS (2026-10-17, first pass, criteria 1–20)**.
+- **glass-quant was consulted** for this phase (mandatory, Phase 4
+  brief): rulings A1–A9 and P1 binding; no-objections recorded —
+  randomness confined to Phase 4, sampling from the fitted model adds
+  no new statistical assumptions, analytic-first preserved, `random`
+  the sole RNG dependency under instance-only + `random()`-only rules.
+- pytest unchanged: 9.1.1 (`python -m pytest --version` re-verified);
+  Python 3.12.3; stdlib-only dependencies per brief (`random`,
+  `bisect` newly permitted in the designated module only).
+- Checkpoint hash: **PENDING** — glass-git records the real hash at
+  the Phase 4 checkpoint; the docs agent then replaces PENDING in
+  docs/ROADMAP.md with that hash and flips ROADMAP Phase 4
+  `in progress` → `committed`.

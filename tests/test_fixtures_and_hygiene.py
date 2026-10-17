@@ -46,6 +46,8 @@ ALLOWED_APP_IMPORTS: dict[str, set[str]] = {
     "app.validation": {"app.domain", "app.validation"},
     "app.ingestion": {"app.domain", "app.validation", "app.ingestion"},
     "app.models": {"app.domain", "app.models"},  # Phase 3: models imports stdlib + app.domain only
+    "app.scenarios": {"app.domain", "app.models", "app.scenarios"},  # Phase 4: scenarios imports stdlib + app.domain/app.models only
+    "app.simulation": {"app.models", "app.scenarios", "app.simulation"},  # Phase 4: simulation imports stdlib + app.models/app.scenarios only
 }
 PURE_PACKAGES = {"app.domain", "app.validation"}
 # Criterion 12: resolved module paths that read the wall clock. Names are

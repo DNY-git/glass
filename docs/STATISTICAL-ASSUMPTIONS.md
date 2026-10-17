@@ -8,9 +8,13 @@ comes immediately after this docs step. Sections 1, 3, 4, and 5 now
 describe **implemented, tested behavior** of `app/models/` (verified
 against the code and its acceptance tests during Phase 3 docs work);
 §2's "what will test it" entries name Phases 9 and 11, which **have not
-run** — they are commitments, not results. This register is the honest
-statement of the model's assumptions and their weaknesses, kept
-coordinated with `docs/KNOWN-LIMITATIONS.md` and any quant advisories.
+run** — they are commitments, not results. §7 (simulation and scenarios)
+was likewise **authored before any Phase 4 build code** (quant ruling A5,
+Phase 4 brief decision 14) and was updated to implemented reality at the
+Phase 4 docs step (2026-10-17), verified against the shipped code and
+its acceptance tests. This register is the honest statement of the
+model's assumptions and their weaknesses, kept coordinated with
+`docs/KNOWN-LIMITATIONS.md` and any quant advisories.
 
 Scope: pipeline stage 5 (STATISTICAL MODELS), model version
 `"poisson-mle-v1"`. Every number produced by this stage is an in-sample
@@ -269,3 +273,149 @@ the insufficient flags attached.
   that the baseline is sufficient.
 - Nothing here is betting functionality. These estimates are for
   research and decision analysis, presented with their weaknesses.
+
+## 7. Simulation and scenarios (Monte Carlo) — implemented and tested (Phase 4)
+
+Status: **authored BEFORE any Phase 4 build code**, per quant ruling A5
+(Phase 4 brief, decision 14, DOCS step) — the Phase 3 A1 pre-build
+pattern applied to the simulation/scenarios section — then **updated at
+phase end to implemented reality**, verified against the shipped code
+and its acceptance tests during the Phase 4 docs step (2026-10-17):
+`app/simulation/` and `app/scenarios/` exist under `app/`, the suite is
+green (57 passed), and independent review passed the phase (PASS,
+2026-10-17, first pass, criteria 1–20). The pre-build authorship is
+recorded deliberately: every honesty constraint below (simulation noise
+≠ uncertainty, hypothetical, analytic-first) was committed to before any
+number could be produced. Sections 1–6 bind every simulation and
+scenario output without exception — scenario numbers inherit **all §2
+caveats** (goal independence, Poisson variance, single shared home
+advantage, omitted structures, season stationarity, draw bias) plus §4
+truncation and §6 in-sample-estimates-only. Implemented named constants
+(echoed on every result): `SIM_VERSION = "sim-categorical-v1"`,
+`DEFAULT_N_SIMS = 10_000`.
+
+Scope: HANDOFF Part IV stage 7 (SCENARIO EXPLORATION — *"bounded,
+labeled-hypothetical multipliers"*) plus a Monte Carlo layer over the
+existing stage-5 scoreline matrix — infrastructure, not a reporter. A
+simulation call consumes exactly one frozen `ScorelineMatrix` for one
+fixture; it has no history surface, no `as_of`, and no time parameter to
+forget, so cutoff discipline stays in `fit` alone (HANDOFF Part V).
+
+**(a) `mc_stderr` measures simulation noise only — never model or
+parameter uncertainty.**
+*Statement:* `mc_stderr = sqrt(p(1-p)/n)` is computed from the
+**analytic** `p` (that exact expression order is part of the contract),
+and it quantifies only the Monte Carlo noise of drawing `n_sims`
+samples from a fixed, already-known distribution.
+*What it is not:* it is not a measure of model uncertainty, parameter
+uncertainty, or data uncertainty — **no confidence intervals exist
+anywhere in this system** (no bootstrap, no parameter sampling, no
+bands anywhere; §6). Increasing `n_sims` shrinks the noise term and
+**never** shrinks the uncertainty: a run with 10⁷ draws of an in-sample
+estimate is still that same in-sample estimate. Scenario numbers are
+**hypothetical**, conditioned on the in-sample fit and on **ALL §2
+caveats** (goal independence, Poisson variance, single shared home
+advantage, omitted structures, season stationarity, draw bias). The
+scenario multipliers are **arbitrary documented knobs** (§d), not
+empirical claims about any team. Scenario outputs **restate the
+inherited caveats**: draw bias (§2f), overdispersion (§2b), stationarity
+(§2e), truncation (§4), and in-sample-estimates-only (§6).
+
+**(b) Sampling target — categorical over the truncated, renormalized
+(K+1)² matrix.**
+*Statement:* draws come from a cumulative table built **row-major** (i
+ascending, j ascending) from `exp(log_probs[i][j])`, divided by the
+table sum; each draw is `u = rng.random()` located by
+`bisect.bisect_left`, with an **fp-epsilon clamp-to-last-cell guard**
+when the lookup lands past the final index (possible only from
+floating-point rounding at the table tail; the clamp touches only the
+last cell and never shifts mass between cells).
+*Documented deviation:* MC frequencies therefore deviate from the
+analytic `outcome_probs` target by at most
+**`dropped_mass / (1 − dropped_mass)` ≤ ~6.004×10⁻⁴** at
+fixture-fitted lambdas (K = 10, where `dropped_mass ≤ 6×10⁻⁴` per §4) —
+the same figure the acceptance tests assert docs/code agreement on
+(implemented and test-asserted).
+*Rejected alternative, recorded honestly:* independent untruncated
+Poisson draws are **not** used this phase, because they would require
+an `out_of_range_count` (draws outside 0..K) — a second sampling path
+and a second truth surface. **No `out_of_range_count` field exists by
+design**; the already-disclosed dropped mass of §4 stands in its place,
+and revisiting this choice requires a future brief that says why.
+
+**(c) Seed policy — required, keyword-only, instance-only.**
+*Statement:* `seed` is a **required keyword-only `int` argument** of
+`simulate` — no default and no RNG-object parameter anywhere in the
+API. Each call constructs a **fresh `random.Random(seed)`**; the RNG is
+instance-only — no module-level RNG binding, no `random.seed()` global
+seeding, no unseeded `Random()`.
+*Draw primitive:* **`random()` is the only draw primitive** — the one
+method CPython documents as sequence-stable across Python versions for
+a given seed; `randrange`/`randint`/`choice`/`choices`/`sample`/
+`getrandbits`/`shuffle` are banned in the simulation module.
+*Banned seed sources:* `hash()`-derived seeds (str hashing is salted
+per process, which would also break cross-process bit-identity),
+`time`/`os.urandom`/`secrets`/`uuid`/`id()`, and seeding from
+`input_digest` or any parameter value or digest.
+*Contract:* identical `(fitted, home, away, seed, n_sims, sim_version
+[, scenario])` → **field-for-field identical frozen output**;
+`seed`, `n_sims`, and the `SIM_VERSION` string are echoed on every
+result for provenance.
+
+**(d) Transform semantics (developer-decided) — parameter-scale,
+bounded, never clamped, never averaged.**
+*Statement:* the transform is literal **parameter-scale**:
+`α′ = m·α`, `β′ = m·β`, `h′ = m·h`. Bounds are named documented
+constants **`MULTIPLIER_MIN = 0.5`** and **`MULTIPLIER_MAX = 2.0`**,
+inclusive at both ends; a non-inclusive-of-range, non-finite, or
+non-numeric multiplier raises **`ValueError` — never silent clamping**
+(clamping would be fabricated data, constitution prohibition 4).
+*Honest interpretation:* on the log scale a multiplier **dulls (m < 1)
+or amplifies (m > 1) the parameter's deviation from league mean**, so
+**the sign of the effect depends on the parameter's sign** — the same
+`m < 1` applied to a positive α and to a negative α moves λ in opposite
+directions. This is stated rather than glossed; the multipliers
+themselves are arbitrary knobs, not measured effects.
+*Labeling and averaging:* every scenario carries a non-empty
+caller-supplied **label echoed on every output**, and scenarios are
+**labeled hypothetical and never averaged** — the API evaluates one
+scenario per call, alternatives are presented side by side, and
+disagreement is reported, never collapsed into a silently invented
+ensemble (comparison belongs to stage 8 / Phase 7).
+
+**(e) Analytic-first rule — simulation never replaces `outcome_probs`.**
+*Statement:* the reported single-match probability is always the
+analytic `outcome_probs` (§4: exact under truncation, analytic tails).
+A single-match probability has a closed form today; simulating it would
+add noise to an exact quantity, so **simulation NEVER replaces
+`outcome_probs`**. Legitimate uses are (i) Phase 12's replay machinery
+(same-seed end-to-end determinism replay, stochastic path replay) and
+(ii) future aggregate/season-path quantities with no closed form
+(season point totals, multi-stage paths). Phase 11 evaluates analytic
+probabilities only — MC noise never contaminates log loss, Brier, or
+RPS.
+
+**(f) Honesty — internal consistency is not validation.**
+*Statement:* MC frequencies tracking the analytic probabilities
+demonstrate **sampler internal consistency only** — never *"validated"*
+and never *"accurate"*; §6's *normalized ≠ accurate* applies verbatim
+to Monte Carlo agreement. **Evidence begins at Phases 9 and 11**
+(chronological backtesting and evaluation against realized results);
+until those run, no number from simulation or scenarios may be
+described — in code, docs, briefs, or reports — as validated, accurate,
+or beating anything. Nothing here is betting functionality
+(constitution prohibition 3); these are hypothetical research numbers
+presented with their weaknesses.
+
+**(g) Provenance refusal — a scenario whose baseline does not equal
+the given fitted object is refused.**
+*Statement (implemented beyond the pre-build specification, recorded at
+phase end so this register describes the code and not the plan):*
+`simulate(fitted, home, away, ..., scenario=s)` raises `ValueError`
+unless `s.baseline == fitted` (frozen-dataclass **value equality**).
+Simulating under a mismatched baseline would draw from one fit's
+distribution while echoing a different fit's provenance on the result —
+mislabeled output — so the mismatch is refused outright rather than
+silently reconciled or re-labeled. This guard shipped with the build
+and is pinned by test
+(`test_simulate_scenario_baseline_mismatch_refused_by_value_equality`).

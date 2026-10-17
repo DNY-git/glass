@@ -1,17 +1,19 @@
 # ARCHITECTURE — SPORTS LOOKING GLASS
 
-Status as of 2026-10-16 (Phase 3): **pipeline stages 1–2 and 5 and the
-domain layer exist** — `app/domain/` (immutable models, match
-collection, canonical state), `app/ingestion/` (stage 1 DATA),
+Status as of 2026-10-17 (Phase 4): **pipeline stages 1–2, 5, and 7 and
+the cross-cutting layers exist** — `app/domain/` (immutable models,
+match collection, canonical state), `app/ingestion/` (stage 1 DATA),
 `app/validation/` (stage 2 VALIDATION), `app/models/` (stage 5
 STATISTICAL MODELS: Poisson MLE fitter, fitted-parameter records,
-analytic scoreline/outcome evaluation), plus checked-in synthetic
-fixtures under `fixtures/`. Everything else in the module map and
-directory tree below is the **target/planned structure**, declared in
-`docs/PLAN.md` (status: proposed) and `docs/HANDOFF.md` Part IV.
-Modules are instantiated by the phase that needs them, never
-speculatively. Nothing in a planned block below should be read as
-existing code.
+analytic scoreline/outcome evaluation), `app/scenarios/` (stage 7
+SCENARIO EXPLORATION: bounded, labeled-hypothetical multipliers),
+`app/simulation/` (the cross-cutting Monte Carlo module — **not** one
+of the ten pipeline stages), plus checked-in synthetic fixtures under
+`fixtures/`. Everything else in the module map and directory tree below
+is the **target/planned structure**, declared in `docs/PLAN.md`
+(status: proposed) and `docs/HANDOFF.md` Part IV. Modules are
+instantiated by the phase that needs them, never speculatively. Nothing
+in a planned block below should be read as existing code.
 
 ## The pipeline (ten stages, mandatory module separation)
 
@@ -26,18 +28,27 @@ code imports no storage, no HTTP, no I/O.
 | 4 | FEATURE EXTRACTION | Chronological features computed from history with explicit cutoffs. | `app/features/` |
 | 5 | STATISTICAL MODELS | Pure computation: Poisson goal models, strength parameters, calibration. | `app/models/` (exists since Phase 3) |
 | 6 | FORECAST DISTRIBUTIONS | Full scoreline/outcome distributions, frozen at creation (immutable). | `app/forecasts/` |
-| 7 | SCENARIO EXPLORATION | Bounded, labeled-hypothetical multipliers. | `app/scenarios/` |
+| 7 | SCENARIO EXPLORATION | Bounded, labeled-hypothetical multipliers. | `app/scenarios/` (exists since Phase 4) |
 | 8 | DECISION ANALYSIS | Comparison of model outputs and their disagreement, honestly presented. | `app/decisions/` |
 | 9 | OUTCOME EVALUATION | Log loss, Brier, RPS against realized results, strictly chronological. | `app/evaluation/` (harness: `app/backtesting/`) |
 | 10 | MODEL IMPROVEMENT | A tuning loop protected from evaluating itself on its own tuning data. | `app/improvement/` |
 
 Cross-cutting modules: `app/domain/` **exists since Phase 2**
-(entities/value objects) and `app/storage/` (local persistence,
-idempotency; sqlite via stdlib, default backend) was **confirmed
-deferred** by the Phase 2 brief (design decision 1) — no durable state
-is needed yet, and the proposal returns in the first brief that needs
-durable state (immutable snapshots, Phase 5+). `app/api/` holds thin
-FastAPI routers only, from Phase 5; routers contain no logic.
+(entities/value objects); `app/simulation/` **exists since Phase 4** —
+the seeded Monte Carlo layer over one fixture's scoreline matrix, and
+the **only module in the codebase permitted to import `random`**
+(AST-enforced with probes). It is deliberately **not one of the ten
+pipeline stages**: it consumes exactly one frozen `ScorelineMatrix`
+per call, never replaces the analytic `outcome_probs` as the reported
+single-match probability, and exists for Phase 12 replay machinery and
+future aggregate quantities with no closed form (see
+`docs/STATISTICAL-ASSUMPTIONS.md` §7). And `app/storage/` (local
+persistence, idempotency; sqlite via stdlib, default backend) was
+**confirmed deferred** by the Phase 2 brief (design decision 1) — no
+durable state is needed yet, and the proposal returns in the first
+brief that needs durable state (immutable snapshots, Phase 5+).
+`app/api/` holds thin FastAPI routers only, from Phase 5; routers
+contain no logic.
 
 ## Rules of separation (binding)
 
@@ -52,7 +63,9 @@ FastAPI routers only, from Phase 5; routers contain no logic.
 - Forecasts and pre-match snapshots are immutable once created.
 - Determinism: identical inputs + model version + seed + config produce
   identical output; all randomness flows through explicitly seeded RNGs
-  passed by the caller; no wall-clock time, environment lookups, or
+  (the caller passes an int seed; the RNG instance is constructed fresh
+  inside the call — PLAN §5 as clarified by the Phase 4 brief decision
+  1); no wall-clock time, environment lookups, or
   unsorted iteration inside calculations.
 
 ## Target directory structure (what exists now vs PLANNED — from docs/PLAN.md §2)
@@ -72,13 +85,14 @@ FastAPI routers only, from Phase 5; routers contain no logic.
     │   ├── features/            # PLANNED — stage 4: versioned feature specs
     │   ├── models/              # EXISTS (Phase 3) — stage 5: pure statistics (stdlib)
     │   ├── forecasts/           # PLANNED — stage 6: immutable, cutoff inside
-    │   ├── scenarios/           # PLANNED — stage 7: bounded multipliers
+    │   ├── scenarios/           # EXISTS (Phase 4) — stage 7: bounded, labeled-hypothetical multipliers
+    │   ├── simulation/          # EXISTS (Phase 4) — CROSS-CUTTING seeded Monte Carlo (not a stage; the only random importer)
     │   ├── decisions/           # PLANNED — stage 8: disagreement reported
     │   ├── backtesting/         # PLANNED — stage 9: chronological harness
     │   ├── evaluation/          # PLANNED — stage 9: log loss, Brier, RPS
     │   ├── improvement/         # PLANNED — stage 10: protected tuning loop
     │   └── api/                 # PLANNED (Phase 5+): thin FastAPI routers
-    ├── tests/                   # EXISTS (Phase 3): 37 tests, 1:1 with criteria
+    ├── tests/                   # EXISTS (Phase 4): 57 tests, 1:1 with criteria
     ├── fixtures/                # EXISTS (Phase 2): synthetic OpenFootball-shaped JSON
     ├── data/                    # NOT CREATED — git-ignored working data, deferred with app/storage
     ├── scripts/health-check.sh  # EXISTS (bootstrap + Phase 1 recursion guard)
@@ -87,7 +101,7 @@ FastAPI routers only, from Phase 5; routers contain no logic.
                                  # HEALTH-LOG, ARCHITECTURE, KNOWN-LIMITATIONS,
                                  # DATA-SOURCES, STATISTICAL-ASSUMPTIONS, briefs/
 
-## Instantiation status (2026-10-16, Phase 3)
+## Instantiation status (2026-10-17, Phase 4)
 
 | Item | Status |
 |------|--------|
@@ -95,18 +109,23 @@ FastAPI routers only, from Phase 5; routers contain no logic.
 | `app/domain/` (models.py, collection.py) | Exists (Phase 2) — frozen dataclasses, deduplicating `MatchCollection`, `canonical_state()`, availability counts |
 | `app/ingestion/` (openfootball.py) | Exists (Phase 2) — local JSON loader, provenance (repo-relative path + sha256), idempotent import |
 | `app/validation/` (report.py, checks.py) | Exists (Phase 2) — `Defect`/`DefectReport`, pure checks; defects reported, never repaired |
-| `app/models/` (constants.py, params.py, poisson.py, scoreline.py) | Exists (Phase 3) — `"poisson-mle-v1"`: unpenalized Poisson MLE by Newton-Raphson with analytic derivatives and a hand-rolled dense solve; frozen `FittedParams`/`FitConfig` with required `convergence_status` (CONVERGED / MAX_ITERATIONS / SINGULAR_SYSTEM / NO_DATA), sha256 input digest, pooling record; analytic scoreline matrices (reported dropped mass) and outcome probabilities exact under truncation; cutoff enforced **inside** `fit` (`date < as_of`); no randomness, no wall clock, no module-level fitted state |
+| `app/models/` (constants.py, params.py, poisson.py, scoreline.py) | Exists (Phase 3) — `"poisson-mle-v1"`: unpenalized Poisson MLE by Newton-Raphson with analytic derivatives and a hand-rolled dense solve; frozen `FittedParams`/`FitConfig` with required `convergence_status` (CONVERGED / MAX_ITERATIONS / SINGULAR_SYSTEM / NO_DATA), sha256 input digest, pooling record; analytic scoreline matrices (reported dropped mass) and outcome probabilities exact under truncation; cutoff enforced **inside** `fit` (`date < as_of`); no randomness, no wall clock, no module-level fitted state. Phase 4 refactor: shared `lambda_pair`/`build_scoreline_matrix` constructors extracted (the ONE cell-math path — `scoreline_log_probs` and every scenario matrix both delegate to them; Phase 3 goldens byte-identical) |
+| `app/scenarios/` (spec.py, apply.py) | Exists (Phase 4) — stage 7: frozen `TransformOp`/`Transform`/`Scenario`, `build_scenario` (bounds `MULTIPLIER_MIN = 0.5`/`MULTIPLIER_MAX = 2.0` inclusive, `ValueError` — **never clamping**, canonical transform ordering, duplicate/unknown-team refusal, required non-empty label), `scenario_matrix` (strict applicability; parameter-scale transforms `α′ = m·α` etc.; matrix echoes the baseline's flags); one scenario per call — **no averaging or ensembling anywhere**; no randomness, no cell math, no `FittedParams` construction (AST-enforced) |
+| `app/simulation/` (constants.py, simulate.py) | Exists (Phase 4) — **cross-cutting Monte Carlo module, not one of the ten pipeline stages**: `simulate(fitted, home, away, *, seed, n_sims=10_000, scenario=None)` with required keyword-only int `seed` (fresh `random.Random(seed)` per call, `random()`-only draws, categorical sampling over the truncated renormalized matrix), frozen `SimulationResult` (raw counts, exact `analytic_outcome`, `mc_stderr` = simulation noise only, dropped mass, flags riding through); `SIM_VERSION = "sim-categorical-v1"`; **the only module permitted to import `random`** (AST-enforced with probes); refuses a scenario whose baseline ≠ the given fitted object (value equality) |
 | `fixtures/openfootball/` (3 synthetic JSON files) | Exists (Phase 2) — 60 valid matches + 12-record defect sample, fictional teams, `"synthetic": true` marker |
-| `pytest.ini`, root `conftest.py`, `tests/` (9 modules, 37 tests), `scripts/health-check.sh` | Exists (Phases 1–3) |
+| `pytest.ini`, root `conftest.py`, `tests/` (12 modules, 57 tests), `scripts/health-check.sh` | Exists (Phases 1–4) |
 | `.venv/` (Python 3.12.3, pip 26.2.1, pytest 9.1.1) | Exists, git-ignored |
 | `app/storage/`, `data/` | **Deferred** (Phase 2 brief design decision 1) — sqlite returns in the first brief needing durable state (Phase 5+) |
-| Remaining `app/` subpackages (state, features, forecasts, scenarios, decisions, backtesting, evaluation, improvement), API | **Do not exist — planned, phase by phase** |
+| Remaining `app/` subpackages (state, features, forecasts, decisions, backtesting, evaluation, improvement), API | **Do not exist — planned, phase by phase** |
 
-There is data (synthetic fixtures) and a fitted statistical model, but
-no forecast, no scenarios, and no API in the repository today.
+There is data (synthetic fixtures), a fitted statistical model, and a
+scenarios/simulation layer, but no forecast and no API in the
+repository today.
 `docs/DATA-SOURCES.md` exists (formats, fixture provenance, licenses);
 `docs/STATISTICAL-ASSUMPTIONS.md` exists (the model's assumptions and
 their weaknesses — authored before the Phase 3 build per quant ruling,
-updated to the implemented reality); `docs/EVALUATION.md` does not
+updated to the implemented reality; §7 covers simulation and
+scenarios, authored before the Phase 4 build per quant ruling and
+likewise updated to implemented reality); `docs/EVALUATION.md` does not
 exist yet because there is no evaluation to document; it arrives with
 the phase that introduces it.

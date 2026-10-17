@@ -15,25 +15,40 @@ history, never the current state of this repository.
 
 ## Current state
 
-**Phase 3 (Core statistics): built and reviewed (PASS, after 1 fix
-cycle); checkpoint pending.** Pipeline stage 5 exists: `app/models/` —
-an unpenalized Poisson goal model (`"poisson-mle-v1"`) with attack/
-defence strengths and an **estimated** home-advantage term, fitted by
-Newton-Raphson maximum likelihood inside `fit` (cutoff enforced inside
-the calculation: only matches strictly before `as_of` enter the
-likelihood), plus analytic scoreline matrices (truncation mass always
-reported) and outcome probabilities that are exact under any
-truncation. Deterministic and stdlib-only by construction; every fit
-carries its convergence status and sha256 provenance. See
+**Phase 4 (Simulation and scenarios): built and reviewed (PASS, 2026-10-17,
+first pass, criteria 1–20); checkpoint pending.** Pipeline stage 7
+exists — `app/scenarios/`: bounded, labeled-hypothetical multiplicative
+transforms on named parameters (`attack`, `defence`, `home_advantage`;
+inclusive bounds 0.5–2.0; out-of-range multipliers are a `ValueError`,
+**never silently clamped**; one scenario per call, never averaged or
+ensembled; strict applicability). Alongside it sits `app/simulation/`,
+a **cross-cutting Monte Carlo module** (not one of the ten pipeline
+stages): seeded simulation over one fixture's scoreline matrix, with a
+required keyword-only integer `seed`, `random()`-only draws, and
+`SIM_VERSION = "sim-categorical-v1"` — it is the **only module in the
+codebase permitted to import `random`** (AST-enforced). Analytic-first
+is unchanged: the reported single-match probability is always the
+analytic `outcome_probs`; `mc_stderr` measures **simulation noise only,
+never model or parameter uncertainty — no confidence intervals exist
+anywhere in this system**, and scenario numbers are labeled
+hypotheticals all the way down (see `docs/STATISTICAL-ASSUMPTIONS.md`
+§7). Phase 3 (Core statistics) remains: `app/models/` — an unpenalized
+Poisson goal model (`"poisson-mle-v1"`) with attack/defence strengths
+and an **estimated** home-advantage term, fitted by Newton-Raphson
+maximum likelihood inside `fit` (cutoff enforced inside the
+calculation), plus analytic scoreline matrices (truncation mass always
+reported) and outcome probabilities exact under any truncation.
+Deterministic and stdlib-only by construction; every fit carries its
+convergence status and sha256 provenance. See
 `docs/STATISTICAL-ASSUMPTIONS.md` for the model's assumptions and their
 weaknesses — every number it produces is an **in-sample estimate on
-synthetic fixtures, never evidence of accuracy**. Phases 1 (Foundation)
-and 2 (Domain and data) are committed at **45ed27e** and **1c5067b**.
-The local, offline, deterministic test loop is operational: 37 tests,
-all green. No forecasts, no scenarios, no storage, no API yet (by
-design; see `docs/briefs/phase-3.md` and `docs/PLAN.md`). See
-`docs/ROADMAP.md` for phase status and `docs/PROGRESS-LOG.md` for the
-record.
+synthetic fixtures, never evidence of accuracy**. Phases 1 (Foundation),
+2 (Domain and data), and 3 (Core statistics) are committed at
+**45ed27e**, **1c5067b**, and **a5d7f56**. The local, offline,
+deterministic test loop is operational: 57 tests, all green. No
+forecasts, no storage, no API yet (by design; see
+`docs/briefs/phase-4.md` and `docs/PLAN.md`). See `docs/ROADMAP.md` for
+phase status and `docs/PROGRESS-LOG.md` for the record.
 
 ## Requirements
 
@@ -74,10 +89,11 @@ From the repository root:
 .venv/bin/python -m pytest -q
 ```
 
-Verified output (2026-10-16, Phase 3 docs run, clean environment —
+Verified output (2026-10-17, Phase 4 docs run, clean environment —
 `env -u PYTEST_ADDOPTS .venv/bin/python -m pytest -q`):
-`37 passed in 16.27s`. Zero skips, zero xfails — no test in this suite
-may use skip or xfail (constitution). If your shell inherits a stray
+`57 passed in 66.48s`. Zero skips, zero xfails — no test in this suite
+may use skip or xfail (constitution). Run time varies with machine load
+(recorded this phase roughly 30–66 s). If your shell inherits a stray
 `PYTEST_ADDOPTS` (e.g. from a health-script environment), unset it as
 above so the health tests are not silently deselected; the health
 script's own inner runs deselect them on purpose (recursion guard).
@@ -90,16 +106,20 @@ From the repository root:
 bash scripts/health-check.sh
 ```
 
-Verified on 2026-10-16 (Phase 3): exit code 0; compile clean; determinism
-comparison `OK: 34 passed, 3 deselected`; skips/xfails `none`; `pip
-check` clean ("No broken requirements found."). Its own pytest
-invocations report `34 passed, 3 deselected`: the script exports a
+Verified on 2026-10-17 (Phase 4 docs run): ran to completion; compile
+clean; determinism comparison `OK: 54 passed, 3 deselected`;
+skips/xfails `none`; `pip check` clean ("No broken requirements
+found."). Its own pytest invocations report `54 passed, 3 deselected`
+(10.36 s and 9.45 s in this run): the script exports a
 `PYTEST_ADDOPTS` recursion guard so its internal suite runs never
 re-execute the tests that spawn the script; those health tests run in
-the direct suite above. Expect roughly half a minute to a minute — the
-script runs the non-health suite five times internally (observed 14.1 s
-total idle this run; 47.5 s under concurrent load at Phase 2 — see
-`docs/KNOWN-LIMITATIONS.md`).
+the direct suite above. Expect roughly half a minute to a couple of
+minutes — the script runs the non-health suite five times internally
+(recorded totals range from 14.1 s idle at Phase 3's 37-test inner
+suite to 128 s under heavy external load on 2026-10-17, the run that
+tripped the health test's 120 s timeout and prompted the
+evidence-based re-scope to 300 s under AMENDMENT A2 — see
+`docs/KNOWN-LIMITATIONS.md` item 2).
 
 Important: by design (no `set -e`, so one failing check cannot abort the
 sweep) the health script prints failures but still exits 0. It is a
@@ -110,10 +130,10 @@ run of `.venv/bin/python -m pytest -q` (Phase 1 criterion 10). See
 ## Repository layout (what exists now)
 
     lookingglass/
-    ├── app/                     # the engine; Phase 3: domain/, ingestion/,
-    │                            # validation/, models/ (+ Phase 1 __init__.py)
+    ├── app/                     # the engine; Phase 4: domain/, ingestion/,
+    │                            # validation/, models/, scenarios/, simulation/
     ├── fixtures/                # synthetic OpenFootball-shaped JSON (Phase 2)
-    ├── tests/                   # 37 tests, 1:1 with acceptance criteria
+    ├── tests/                   # 57 tests, 1:1 with acceptance criteria
     ├── scripts/health-check.sh  # mechanical health sweep
     ├── pytest.ini               # testpaths=tests, --strict-markers
     ├── conftest.py              # repo root importability for bare pytest
@@ -135,7 +155,8 @@ phase by phase — never speculatively.
 - `docs/ARCHITECTURE.md` — pipeline stages and module map (target marked).
 - `docs/DATA-SOURCES.md` — data formats, fixture provenance, licenses.
 - `docs/STATISTICAL-ASSUMPTIONS.md` — the Poisson model's assumptions
-  and their weaknesses (Phase 3).
+  and their weaknesses (Phase 3), plus simulation and scenarios (Phase
+  4, §7).
 - `docs/PROGRESS-LOG.md` — what was built, real test counts, checkpoint
   hashes.
 - `docs/KNOWN-LIMITATIONS.md` — the honest list, updated every phase.

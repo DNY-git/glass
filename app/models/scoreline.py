@@ -64,29 +64,60 @@ def _pmf(goals: int, log_rate: float, rate: float) -> float:
     return math.exp(goals * log_rate - rate - math.lgamma(goals + 1.0))
 
 
-def scoreline_log_probs(
-    fitted: FittedParams, home: str, away: str
-) -> ScorelineMatrix:
-    """Joint scoreline log-probabilities for one fixture (H vs A).
+def lambda_pair(
+    mu: float,
+    alpha_home: float,
+    beta_away: float,
+    alpha_away: float,
+    beta_home: float,
+    home_advantage: float,
+) -> tuple[float, float]:
+    """``(lambda_home, lambda_away)`` from the documented log-linear form.
 
-    lambdas from the documented log-linear form, evaluated in formula
-    order: lambda_home = exp(mu + alpha_home + beta_away + h),
-    lambda_away = exp(mu + alpha_away + beta_home). Cells cover
-    0..fitted.config.max_goals per side; dropped mass is reported, and
-    outcome probabilities (see ``outcome_probs``) come from analytic
-    tails and are unaffected by the truncation.
+    The ONE shared lambda-pair constructor (Phase 4 brief decision 9):
+    every scoreline matrix — baseline and scenario — gets its rates
+    from this function, so the formula exists exactly once in the
+    codebase. Evaluated in formula order, character-for-character as
+    Phase 3 shipped it:
+
+        lambda_home = exp(mu + alpha_home + beta_away + h)
+        lambda_away = exp(mu + alpha_away + beta_home)
+
+    The argument order mirrors that formula (home-side terms first),
+    and the additions inside each ``exp`` run left to right exactly as
+    before the refactor, so the floats are bit-identical to Phase 3's
+    full-precision goldens (criterion 11d: no Phase 3 test changes).
+    In-sample estimates of the fitted model, never evidence of
+    accuracy (docs/STATISTICAL-ASSUMPTIONS.md section 6).
     """
-    home_index = _team_index(fitted, home)
-    away_index = _team_index(fitted, away)
-
     lambda_home = math.exp(
-        fitted.mu + fitted.alpha[home_index] + fitted.beta[away_index] + fitted.home_advantage
+        mu + alpha_home + beta_away + home_advantage
     )
     lambda_away = math.exp(
-        fitted.mu + fitted.alpha[away_index] + fitted.beta[home_index]
+        mu + alpha_away + beta_home
     )
+    return lambda_home, lambda_away
 
-    max_goals = fitted.config.max_goals
+
+def build_scoreline_matrix(
+    lambda_home: float,
+    lambda_away: float,
+    max_goals: int,
+    convergence_status: ConvergenceStatus,
+    insufficient_data: bool,
+    insufficient_teams: tuple[str, ...],
+) -> ScorelineMatrix:
+    """Build a ScorelineMatrix from a lambda pair — ALL cell math lives here.
+
+    The ONE shared matrix builder (Phase 4 brief decision 9): cell log
+    probabilities (``_log_pmf`` products), the exact dropped-mass
+    report, and the flags echo — no caller of this function ever
+    reimplements a cell formula. ``max_goals`` and the three flags are
+    explicit arguments (a scenario matrix carries the BASELINE's fit
+    status: a transform does not change fit status). Evaluation order
+    is byte-for-byte Phase 3's original body, so baseline outputs stay
+    bit-identical under the refactored ``scoreline_log_probs``.
+    """
     log_rate_home = math.log(lambda_home)
     log_rate_away = math.log(lambda_away)
     rows = []
@@ -115,9 +146,46 @@ def scoreline_log_probs(
         lambda_away=lambda_away,
         max_goals=max_goals,
         dropped_mass=dropped_mass,
-        convergence_status=fitted.convergence_status,
-        insufficient_data=fitted.insufficient_data,
-        insufficient_teams=fitted.insufficient_teams,
+        convergence_status=convergence_status,
+        insufficient_data=insufficient_data,
+        insufficient_teams=insufficient_teams,
+    )
+
+
+def scoreline_log_probs(
+    fitted: FittedParams, home: str, away: str
+) -> ScorelineMatrix:
+    """Joint scoreline log-probabilities for one fixture (H vs A).
+
+    lambdas from the documented log-linear form, evaluated in formula
+    order: lambda_home = exp(mu + alpha_home + beta_away + h),
+    lambda_away = exp(mu + alpha_away + beta_home) — delegated to the
+    shared ``lambda_pair`` constructor and ``build_scoreline_matrix``
+    (Phase 4 brief decision 9: ONE shared cell-math path for baseline
+    and scenario matrices alike). Cells cover 0..fitted.config.max_goals
+    per side; dropped mass is reported, and outcome probabilities (see
+    ``outcome_probs``) come from analytic tails and are unaffected by
+    the truncation.
+    """
+    home_index = _team_index(fitted, home)
+    away_index = _team_index(fitted, away)
+
+    lambda_home, lambda_away = lambda_pair(
+        fitted.mu,
+        fitted.alpha[home_index],
+        fitted.beta[away_index],
+        fitted.alpha[away_index],
+        fitted.beta[home_index],
+        fitted.home_advantage,
+    )
+
+    return build_scoreline_matrix(
+        lambda_home,
+        lambda_away,
+        fitted.config.max_goals,
+        fitted.convergence_status,
+        fitted.insufficient_data,
+        fitted.insufficient_teams,
     )
 
 
@@ -154,4 +222,10 @@ def outcome_probs(matrix: ScorelineMatrix) -> tuple[float, float, float]:
     return (p_home, p_draw, p_away)
 
 
-__all__ = ["ScorelineMatrix", "outcome_probs", "scoreline_log_probs"]
+__all__ = [
+    "ScorelineMatrix",
+    "build_scoreline_matrix",
+    "lambda_pair",
+    "outcome_probs",
+    "scoreline_log_probs",
+]

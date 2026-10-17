@@ -19,8 +19,8 @@ Developer acceptance is recorded per BLOCK, not per phase.
 |-------|---------------------------------|-----------|
 | 1     | Foundation                      | committed   |
 | 2     | Domain and data                 | committed   |
-| 3     | Core statistics                 | in progress |
-| 4     | Simulation and scenarios        | planned   |
+| 3     | Core statistics                 | committed   |
+| 4     | Simulation and scenarios        | in progress |
 | 5     | Forecasting API                 | planned   |
 | 6     | Feature engine                  | planned   |
 | 7     | Decision analysis               | planned   |
@@ -45,23 +45,38 @@ Status notes:
   (HEALTH-LOG, PROGRESS-LOG, ROADMAP — monitor finding 1) plus the
   Phase 2 DOCS-step files. Hash recorded in docs/PROGRESS-LOG.md per
   the Phase 1 convention. Pre-commit suite re-run: 24 passed.
-- Phase 3 is `in progress`: built and passed independent review (PASS,
-  2026-10-16, after 1 fix cycle; the fix cycle also carried a
+- Phase 3 is `committed`: checkpoint hash **a5d7f56** — `phase 3:
+  poisson core statistics, mle fitter with internal cutoff, scoreline
+  matrices` (2026-10-17, master). Built and passed independent review
+  (PASS, 2026-10-16, after 1 fix cycle; the fix cycle also carried a
   tester-caught, builder-acknowledged honesty finding); suite 37
-  passed. Checkpoint hash **PENDING** — glass-git records the real hash
-  at the Phase 3 checkpoint (immediately after this docs step), which
-  also carries the three uncommitted protocol records (HEALTH-LOG,
-  PROGRESS-LOG, ROADMAP — monitor finding 1, carried from Phases 1–2)
-  and the brief amendment-A1-declared **+1 line** in
-  tests/test_fixtures_and_hygiene.py; the docs agent then replaces
-  PENDING with the hash here and in docs/PROGRESS-LOG.md and flips this
-  row to `committed` (Phase 1/2 convention).
+  passed. The commit also carried the three protocol records
+  (HEALTH-LOG, PROGRESS-LOG, ROADMAP — monitor finding 1, carried from
+  Phases 1–2) and the brief amendment-A1-declared **+1 line** in
+  tests/test_fixtures_and_hygiene.py. Hash recorded in
+  docs/PROGRESS-LOG.md per the Phase 1/2 convention. Docs-step suite
+  re-run (2026-10-17): 37 passed.
+- Phase 4 is `in progress`: checkpoint hash **PENDING** (convention:
+  the docs agent replaces PENDING with the real hash and flips the
+  status to `committed` immediately after the checkpoint commit). Built
+  and passed independent review (PASS, 2026-10-17, first pass, criteria
+  1–20); suite 57 passed. The checkpoint commit must carry the three
+  protocol records (docs/HEALTH-LOG.md, docs/PROGRESS-LOG.md,
+  docs/ROADMAP.md — monitor finding 1, carried from Phases 1–3
+  sweeps), the phase brief, the AMENDMENT-A1-declared **+2 lines** in
+  tests/test_fixtures_and_hygiene.py (612 → 614), and the
+  AMENDMENT-A2-declared **two in-place edits** in
+  tests/test_health_script.py (health-test timeout 120 → 300 s,
+  evidence-based; 105 → 105 lines). Block 1 developer acceptance is
+  recorded in the block acceptance record below (acceptance is
+  recorded per BLOCK, not per phase; Block 2 acceptance belongs to the
+  developer at the Phases 4–6 boundary).
 
 ## Block acceptance record
 
 | Block | Accepted by developer | Date | Notes |
 |-------|-----------------------|------|-------|
-|       |                       |      |       |
+| 1     | yes (recorded)        | 2026-10-17 | Phases 1–3 committed at 45ed27e, 1c5067b, a5d7f56; all three reviewer verdicts PASS. Acceptance reported by the conductor at the Phase 4 boundary and recorded here per the constitution — the Phase 4 brief flagged the then-empty table as constitutionally required (docs/briefs/phase-4.md, "State verified before writing this brief"). |
 
 ## Postponed
 

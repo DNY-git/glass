@@ -4,8 +4,8 @@ The honest list. Updated every phase (constitution; HANDOFF Part IX item
 13 formalizes this at Phase 13, but the discipline starts now). Nothing
 here is hidden behavior — each item is also recorded where it was found.
 
-Entry below reflects the state as of Phase 3 (Core statistics),
-2026-10-16.
+Entry below reflects the state as of Phase 4 (Simulation and
+scenarios), 2026-10-17.
 
 ## Phase 1
 
@@ -33,6 +33,30 @@ Entry below reflects the state as of Phase 3 (Core statistics),
    can still push it over. If it trips, the responsible phase's brief
    must **re-scope the mechanism** — never weaken, skip, or xfail the
    test (constitution).
+   **Update 2026-10-17 (Phase 4 — AMENDMENT A2, the predicted trip
+   happened; prior figures above kept as measured, nothing rewritten).**
+   During the Phase 4 build, under sustained external load average
+   10.27–10.43 (not this project's load), the direct suite reported
+   `54 passed, 3 errors` on two consecutive runs — all three errors
+   `subprocess.TimeoutExpired` (120 s) from the module-scoped fixture in
+   `tests/test_health_script.py`. The health script itself was
+   functional and honest: a standalone `bash scripts/health-check.sh`
+   completed every section (compile clean, determinism `OK`, skips/xfails
+   `none`, pip clean) in 128 s (2m08s); only the test's wall-clock
+   budget failed, no asserted property of the script. Per this item's
+   own trigger, AMENDMENT A2 of the Phase 4 brief re-scoped the timeout
+   **120 s → 300 s** (2.34× the worst observed completion) in exactly
+   two in-place edits to `tests/test_health_script.py` — the
+   `HEALTH_TIMEOUT_S` constant and its matching docstring figure — file
+   size unchanged (105 lines). **No assertion changed**: the health
+   tests still assert content and completion (exit 0 + all section
+   headers, `OK:` determinism, no `MISMATCH`, `none` skips, clean pip);
+   a script that hangs >300 s, exits non-zero, drops a section,
+   mismatches, shows a skip, or breaks pip fails exactly as before. The
+   trigger stands for any future trip: evidence-based re-scope in the
+   responsible phase's brief, never a weakened, skipped, or xfailed
+   test — and re-architecting the script's five inner runs is
+   explicitly Phase 10's (HANDOFF IX-10).
 
 3. **Criterion 7 header checks are substring-based** (tester finding G3).
    `test_health_script_runs_to_completion` asserts that the script's
@@ -190,15 +214,98 @@ Entry below reflects the state as of Phase 3 (Core statistics),
    Phase 2) remains carried; the file grew 611 → 612 lines and nothing
    else in it changed.
 
-## Not yet applicable (as of Phase 3)
+## Phase 4
 
-Forecast, scenario, decision, and API limitations are not yet listable:
-pipeline stages 3–4 and 6–10 are unbuilt — there are no forecasts, no
-scenarios, and no evaluation metrics to mis-trust yet. Model-calibration
-and predictive limitations (as distinct from the in-sample assumptions
-above) arrive with Phases 9 and 11 and will be documented in
-`docs/EVALUATION.md` (which does not exist yet — there is no evaluation
-to document) and in this file. Data provenance and format limitations
-remain in `docs/DATA-SOURCES.md`; the model's statistical assumptions
-and their weaknesses are in `docs/STATISTICAL-ASSUMPTIONS.md` (exists
-since Phase 3).
+1. **`mc_stderr` measures simulation noise only — no confidence
+   intervals exist anywhere.** The `mc_stderr` field of every
+   `SimulationResult` is `sqrt(p(1-p)/n_sims)` computed from the
+   **analytic** probability: it quantifies Monte Carlo sampling noise
+   over a fixed, already-known distribution and nothing else. It is not
+   model, parameter, or data uncertainty — there is no bootstrap, no
+   parameter sampling, and no confidence band anywhere in this system
+   (STATISTICAL-ASSUMPTIONS §7a, §6). Increasing `n_sims` shrinks this
+   term and never shrinks uncertainty: a 10⁷-draw run of an in-sample
+   estimate is still that same in-sample estimate.
+
+2. **Golden simulation counts are CPython-version-local.** The single
+   fixed-seed golden pins exact counts `(5798, 2106, 2096)` for
+   `seed=20261017`, `n_sims=10000` on the fixture fit, derived on
+   CPython 3.12.3 (`SIM_VERSION = "sim-categorical-v1"`). Draws use
+   `random.Random(seed).random()` — CPython documents that sequence as
+   stable across versions — but the golden is treated as
+   interpreter-local by the Phase 3 golden discipline: on an interpreter
+   change, **re-derive and re-document the literal — never widen a
+   bound, never delete the golden**.
+
+3. **Scenario multipliers are arbitrary documented knobs — hypothetical
+   all the way down.** `MULTIPLIER_MIN = 0.5` / `MULTIPLIER_MAX = 2.0`
+   are named, documented, inclusive bounds chosen for usability, not
+   estimated from data; every scenario number is a labeled hypothetical
+   conditioned on the in-sample fit and **all §2 caveats** of
+   STATISTICAL-ASSUMPTIONS. No scenario output is evidence, and none is
+   averaged or ensembled — one scenario per call, disagreement reported
+   (STATISTICAL-ASSUMPTIONS §7d).
+
+4. **Parameter-scale transforms are sign-dependent.** The shipped
+   transform semantics are literal parameter scale (`α′ = m·α`,
+   `β′ = m·β`, `h′ = m·h`): a multiplier dulls (m < 1) or amplifies
+   (m > 1) the parameter's deviation from league mean, so **the
+   direction of the effect on λ depends on the parameter's sign** — the
+   same m < 1 moves λ in opposite directions for positive and negative
+   α. Stated, not glossed (STATISTICAL-ASSUMPTIONS §7d).
+
+5. **No `out_of_range_count` field exists — by design.** Simulation
+   draws categorically over the truncated, renormalized (K+1)²
+   matrix rather than from independent untruncated Poissons; MC
+   frequencies can therefore deviate from the analytic `outcome_probs`
+   target by at most `dropped_mass / (1 − dropped_mass)` ≤ ~6.004×10⁻⁴
+   at fixture-fitted lambdas (asserted by test). The untruncated
+   alternative was rejected because it would need a second sampling
+   path and a second truth surface; the already-disclosed dropped mass
+   of Phase 3 item 4 stands in its place. Revisiting requires a future
+   brief that says why (STATISTICAL-ASSUMPTIONS §7b).
+
+6. **The hygiene file now carries three A1-declared lines; it grew 612
+   → 614 this phase.** AMENDMENT A1 (Phase 4, pre-planned per the
+   Phase 2 P1 clause) sanctioned exactly two new
+   `ALLOWED_APP_IMPORTS` entries in
+   `tests/test_fixtures_and_hygiene.py` (`"app.scenarios"`,
+   `"app.simulation"`) — a dictionary-coverage gap the new packages
+   would otherwise crash against with `KeyError`; no check was
+   weakened, nothing else in that file changed. Declared here and in
+   the brief per the amendment; monitor finding 2 (file size) remains
+   carried, now covering both the Phase 3 +1 and this +2.
+
+7. **AMENDMENT A2's two in-place edits to a Phase 1 test file
+   (105 → 105 lines).** `tests/test_health_script.py` changed by
+   exactly the `HEALTH_TIMEOUT_S` constant (120 → 300 s) and its
+   matching docstring figure — the evidence-based re-scope of the
+   predicted health-timeout trip; full story, evidence, and the
+   no-assertion-changed reasoning are in Phase 1 item 2's
+   2026-10-17 update. Declared here so the diff is not read as
+   unexplained change to a Phase 1 test.
+
+8. **`simulate` refuses a scenario whose baseline does not equal the
+   given fitted object.** `simulate(..., scenario=s)` raises
+   `ValueError` unless `s.baseline == fitted` (frozen-dataclass value
+   equality) — simulating under a mismatched baseline would draw from
+   one fit's distribution while echoing another fit's provenance
+   (mislabeled output), so it is refused, never reconciled silently.
+   Implemented beyond the pre-build spec, test-pinned, documented in
+   STATISTICAL-ASSUMPTIONS §7g.
+
+## Not yet applicable (as of Phase 4)
+
+Scenarios and simulation limitations are now listable and listed above
+(pipeline stage 7 and the cross-cutting Monte Carlo module exist).
+Still not yet listable: forecast, decision, and API limitations —
+pipeline stages 3–4, 6, 8–10 are unbuilt; there are no pre-match
+snapshots, no features, no forecasts, no decision reports, and no
+evaluation metrics to mis-trust yet. Model-calibration and predictive
+limitations (as distinct from the in-sample assumptions above) arrive
+with Phases 9 and 11 and will be documented in `docs/EVALUATION.md`
+(which does not exist yet — there is no evaluation to document) and in
+this file. Data provenance and format limitations remain in
+`docs/DATA-SOURCES.md`; the model's statistical assumptions and their
+weaknesses are in `docs/STATISTICAL-ASSUMPTIONS.md` (exists since
+Phase 3; §7 covers simulation and scenarios).
