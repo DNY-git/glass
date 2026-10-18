@@ -12,6 +12,7 @@ from .collection import (
 )
 from .models import (
     Availability,
+    Fixture,
     IngestedRecord,
     Match,
     NaturalKey,
@@ -26,6 +27,7 @@ from .models import (
 __all__ = [
     "Availability",
     "AvailabilityCounts",
+    "Fixture",
     "IngestedRecord",
     "Match",
     "MatchCollection",

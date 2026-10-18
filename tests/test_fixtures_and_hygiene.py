@@ -37,6 +37,12 @@ BANNED_TOP_LEVEL_IMPORTS = {
     "fastapi",
     "sqlite3",
 }
+# AMENDMENT A2 (Phase 5): the sanctioned sqlite backend (app.storage) and
+# stdlib HTTP server (app.api) are the ONLY packages permitted these imports.
+BANNED_IMPORT_EXCEPTIONS: dict[str, set[str]] = {
+    "app.storage": {"sqlite3"},
+    "app.api": {"http"},
+}
 # Criterion 12: domain and validation are pure — no filesystem plumbing.
 BANNED_PURITY_IMPORTS = {"os", "sys", "pathlib", "io"}
 # Criterion 12: allowed app.* import sets per package.
@@ -48,6 +54,9 @@ ALLOWED_APP_IMPORTS: dict[str, set[str]] = {
     "app.models": {"app.domain", "app.models"},  # Phase 3: models imports stdlib + app.domain only
     "app.scenarios": {"app.domain", "app.models", "app.scenarios"},  # Phase 4: scenarios imports stdlib + app.domain/app.models only
     "app.simulation": {"app.models", "app.scenarios", "app.simulation"},  # Phase 4: simulation imports stdlib + app.models/app.scenarios only
+    "app.forecasts": {"app.domain", "app.models", "app.forecasts"},  # Phase 5: forecasts imports stdlib + app.domain/app.models only (pure)
+    "app.storage": {"app.domain", "app.forecasts", "app.storage"},  # Phase 5: storage imports stdlib sqlite3 + app.domain/app.forecasts only
+    "app.api": {"app.domain", "app.forecasts", "app.storage", "app.api"},  # Phase 5: api imports stdlib http + app.domain/app.forecasts/app.storage only
 }
 PURE_PACKAGES = {"app.domain", "app.validation"}
 # Criterion 12: resolved module paths that read the wall clock. Names are
@@ -257,7 +266,7 @@ def scan_source(
             continue
         for target in targets:
             top_level = target.split(".")[0]
-            if top_level in BANNED_TOP_LEVEL_IMPORTS:
+            if top_level in BANNED_TOP_LEVEL_IMPORTS and top_level not in BANNED_IMPORT_EXCEPTIONS.get(package, set()):
                 complain(f"banned import {target!r} (line {node.lineno})")
             # Environment lookups are also banned at the import statement
             # itself, for both spellings: `import os.environ as env2`

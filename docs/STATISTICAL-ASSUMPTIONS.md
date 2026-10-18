@@ -419,3 +419,217 @@ mislabeled output — so the mismatch is refused outright rather than
 silently reconciled or re-labeled. This guard shipped with the build
 and is pinned by test
 (`test_simulate_scenario_baseline_mismatch_refused_by_value_equality`).
+
+## 8. Forecasts (stage 6) — forecast discipline, snapshot immutability, and serving honesty — implemented and tested (Phase 5)
+
+Status: **authored BEFORE any Phase 5 build code**, per the Phase 5
+brief decision 16 (the Phase 3 §3 / Phase 4 §7 pre-build pattern, here
+quant-mandated) — every constraint below was committed to before a line
+of `app/forecasts/`, `app/storage/`, or `app/api/` could exist — then
+**updated at phase end to implemented reality**, verified against the
+shipped code and its acceptance tests during the Phase 5 docs step
+(2026-10-17): all three packages exist under `app/`, the suite is green
+(83 passed), and independent review passed the phase (PASS, 2026-10-17,
+first pass, criteria 1–27). The pre-build authorship is recorded
+deliberately: every honesty, immutability, and serving constraint below
+was fixed in prose before a stored byte or an HTTP body could exist.
+The bindings cited are the Phase 5 brief's quant rulings (F1–F3, S1–S3,
+A1–A3, H1, L1) and the developer's recorded answers of 2026-10-17
+(stdlib `http.server`; re-derive `log_probs`; no `GET /teams`; new
+scoreless `Fixture`; no generation CLI;
+`FORECAST_VERSION = "forecast-poisson-mle-v1"`; amendment A2 as
+written). Two build-time deviations from the pre-build text are
+recorded in the brief as ratified architect amendments (2026-10-17) and
+noted here where they touch this section's claims: (i) path segments
+are decoded by a small strict manual decoder (`decode_segment` in
+`app/api/server.py`) rather than `urllib.parse` — AMENDMENT A5: `urllib`
+stays banned under A2's exactly-pinned exception map
+`{"app.storage": {"sqlite3"}, "app.api": {"http"}}`, and a permissive
+`unquote` never raises on malformed escapes, which criterion 19's 400s
+require; (ii) criterion 8's raw-write refusal surfaces as
+`sqlite3.IntegrityError` (the brief's `OperationalError` mention
+corrected by erratum — test reality over brief text; no test text
+changed).
+
+Scope: HANDOFF Part IV stage 6 (FORECAST DISTRIBUTIONS — *"full
+scoreline/outcome distributions, frozen at creation"*) plus the durable
+write-once snapshot store and the read-only serving surface around it.
+Sections 1–7 bind every forecast without exception: a forecast is the
+§5 fit projected through the §4 matrix — inheriting all §2 caveats, §4
+truncation and its dropped-mass disclosure, §5's flags, §6's honesty,
+and §7e's analytic-first rule. Nothing below is a claim about
+predictive quality; this section specifies **discipline and provenance
+properties** — what a forecast may contain, when it was frozen, how it
+verifies — never accuracy. "Validated" and "accurate" remain banned
+until Phases 9/11 evidence exists (§6, §7f).
+
+**(a) Cutoff discipline — the cutoff IS the fixture date, derived inside
+the builder; no caller-supplied `as_of` exists (F1/L1).**
+*Statement:* the builder signature is `build_forecast(matches, fixture)`
+— no `as_of`, `cutoff`, `date`, or any time-like parameter exists to
+forget. The cutoff **is `fixture.date`**, computed inside the builder,
+which then calls `fit(matches, fixture.date)` — so Phase 3's strict
+`date < as_of` filter (§3) applies unchanged underneath: cutoff
+enforcement lives in the calculation, never only at the call site
+(HANDOFF Part V), and here it is double-enforced (builder derivation +
+fit's internal filter).
+*Guarantees:* nothing dated **on or after** the fixture date can enter
+the fit — a match dated exactly at the fixture date is excluded by the
+strict `<` (silently outside the cutoff, never an error: that is the
+leakage defense), while the fixture's own natural key appearing in
+`matches` is refused with `ValueError` — the target must not be its
+own history.
+*Day granularity, stated precisely (L1):* `fixture.date` is a strict
+day-granularity date string — never a datetime, never a fractional
+day, never a wall-clock instant; `as_of` is stored as exactly the
+fixture date string. The engine therefore **cannot exploit within-day
+ordering even when a kickoff time is known** (two same-date matches
+cannot be ordered against each other) and **cannot verify wall-clock
+pre-kickoff ordering at all** — the domain has dates, no clock (S2:
+no wall clock anywhere in forecast content or schema). This is honest
+day-level pre-match discipline and is never described as anything
+finer.
+
+**(b) The forecast record — frozen, analytic, deterministic, scoreless
+(F2).**
+*Statement:* `Forecast` is a frozen dataclass with a pinned field
+contract: the fixture natural key (competition, season, date, home,
+away) plus `kickoff` as `OptionalValue` (MISSING never defaulted),
+`as_of` (== `fixture.date` exactly), the **full `FittedParams` by
+value** (all provenance: model_version, config, pooling, input_digest,
+teams, parameters, convergence_status, sample_size, insufficient
+flags), matrix essentials (`lambda_home`, `lambda_away`, `max_goals`,
+`dropped_mass`), the three analytic outcome probabilities,
+`forecast_version`, and `content_hash`.
+*Analytic-first across the Phase 4 boundary (§7e):* the stored
+probabilities are the analytic `outcome_probs` at full precision —
+**Monte Carlo counts and frequencies never become stored probabilities,
+and no `seed` field exists anywhere on the record**. A forecast is a
+deterministic object: identical `(matches, fixture)` + model version +
+config ⇒ field-for-field identical `Forecast` including
+`content_hash`. `app/simulation` and `app/scenarios` are not touched by
+any forecast.
+*Re-derivation:* full `FittedParams` by value make the scoreline matrix
+a pure-function output, so the 121 `log_probs` cells are **re-derived
+and hash-verified, not stored** (developer decision, 2026-10-17) —
+enough for Phase 9 bit-identity verification without duplicating them.
+*Flags and disclosure ride every record:* `dropped_mass` (§4) and the
+fit's `convergence_status` / `insufficient_data` /
+`insufficient_teams` — `SINGULAR_SYSTEM` / `NO_DATA` / insufficient are
+**reported results, never fallback estimates**; a plausible-looking
+flagged forecast stays flagged.
+*Scoreless target:* `Fixture`, the builder's typed input, has **no
+`score` field at all** — a forecast target that cannot even represent a
+result is structurally incapable of consuming its own future; `Match`
+(realized, scored) remains the history type, untouched.
+*No baselines:* long-run home/draw/away frequency baselines belong to
+Phases 9/11 and are never baked into a forecast.
+
+**(c) Content hash — a written canonicalization spec, recomputable from
+stored fields alone (F3).**
+*Statement:* `content_hash = sha256(utf-8 bytes of canonical JSON)` over
+exactly the record's fields **minus `content_hash` itself**, under a
+fixed spec — written as code + module docstring in
+`app/forecasts/canonicalization.py` (the spec of record) and summarized
+here: keys sorted lexicographically (`sort_keys=True`), fixed
+separators `(",", ":")`, `ensure_ascii=True`, no trailing newline;
+strings as-is; ints decimal; **floats via Python's shortest round-trip
+repr (full precision, no rounding ever)**; bools as `true`/`false`;
+enums as their `.value` strings (`convergence_status`); tuples as JSON
+arrays in order; `None` as `null`; nested frozen objects (`FitConfig`,
+`PoolingRecord`, `SampleSize`, `OptionalValue`) as nested canonical
+objects under fixed key names.
+*Out of the payload, always:* no timestamp, no filesystem path, no
+environment value, no seed, and no Monte Carlo quantity may appear in
+the hashed payload (AST-enforced).
+*Version is the contract:* `FORECAST_VERSION =
+"forecast-poisson-mle-v1"` is part of the hashed content; any change to
+the hashed field set, the canonicalization spec, or the derivation
+semantics **requires a `FORECAST_VERSION` bump**.
+*Verification:* a mismatch is a **hard error
+(`ForecastIntegrityError`), never a warning**; the read path recomputes
+the hash from the stored fields alone and compares on **every** row it
+returns, and any covered field altered by any means changes the hash —
+tamper evidence by construction.
+
+**(d) Write-once snapshots — schema triggers, no clock, exact floats,
+and the scope of the guarantee stated (S1/S2/S3).**
+*Statement:* the forecasts table is write-once **at the schema level**:
+`BEFORE UPDATE` and `BEFORE DELETE` triggers raise ABORT inside the
+database file, so enforcement survives any client — including a raw
+connection and the sqlite3 CLI — not merely well-behaved app code; the
+application layer contains **no `UPDATE`/`DELETE` SQL at all**
+(AST-scanned), and read connections open `PRAGMA query_only = 1`.
+Writes are insert-only under a fixed identity: an identical re-insert is
+an idempotent no-op, and an identity collision with different content
+is a hard error — the original row is never overwritten.
+*No clock in content (S2):* the table has **no timestamp column** — the
+hash must be recomputable from stored fields alone; timestamps exist
+only in HTTP `Date` headers (headers, never bodies) and in stderr log
+lines.
+*Float discipline (S3):* sqlite `REAL` stores IEEE-754 doubles exactly
+and JSON floats round-trip via Python's exact repr; the mandated test
+is build → store → read → recompute the hash → byte-equal to the
+original forecast and hash.
+*Scope of the guarantee — stated, not hidden:* the triggers stop every
+writer that goes through sqlite's normal write paths (app code, raw
+connections, the CLI). They do **not** stop a hostile superuser with
+`writable_schema` access, who can alter or drop the triggers inside the
+file itself. The honest claim is therefore schema-level write-once
+against accidental and ordinary rewriting, **plus** content-hash
+verification at read time — which still catches any alteration of a
+covered field that gets past the triggers.
+
+**(e) Serving honesty — flags at top level, provenance echoed, no
+betting surface (H1/A2/A3).**
+*Statement:* every forecast response carries, at **top level**
+(unmissable, never nested away): `convergence_status`,
+`insufficient_data`, `insufficient_teams`, `dropped_mass` — a
+`SINGULAR_SYSTEM`/`NO_DATA` forecast is served with its flags
+screaming, never as a silent plausible 200 — plus the full provenance
+echo (`as_of`, `model_version`, `input_digest`, `forecast_version`,
+`content_hash`), the fixture block with kickoff availability (MISSING
+stays MISSING), and a fixed deterministic **disclaimer** stating that
+these are in-sample estimates pending chronological evaluation
+(Phases 9/11), never evidence of accuracy.
+*What the surface never has:* no `confidence`, `ci`, `stderr`, or
+interval field exists anywhere (§6; §7a's `mc_stderr` is simulation
+noise and is not part of a forecast at all; `dropped_mass` is §4
+truncation disclosure, not an uncertainty band) — **no uncertainty
+quantification ships with a forecast**; and **no betting surface ever**
+(constitution prohibition 3): no odds, stakes, EV, Kelly, edge, value,
+or wager field or endpoint, with field names saying estimate or
+probability, never "confidence"/"edge"/"value".
+*No fabricated defaults, byte-deterministic bodies:* unknown fixture ⇒
+404 with an explicit JSON error body; malformed input ⇒ 400; responses
+are deterministic JSON (sorted keys, fixed separators, full-precision
+floats, no timestamp in any body). "Validated"/"accurate" language
+stays banned until Phases 9/11.
+
+**(f) Store-then-serve — the API never computes (A1).**
+*Statement:* the serving surface is `GET /health` and
+`GET /forecasts/{competition}/{season}/{date}/{home}/{away}` only (no
+`GET /teams` — developer decision, 2026-10-17), bound to `127.0.0.1`,
+serving **stored snapshots only**; generation is not an HTTP verb
+(non-GET ⇒ 405), no generation CLI ships, and `build_forecast` appears
+nowhere under `app/api` (AST-enforced).
+*Rationale:* a compute-on-demand endpoint would mint **ephemeral**
+forecasts that never enter the write-once store and can therefore
+**never be scored by Phase 11** — the point of durable, hash-identified,
+immutable snapshots is that every forecast that ever existed is
+scorable. If generation is ever exposed, it must **store-then-serve**
+(insert through the write-once path, then serve the stored row) — a
+future brief's decision, not this phase's.
+
+**(g) Honesty — these are provenance properties, not quality claims.**
+*Statement:* frozen records, byte-identical rebuilds, write-once
+triggers, and hash verification demonstrate **immutability,
+determinism, and tamper-evidence — provenance only**. A stored,
+hash-verified, perfectly normalized forecast is still an **in-sample
+point estimate** on synthetic data (§6): *normalized ≠ accurate*
+applies verbatim to it. Evidence begins at Phases 9 and 11
+(chronological backtesting against baselines; log loss, Brier, RPS,
+calibration against realized results); until those run, no forecast —
+served or stored — may be described, in code, docs, briefs, or
+reports, as validated, accurate, or beating anything. Nothing here is
+betting functionality.

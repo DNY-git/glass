@@ -47,7 +47,7 @@ Subpackages are created when their phase begins, never speculatively:
     │   ├── domain/              # domain models (entities/value objects)
     │   ├── ingestion/           # stage 1 DATA: loaders, provenance
     │   ├── validation/          # stage 2 VALIDATION: defect reports
-    │   ├── storage/             # cross-cutting: local persistence — DEFERRED (Phase 2 brief decision 1)
+    │   ├── storage/             # cross-cutting: local persistence — EXISTS (Phase 5): sqlite write-once snapshots via stdlib
     │   ├── state/               # stage 3 PRE-MATCH STATE: as-of-kickoff views
     │   ├── features/            # stage 4: chronological features, versioned specs
     │   ├── models/              # stage 5: pure statistics (stdlib only)
@@ -57,10 +57,10 @@ Subpackages are created when their phase begins, never speculatively:
     │   ├── backtesting/         # stage 9: chronological harness, baselines
     │   ├── evaluation/          # stage 9: log loss, Brier, RPS, calibration
     │   ├── improvement/         # stage 10: tuning loop (protected from itself)
-    │   └── api/                 # thin FastAPI routers only (Phase 5+)
+    │   └── api/                 # read-only serving surface — EXISTS (Phase 5): stdlib http.server (no logic, no generation)
     ├── tests/                   # 1:1 with acceptance criteria per phase
     ├── fixtures/                # small, checked-in sample data (EXISTS, Phase 2)
-    ├── data/                    # git-ignored working data (deferred with app/storage)
+    ├── data/                    # git-ignored working data (not created; the DB path is caller-passed)
     ├── scripts/health-check.sh  # continuous baseline (exists)
     └── docs/                    # HANDOFF, ROADMAP, PLAN, PROGRESS-LOG,
                                  # HEALTH-LOG, briefs/, DATA-SOURCES.md,
@@ -70,10 +70,13 @@ Stage-to-module rule: each of the ten pipeline stages lives in its own
 module; pure statistical code (`app/models`, evaluation math) imports only
 stdlib and domain types — never storage, HTTP, or filesystem. API routers
 contain no logic. `app/storage` (sqlite via stdlib, default backend) was
-confirmed **deferred** by the Phase 2 brief (design decision 1): no
-durable state was needed that phase, and the proposal returns in the
-first brief that needs durable state (immutable snapshots, Phase 5+);
-consequently `data/` is also not created yet. `app/domain` is
+**confirmed deferred** by the Phase 2 brief (design decision 1) and the
+deferral is hereby **RESOLVED at Phase 5** (Phase 5 brief design
+decision 1): immutable forecast snapshots are exactly the durable state
+the deferral waited for, so `app/storage/` is confirmed instantiated
+(sqlite via stdlib); `data/` remains not created — the DB path is a
+caller-passed argument, never a hardcoded default or env lookup.
+`app/domain` is
 cross-cutting and exists since Phase 2 (with `app/ingestion`,
 `app/validation`, and `fixtures/`).
 
@@ -84,8 +87,8 @@ cross-cutting and exists since Phase 2 (with `app/ingestion`,
 | pytest    | 1     | The constitution mandates a pytest test loop; `scripts/health-check.sh` invokes `python -m pytest`. Installed into `.venv`; exact version recorded in PROGRESS-LOG. |
 | pip (in venv) | 1 | The health script runs `python -m pip check`; the venv must be self-describing. |
 | uv (machine tool, bootstrap only) | 1 | One-time installer used only to bootstrap pip+pytest because this machine's system Python lacks ensurepip/pip (developer approval required — see open questions of the Phase 1 brief). Nothing in the engine imports it; it is not a product dependency. |
-| FastAPI + uvicorn | 5 | Edge only, when an API phase arrives; routers stay thin over domain logic. Justified again at that brief. |
-| sqlite3, json, csv, math, statistics, argparse, subprocess | stdlib | Storage, ingestion, Poisson math, and tooling with zero installs. |
+| ~~FastAPI + uvicorn~~ — **superseded at Phase 5** | 5 | Replaced by stdlib `http.server.ThreadingHTTPServer` per the Phase 5 brief's D1 (developer answer Q1 = a, 2026-10-17): the surface is a read-only two-route GET API over already-validated frozen records on `127.0.0.1`; pydantic/fastapi would drag starlette/anyio/uvicorn onto an offline machine for nothing. **No third-party dependency ships**; `http` joins `sqlite3` in the stdlib row below. |
+| sqlite3, json, csv, math, statistics, argparse, subprocess, http.server | stdlib | Storage, ingestion, Poisson math, the read-only serving surface, and tooling with zero installs. |
 
 Explicit non-dependencies by default: no numpy, pandas, scipy, scikit-learn
 or any numeric stack (stdlib `math` suffices for the Poisson engine; revisit
@@ -191,8 +194,10 @@ Five cumulative layers:
 - A generic multi-domain framework (constitution: not before football
   works end to end).
 - Any domain other than football.
-- Any API surface beyond the minimum thin FastAPI routers (they wait for
-  the core statistics and simulation phases).
+- Any API surface beyond the minimum read-only serving surface (the
+  Phase 5 stdlib API — `GET /health` and one forecast route over
+  stored snapshots — is the minimum; generation, extra routes, write
+  verbs, and any framework wait for a brief that justifies them).
 - Advanced model families beyond the baseline Poisson engine — nothing
   beyond the documented baseline until the baseline has been backtested
   and evaluated chronologically.

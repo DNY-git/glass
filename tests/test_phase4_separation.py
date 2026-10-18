@@ -785,12 +785,14 @@ def test_new_package_import_allowlists() -> None:
 
 
 def test_hygiene_amendment_entries_pinned_and_scan_clean() -> None:
-    # Criterion 19: AMENDMENT A1 pinned — exactly seven keys, the five
-    # legacy values untouched (append-only protection), the two new
-    # values exactly as sanctioned; and hygiene.scan_file over every
-    # .py under app/ completes with zero violations and no KeyError —
-    # proof the amendment closed the coverage gap without relaxing
-    # any check (a KeyError would fail this test as an error).
+    # Criterion 19: AMENDMENT A1 pinned — exactly ten keys (the seven
+    # Phase 1-4 values untouched, append-only protection; AMENDMENT A3,
+    # Phase 5, sanctioned the 7 -> 10 pin update when A1 added three
+    # dictionary-coverage entries), the two Phase 4 values exactly as
+    # sanctioned; and hygiene.scan_file over every .py under app/
+    # completes with zero violations and no KeyError — proof the
+    # amendment closed the coverage gap without relaxing any check
+    # (a KeyError would fail this test as an error).
     expected_legacy: dict[str, set[str]] = {
         "app": set(),
         "app.domain": {"app.domain"},
@@ -798,10 +800,13 @@ def test_hygiene_amendment_entries_pinned_and_scan_clean() -> None:
         "app.ingestion": {"app.domain", "app.validation", "app.ingestion"},
         "app.models": {"app.domain", "app.models"},
     }
-    assert len(hygiene.ALLOWED_APP_IMPORTS) == 7
+    assert len(hygiene.ALLOWED_APP_IMPORTS) == 10
     assert set(hygiene.ALLOWED_APP_IMPORTS) == set(expected_legacy) | {
         "app.scenarios",
         "app.simulation",
+        "app.forecasts",
+        "app.storage",
+        "app.api",
     }
     for package, allowed in expected_legacy.items():
         assert hygiene.ALLOWED_APP_IMPORTS[package] == allowed

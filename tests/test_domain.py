@@ -16,6 +16,7 @@ import pytest
 from app.domain import (
     Availability,
     AvailabilityCounts,
+    Fixture,
     IngestedRecord,
     Match,
     MatchCollection,
@@ -64,6 +65,16 @@ DATACLASS_SAMPLES: dict[type, object] = {
     RecordLocation: LOCATION,
     OptionalValue: OptionalValue.available("15:00"),
     Match: sample_match(),
+    # AMENDMENT A4 (Phase 5): one sample for the Phase 5 Fixture value
+    # object (additive; the 1:1 completeness pin now covers it too).
+    Fixture: Fixture(
+        competition="Obsidian Coast League",
+        season="2024-25",
+        date="2024-08-10",
+        home="Coralgate Athletic",
+        away="Thistledown Wanderers",
+        kickoff=OptionalValue.missing(),
+    ),
     RawRecord: RawRecord(
         location=LOCATION,
         provenance=PROVENANCE,

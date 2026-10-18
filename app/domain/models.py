@@ -114,6 +114,35 @@ class Match:
 
 
 @dataclass(frozen=True)
+class Fixture:
+    """One forecast target: an upcoming fixture with no result.
+
+    Phase 5 design decision 3: deliberately NO ``score`` field exists —
+    a forecast target that cannot even represent a result is
+    structurally incapable of consuming its own future, while ``Match``
+    stays the realized, scored history type (its required ``score`` is
+    what the fitter's goal arithmetic and validation rely on). Kickoff
+    rides as an OptionalValue: MISSING stays MISSING, never defaulted.
+    """
+
+    competition: str
+    season: str
+    date: str  # ISO calendar date, day granularity (the forecast cutoff)
+    home: str
+    away: str
+    kickoff: OptionalValue
+
+    @property
+    def natural_key(self) -> NaturalKey:
+        return (self.competition, self.season, self.date, self.home, self.away)
+
+    @property
+    def canonical_sort_key(self) -> tuple[str, str, str, str, str]:
+        """Canonical order (design decision 7): chronological primary."""
+        return (self.date, self.competition, self.season, self.home, self.away)
+
+
+@dataclass(frozen=True)
 class RawRecord:
     """One record parsed from a fixture file, before validation.
 

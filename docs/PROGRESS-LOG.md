@@ -223,7 +223,7 @@ No phases completed yet. (Update: Phase 1 committed at 45ed27e — 2026-10-16.)
   replaces PENDING in docs/ROADMAP.md with a5d7f56 and flips ROADMAP
   Phase 3 `in progress` → `committed`.
 
-## 2026-10-17 — Phase 4 (Simulation and scenarios) — built, reviewed PASS (first pass); checkpoint PENDING
+## 2026-10-17 — Phase 4 (Simulation and scenarios) — built, reviewed PASS (first pass); checkpoint f208e43
 
 - Built (per docs/briefs/phase-4.md, design decisions 1–14, AMENDMENT
   A1, AMENDMENT A2):
@@ -358,7 +358,205 @@ No phases completed yet. (Update: Phase 1 committed at 45ed27e — 2026-10-16.)
 - pytest unchanged: 9.1.1 (`python -m pytest --version` re-verified);
   Python 3.12.3; stdlib-only dependencies per brief (`random`,
   `bisect` newly permitted in the designated module only).
+- Checkpoint hash: **f208e43** (full hash
+  f208e43ff2ec9470f12a72d98ce6e65c53b64b1b; "phase 4: seeded
+  simulation, bounded hypothetical scenarios, scoreline matrix
+  sampling"; 21 files, +3367/−124; 57 passed in 73.05s in the
+  pre-commit clean-env run). The docs agent then replaces PENDING in
+  docs/ROADMAP.md with f208e43 and flips ROADMAP Phase 4
+  `in progress` → `committed`.
+
+## 2026-10-17 — Phase 5 (Forecasts and API) — built, reviewed PASS (first pass); checkpoint PENDING
+
+- Built (per docs/briefs/phase-5.md, design decisions 1–16, AMENDMENTS
+  A1–A5, criterion-8 erratum):
+  - `app/domain/` — the sanctioned domain edit only: new frozen
+    `Fixture` value object in `models.py` (competition, season, date,
+    home, away, `kickoff: OptionalValue`; **no `score` field exists at
+    all** — structural scorelessness, design decision 3 / developer
+    answer Q4 = a), exported from `__init__.py`. `Match`, validation,
+    ingestion untouched.
+  - `app/forecasts/` — pipeline stage 6 FORECAST DISTRIBUTIONS, pure
+    (stdlib dataclasses/typing/enum/json/hashlib + `app.domain` +
+    `app.models` only — AST-enforced): `constants.py`
+    (`FORECAST_VERSION = "forecast-poisson-mle-v1"`, developer answer
+    Q6 = a); `canonicalization.py` — the WRITTEN canonicalization spec
+    of record (keys sorted, fixed separators, `ensure_ascii=True`, no
+    trailing newline, floats via Python's shortest round-trip repr,
+    enums as `.value` strings, no timestamp/path/env/seed/MC quantity
+    in the hashed payload) plus `config_identity`, the ONE
+    `FittedParams`↔payload mapping; `record.py` — frozen 17-field
+    `Forecast` (exact F2 contract; `content_hash` computed at
+    construction, `init=False`; **no `seed` field exists anywhere**)
+    and `ForecastIntegrityError`/`ForecastConflictError`; `builder.py`
+    — `build_forecast(matches, fixture)` with **the cutoff IS
+    `fixture.date`, computed inside** (no `as_of`/`cutoff`/date/time
+    parameter exists to forget; `ValueError` if the fixture's natural
+    key appears in the history; `TypeError` on a non-`Fixture` target;
+    delegates to `fit` + `scoreline_log_probs` + `outcome_probs` —
+    stored probabilities are the analytic ones, full precision).
+    Golden content hash pinned version-locally:
+    `2e428d60978b251ca2ebc04b12f7d50b8a95c3a9460bf0d4b608fd7aafc346ba`.
+  - `app/storage/` — the Phase-2-deferred sqlite backend returning now
+    (design decision 1, PLAN §2 deferral RESOLVED): stdlib `sqlite3`
+    only (AMENDMENT A2's sanctioned package); 21-column forecasts
+    table (10-column UNIQUE identity + content columns; **no timestamp
+    column anywhere**), `SCHEMA_VERSION = 1`, no ORM/migrations/pooling;
+    `BEFORE UPDATE`/`BEFORE DELETE` triggers with `RAISE(ABORT …)`
+    bodies — write-once **inside the database file**, surviving raw
+    connections and the sqlite3 CLI (raw-write refusal surfaces as
+    `sqlite3.IntegrityError` — criterion-8 erratum); `insert_forecast`
+    (one INSERT per forecast in a `BEGIN IMMEDIATE` transaction
+    containing the identity check; identical identity + identical hash
+    = idempotent no-op with zero INSERTs; different hash =
+    `ForecastConflictError`, never an overwrite); `get_forecast`/
+    `verify_all` open with `PRAGMA query_only = 1` and recompute the
+    content hash from stored fields on every row (mismatch = hard
+    error naming the fixture key, never a warning);
+    `backup_forecasts` via `Connection.backup`; DB path always
+    caller-passed (tests use `tmp_path` exclusively).
+  - `app/api/` — read-only serving surface over STORED snapshots:
+    stdlib `http.server.ThreadingHTTPServer` bound to `127.0.0.1`
+    (never `0.0.0.0`; D1 option a / developer answer Q1 = a — **no
+    third-party dependency ships**); `serialize.py` (byte-deterministic
+    JSON — sort_keys, fixed separators, full-precision floats, **no
+    timestamp in any body**; top-level honesty flags
+    convergence_status/insufficient_data/insufficient_teams/
+    dropped_mass; provenance echo; kickoff block with availability
+    (MISSING never defaulted); analytic `outcome_probs`; fixed
+    `DISCLAIMER` naming in-sample/pending-evaluation honesty);
+    `server.py` (`GET /health` + `GET
+    /forecasts/{competition}/{season}/{date}/{home}/{away}` only —
+    generation is not an HTTP verb, non-GET → 405, `build_forecast`
+    appears nowhere under `app/api`, AST-enforced; store-then-serve:
+    buildable-but-unstored fixture → 404 `{"error":"unknown_fixture"}`;
+    malformed date/bad percent-encoding → 400 `{"error":"bad_request"}`
+    via the strict manual `decode_segment` percent-decoder — AMENDMENT
+    A5, `urllib` never imported).
+  - Tests (criteria 1–26 mapped 1:1 in four NEW files; 26 new):
+    `tests/test_forecasts.py` (7 — signature pin, fixture-in-history
+    refusal, poisoned-future byte-identity, field contract + double
+    run, scoreless Fixture, analytic fields/flags, golden hash +
+    canonicalization spec), `tests/test_storage.py` (8 — raw-write
+    trigger abort, idempotency/conflict, round-trip hash recompute,
+    1-ulp tamper hard error, nasty-float battery incl. subnormal and
+    1e-300 through REAL columns and JSON, query_only, single-INSERT
+    immediate transaction + backup verify, no timestamp column),
+    `tests/test_api.py` (6 — surface/verbs/localhost bind, top-level
+    flags + provenance + disclaimer, byte-deterministic bodies,
+    404/400/no-defaults, no timestamps or betting tokens in bodies,
+    serve-the-store-only), `tests/test_phase5_separation.py` (5 —
+    import allowlists + layering with probes, no mutating SQL
+    AST-scan, betting-token scan, amendments pinned + full-tree scan
+    clean, wall-clock/env scan still clean app-wide).
+  - Declared amendments (all ride checkpoint/review/monitor sweep):
+    **A1** (pre-sanctioned, brief): exactly three `ALLOWED_APP_IMPORTS`
+    entries added (`app.forecasts`, `app.storage`, `app.api` —
+    dictionary-coverage gaps); **A2** (pre-sanctioned, brief):
+    banned-import ban relocation — exception map pinned **exactly**
+    `{"app.storage": {"sqlite3"}, "app.api": {"http"}}`, no name
+    removed from `BANNED_TOP_LEVEL_IMPORTS`, both-direction probes;
+    A1+A2 combined **614 → 623 lines** in
+    tests/test_fixtures_and_hygiene.py (single declared figure per A2
+    §1). **A3** (builder self-declared → architect RATIFIED):
+    Phase-4 hygiene pin 7 → 10 keys in
+    tests/test_phase4_separation.py, **826 → 831 lines**, all legacy
+    assertions retained — strictly stronger, not a weakening.
+    **A4** (self-declared → RATIFIED): one `Fixture` sample in Phase
+    2's `DATACLASS_SAMPLES` completeness pin (tests/test_domain.py),
+    **+11 lines purely additive**. **A5** (self-declared → RATIFIED):
+    the manual `decode_segment` percent-decoder is compliant and, as
+    built, the only compliant option — the brief's `urllib.parse`
+    mentions superseded (criterion 22's set is an upper bound; A2
+    pins `urllib` banned in every package; `unquote` never raises on
+    malformed escapes so criterion 19's 400s are unreachable with it).
+    **Criterion-8 erratum** (architect-issued): raw-write refusal is
+    `sqlite3.IntegrityError`, not `OperationalError` — brief text
+    only, no test text changed.
+  - **Attribution honesty incident (recorded):** the builder's in-code
+    comments initially attributed A5 and the criterion-8 correction to
+    a "developer decision / sanctioned correction of 2026-10-17" that
+    was not verifiable from repo state; the architect's A3–A5 ruling
+    flagged this, and the attribution comments were corrected to cite
+    the architect rulings they actually are. Both rulings stand on the
+    brief's own pinned text plus empirical evidence independently of
+    the false claim (the brief carries the provenance note for the
+    conductor). Recorded here per the constitution: recorded
+    decisions, not assumed ones.
+- Docs (this step): `docs/STATISTICAL-ASSUMPTIONS.md` §8 updated from
+  pre-build SPECIFICATION to implemented-and-tested reality (§1–§7
+  untouched; single append/reword hunk within §8), including the A5
+  decoder and criterion-8 erratum reconciliations;
+  `docs/KNOWN-LIMITATIONS.md` new Phase 5 section (12 entries:
+  day-granularity cutoff limits + guarantee; double-header limitation
+  applied to forecast identity; in-sample-estimates-only; write-once
+  scope incl. the `writable_schema` superuser carve-out; localhost/
+  no-auth conjunction; A1+A2 614→623; A3 826→831; A4 +11; A5 decoder;
+  criterion-8 erratum; no generation endpoint/CLI by design; the
+  reviewer-mandated kickoff-vs-criterion-20-scan entry — dormant, all
+  stored fixtures kickoff MISSING, named amendment required before any
+  kickoff-carrying forecast is stored) plus the "Not yet applicable"
+  refresh (forecasts/storage/API now exist; stages 3–4, 8–10 do not);
+  `docs/ARCHITECTURE.md` (stage 6 exists; `app/storage/` and
+  `app/api/` instantiated — read-only stdlib http.server, localhost;
+  "no forecasts" retired); `README.md` (Phase 5, 83 tests, clean-env
+  note, all four block hashes); `docs/PLAN.md` (§2 storage deferral
+  RESOLVED — sqlite via stdlib, condition met at Phase 5; §3 FastAPI
+  row superseded to stdlib http.server per developer answer Q1 = a;
+  §8 postponement line refreshed to the shipped minimum surface);
+  `docs/ROADMAP.md` (Phase 5 `in progress`, PENDING-hash convention;
+  block table unchanged; no Block 2 acceptance row — acceptance is the
+  developer's at the Phases 4–6 boundary). The three protocol records
+  (HEALTH-LOG, PROGRESS-LOG, ROADMAP — monitor finding 1) and the
+  phase brief must ride the Phase 5 checkpoint commit.
+- Suite: `env -u PYTEST_ADDOPTS .venv/bin/python -m pytest -q` →
+  `83 passed in 66.28s` (0 failed, 0 skipped, 0 xfailed) — this docs
+  run; recorded range this phase ~59–90 s light load, higher under
+  contention. 57 prior tests + 26 new; criterion 27 (suite gate)
+  verified by recorded direct runs (tester, reviewer ×2, monitor-to-
+  come).
+- Health (docs run, `bash scripts/health-check.sh`, 2026-10-17): ran
+  to completion; compile clean; inner pytest runs `80 passed, 3
+  deselected` (9.91 s and 10.07 s); skips/xfails `none`; determinism
+  `OK: 80 passed, 3 deselected`; pip check clean ("No broken
+  requirements found."). Recorded totals vs the A2 standing 300 s
+  health-test valve: healthy headroom (conductor-recorded ~20–96 s
+  range; this docs run's inner pairs ~10 s each).
+- **glass-quant was consulted** for this phase (mandatory, brief):
+  7 blockers, all binding, carried into the brief as inline rulings
+  (F1–F5, S1–S5, A1–A3, H1, D1, L1); no-objections recorded (sqlite
+  REAL float exactness with the mandated round-trip test;
+  analytic-first stored forecasts — store analytic probabilities +
+  matrix essentials + `FittedParams` by value + digest + as_of,
+  exactly what Phases 9/11 need; no baselines baked in).
+- **Developer answered all 7 open questions = the recommended defaults
+  (2026-10-17, recorded at brief hand-off):** Q1 = a (stdlib
+  `http.server.ThreadingHTTPServer`; no third-party dependency
+  ships); Q2 = a (re-derive `log_probs`; store essentials + analytic
+  outcome probs); Q3 = a (no `GET /teams`); Q4 = a (new scoreless
+  `Fixture`); Q5 = a (no generation CLI); Q6 = a
+  (`FORECAST_VERSION = "forecast-poisson-mle-v1"`); Q7 = a (AMENDMENT
+  A2 ban relocation as written).
+- Review history: builder suite green with **6 self-declared
+  deviations** (A3, A4, A5, the criterion-8 exception-type correction,
+  and the attribution/provenance issues around them); the architect
+  **RATIFIED A3/A4/A5 and issued the criterion-8 erratum** (A1/A2 were
+  pre-sanctioned in the brief), verification method `git diff f208e43`
+  of every touched file + empirical sqlite3/decoder probes + an
+  independent 83-passed suite run; attribution comments corrected
+  (honesty incident recorded above). Tester verdict **PASS** on all
+  **27 criteria** with **469 probes, zero bugs**. Reviewer verdict
+  **PASS (2026-10-17, first pass, criteria 1–27)**, including the
+  kickoff adjudication: criterion 20's `\b\d{2}:\d{2}\b` timestamp
+  scan is **benign-dormant** (every stored fixture has kickoff
+  MISSING; serving a supplied kickoff time would be fixture-data echo,
+  never fabrication) — declared in KNOWN-LIMITATIONS Phase 5 item 12
+  with a named-amendment gate before any kickoff-carrying forecast is
+  stored.
+- pytest unchanged: 9.1.1 (`python -m pytest --version` re-verified);
+  Python 3.12.3; stdlib-only dependencies per brief — **no third-party
+  dependency ships** (FastAPI refused per D1 option a).
 - Checkpoint hash: **PENDING** — glass-git records the real hash at
-  the Phase 4 checkpoint; the docs agent then replaces PENDING in
-  docs/ROADMAP.md with that hash and flips ROADMAP Phase 4
+  the Phase 5 checkpoint; the docs agent then replaces PENDING in
+  docs/ROADMAP.md with that hash and flips ROADMAP Phase 5
   `in progress` → `committed`.

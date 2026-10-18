@@ -4,8 +4,8 @@ The honest list. Updated every phase (constitution; HANDOFF Part IX item
 13 formalizes this at Phase 13, but the discipline starts now). Nothing
 here is hidden behavior — each item is also recorded where it was found.
 
-Entry below reflects the state as of Phase 4 (Simulation and
-scenarios), 2026-10-17.
+Entry below reflects the state as of Phase 5 (Forecasts and API),
+2026-10-17.
 
 ## Phase 1
 
@@ -294,18 +294,168 @@ scenarios), 2026-10-17.
    Implemented beyond the pre-build spec, test-pinned, documented in
    STATISTICAL-ASSUMPTIONS §7g.
 
-## Not yet applicable (as of Phase 4)
+## Phase 5
 
-Scenarios and simulation limitations are now listable and listed above
-(pipeline stage 7 and the cross-cutting Monte Carlo module exist).
-Still not yet listable: forecast, decision, and API limitations —
-pipeline stages 3–4, 6, 8–10 are unbuilt; there are no pre-match
-snapshots, no features, no forecasts, no decision reports, and no
-evaluation metrics to mis-trust yet. Model-calibration and predictive
-limitations (as distinct from the in-sample assumptions above) arrive
-with Phases 9 and 11 and will be documented in `docs/EVALUATION.md`
-(which does not exist yet — there is no evaluation to document) and in
-this file. Data provenance and format limitations remain in
-`docs/DATA-SOURCES.md`; the model's statistical assumptions and their
-weaknesses are in `docs/STATISTICAL-ASSUMPTIONS.md` (exists since
-Phase 3; §7 covers simulation and scenarios).
+1. **Day-granularity cutoff — within-day ordering is impossible and
+   wall-clock pre-kickoff ordering is unverifiable (L1, mandated
+   wording).** The forecast cutoff is `fixture.date`, a strict
+   day-granularity date string computed inside
+   `build_forecast` (`as_of` is stored as exactly that date string).
+   The engine therefore **cannot exploit within-day ordering even when
+   a kickoff time is known** — two matches dated the same day cannot be
+   ordered against each other — and **cannot verify wall-clock
+   pre-kickoff ordering at all**: the domain has dates, no clock, and
+   no wall clock exists anywhere in forecast content or schema
+   (STATISTICAL-ASSUMPTIONS §8a, §8d). The guarantee, stated precisely:
+   **nothing dated on or after the fixture date can enter the fit** — a
+   match dated exactly at the fixture date is excluded by `fit`'s
+   strict `date < as_of` (double-enforced: the builder also refuses a
+   fixture whose natural key appears in the history). This is honest
+   day-level pre-match discipline, never described as anything finer.
+
+2. **Forecast identity inherits the double-header natural-key
+   limitation (carried from Phase 2 item 4, per brief decision 6).**
+   Forecast identity is `(competition, season, date, home, away, as_of,
+   model_version, input_digest, config, forecast_version)` — the
+   natural key is its first five components, so two distinct same-day
+   matches between the same pair (a double-header) are
+   **indistinguishable** in forecast identity exactly as in ingestion.
+   Impossible in the synthetic fixtures by construction; documented
+   here, not silently accepted — a real source exhibiting this would
+   need a key extension (e.g. round or a source-unique id) in both
+   places.
+
+3. **Stored forecasts are in-sample estimates — nothing is validated
+   (evidence begins at Phases 9/11).** A stored, hash-verified,
+   perfectly immutable forecast is still an **in-sample point
+   estimate** on synthetic fixtures: immutability, determinism, and
+   tamper-evidence are provenance properties, not quality claims
+   (`normalized ≠ accurate`). The API's `disclaimer` field states this
+   on every body. Neither chronological backtesting (Phase 9) nor
+   evaluation against realized results (Phase 11) has run; until they
+   do, no forecast may be described — in code, docs, briefs, or
+   reports — as validated, accurate, or beating anything
+   (STATISTICAL-ASSUMPTIONS §6, §8g).
+
+4. **Write-once is schema-level, not superuser-proof — the scope of
+   the guarantee stated.** The forecasts table's `BEFORE UPDATE`/
+   `BEFORE DELETE` triggers (RAISE ABORT inside the database file)
+   stop every writer that goes through sqlite's normal write paths —
+   app code, raw connections, the sqlite3 CLI — and the read path
+   additionally recomputes the content hash on every row it returns.
+   A **hostile superuser with `writable_schema` access can alter or
+   drop the triggers inside the file itself** and is outside the
+   trigger guarantee; read-time hash verification still catches any
+   alteration of a covered field that gets past the triggers
+   (STATISTICAL-ASSUMPTIONS §8d).
+
+5. **The localhost/no-auth posture is a conjunction — each pillar is
+   load-bearing.** The API binds `127.0.0.1` only (never `0.0.0.0`),
+   serves only `GET` methods over an already-validated read-only store
+   (`PRAGMA query_only` connections), and the system holds zero
+   secrets — no keys, no user data, no betting surface. The absence of
+   authentication is acceptable **only** given all three together; if
+   any one ever falls (network bind, write methods, secrets),
+   authentication becomes a Phase-10+ brief requirement, not an
+   afterthought (brief decision 14).
+
+6. **AMENDMENT A1 + A2 — the Phase 2 hygiene file grew 614 → 623
+   (declared).** AMENDMENT A1 (pre-planned per P1) added exactly three
+   `ALLOWED_APP_IMPORTS` entries (`"app.forecasts"`, `"app.storage"`,
+   `"app.api"` — dictionary-coverage gaps the new packages would
+   otherwise crash against with `KeyError`); AMENDMENT A2 relocated the
+   Phase 2 `sqlite3`/`http` import bans into a package-scoped exception
+   map, pinned **exactly** `{"app.storage": {"sqlite3"},
+   "app.api": {"http"}}` — a Phase 2 check edited for the first time;
+   the edit is a package-scoped exception with both-direction probes
+   (criterion 25), not a weakening: no banned name was removed from
+   `BANNED_TOP_LEVEL_IMPORTS`, and every other package keeps the full
+   ban. Net growth A1 (+3) + A2 (+6) = **614 → 623 lines**, declared as
+   one figure per A2 §1. Declared at checkpoint, review, and monitor
+   sweep.
+
+7. **AMENDMENT A3 — a Phase 4 pin updated 7 → 10 keys
+   (`tests/test_phase4_separation.py`, 826 → 831 lines, declared).**
+   A1-mandated growth collided with Phase 4's exact 7-key
+   `ALLOWED_APP_IMPORTS` pin; the pin was updated to the exact 10-key
+   universe (the seven legacy keys ∪ the three new), all pre-existing
+   assertions retained verbatim — strictly stronger, none removed,
+   relaxed, skipped, or xfailed. Architect-ratified after the builder
+   self-declared it (2026-10-17); not standing precedent (each future
+   collision needs its own named amendment).
+
+8. **AMENDMENT A4 — one `Fixture` sample in the Phase 2 dataclass pin
+   (`tests/test_domain.py`, +11 lines, purely additive, declared).**
+   The new frozen `Fixture` (design decision 3, developer answer
+   Q4 = a) required a sample in Phase 2's 1:1 completeness pin
+   (`DATACLASS_SAMPLES`); the addition is the pin working as designed —
+   the generic frozen/setattr/replace loop now also covers `Fixture`.
+   Architect-ratified; nothing else in that file changed.
+
+9. **AMENDMENT A5 — manual percent-decoder; the brief's
+   `urllib.parse` mentions superseded (declared).** Path segments are
+   decoded by a strict manual `decode_segment`
+   (`app/api/server.py`): `urllib` stays on A2's ban in every package
+   (its exception map is pinned exactly), and
+   `urllib.parse.unquote` never raises on malformed escapes — it
+   cannot deliver criterion 19's 400s. `decode_segment` raises
+   `ValueError` on bad escapes and truncated UTF-8, mapped to 400 with
+   the pinned `{"error": "bad_request"}` body. Architect-ratified
+   (2026-10-17); percent-decoding of path segments is still mandated
+   and delivered.
+
+10. **Criterion-8 erratum — raw-write refusal is `IntegrityError`,
+    brief text only (declared).** A trigger's `RAISE(ABORT, ...)`
+    surfaces to Python as `sqlite3.IntegrityError` (verified on this
+    platform, sqlite 3.45.1 / CPython 3.12.3, both UPDATE and DELETE),
+    not the `OperationalError` the brief originally read;
+    `tests/test_storage.py` already pinned the exact `IntegrityError`
+    type plus both ABORT messages — erratum corrected brief text only,
+    **no test text changed**. (Criterion 13's separate
+    `OperationalError` — `PRAGMA query_only` — is a different mechanism
+    and remains correct.) Architect-issued, 2026-10-17.
+
+11. **No generation endpoint, no generation CLI — by design, not by
+    omission.** The API serves **stored** snapshots only (`GET /health`
+    and `GET /forecasts/{competition}/{season}/{date}/{home}/{away}`);
+    non-GET methods answer 405 and `build_forecast` appears nowhere
+    under `app/api` (AST-enforced). A compute-on-demand endpoint would
+    mint **ephemeral** forecasts that never enter the write-once store
+    and can therefore never be scored by Phase 11. If generation is
+    ever exposed it must store-then-serve — a future brief's decision
+    (brief out-of-scope list, open question 5 answered `a`).
+
+12. **A kickoff time-of-day in a response body would trip criterion
+    20's timestamp scan — dormant today, gated by amendment (reviewer
+    adjudication, benign-dormant).** Criterion 20's body scan uses
+    `\b\d{2}:\d{2}\b` among its timestamp-like patterns
+    (`tests/test_api.py`); every fixture stored so far carries
+    `kickoff` **MISSING** (`{"availability": "MISSING", "time": null}`),
+    so no kickoff time-of-day ever appears in a body and the pattern is
+    **dormant** with respect to kickoff values. Serving a supplied
+    kickoff time is fixture-data echo, never fabrication (MISSING is
+    never defaulted) — but storing any forecast whose `Fixture` carries
+    a kickoff time would make the scan trip on legitimate data. Before
+    that happens, that phase's brief must carry **its own named
+    amendment** to criterion 20 (narrowing or exempting the kickoff
+    value), never a silent scan weakening. Adjudicated benign-dormant
+    by the Phase 5 reviewer (2026-10-17); declared here so the dormancy
+    is visible, not accidental.
+
+## Not yet applicable (as of Phase 5)
+
+Forecast, storage, and API limitations are now listable and listed
+above (pipeline stage 6 FORECAST DISTRIBUTIONS, its durable write-once
+sqlite store, and the read-only serving surface all exist). Still not
+yet listable: pre-match-state, feature, decision, backtesting,
+evaluation, and model-improvement limitations — pipeline stages 3–4,
+8–10 are unbuilt; there are no pre-match snapshots, no features, no
+decision reports, and no evaluation metrics to mis-trust yet.
+Model-calibration and predictive limitations (as distinct from the
+in-sample assumptions above) arrive with Phases 9 and 11 and will be
+documented in `docs/EVALUATION.md` (which does not exist yet — there is
+no evaluation to document) and in this file. Data provenance and format
+limitations remain in `docs/DATA-SOURCES.md`; the model's statistical
+assumptions and their weaknesses are in
+`docs/STATISTICAL-ASSUMPTIONS.md` (exists since Phase 3; §7 covers
+simulation and scenarios; §8 covers forecasts, storage, and serving).
