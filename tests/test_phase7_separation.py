@@ -42,10 +42,10 @@ PROTECTED_PACKAGES = (
 )
 
 # Criterion 13 (A3): the pinned scoring-token tuple (extend-not-weaken)
-# and the five quant-named families of ruling A1 it must cover.
+# and the five quant-named families of ruling A1; segment-boundary pattern form = Phase 8 AMENDMENT A1 (440 -> 440 lines).
 SCORING_TOKENS = ("log_loss", "logloss", "brier", "rps", "hit_rate", "calibration")
 QUANT_FAMILIES = ("log_loss", "brier", "rps", "hit_rate", "calibration")
-_SCORING_PATTERN = re.compile(r"\b(" + "|".join(map(re.escape, SCORING_TOKENS)) + r")\b", re.IGNORECASE)
+_SCORING_PATTERN = re.compile(r"(?<![A-Za-z0-9])(" + "|".join(map(re.escape, SCORING_TOKENS)) + r")(?![A-Za-z0-9])", re.IGNORECASE)
 
 # Criterion 14 (A4): the shared Phase 5 list IMPORTED (single source of
 # truth) plus exactly the Phase 7 advice-framing extension; the

@@ -4,7 +4,7 @@ The honest list. Updated every phase (constitution; HANDOFF Part IX item
 13 formalizes this at Phase 13, but the discipline starts now). Nothing
 here is hidden behavior — each item is also recorded where it was found.
 
-Entry below reflects the state as of Phase 7 (Decision analysis),
+Entry below reflects the state as of Phase 8 (Temporal integrity),
 2026-10-19.
 
 ## Phase 1
@@ -732,6 +732,22 @@ Entry below reflects the state as of Phase 7 (Decision analysis),
     tuple must be **extended** (extend-not-weaken, criterion 13's
     superset pin), and that extension should consider suffixed forms;
     the guard is never weakened.
+    **Update 2026-10-19 (Phase 8 — disposition discharged early by
+    AMENDMENT A1).** The suffixed-form gap this item recorded was
+    **pulled forward from Phases 9/11 to Phase 8** by quant ruling A4
+    and closed by the brief-pre-sanctioned AMENDMENT A1: exactly one
+    line changed in place (`_SCORING_PATTERN`'s compile line,
+    `\b`-form → segment-boundary lookarounds
+    `(?<![A-Za-z0-9])(…)(?![A-Za-z0-9])` so `_` acts as a segment
+    delimiter on both sides), **440 → 440 lines**, every legacy
+    assertion retained. Strictly stronger and **empirically
+    verified**: the segment pattern flags a strict superset of every
+    `\b`-form match on ASCII text (every Phase 7 positive control
+    still flags) and `brier_score`-shaped identifiers now flag (Phase
+    8 criterion 9's positive control). Nothing above was rewritten;
+    the guard of record stays where criterion 13 pinned it, and the
+    app-wide scan introduced at Phase 8 imports `SCORING_TOKENS` from
+    it (single source of truth).
 
 12. **The A2/A3 comment-text amendment numbers collide with earlier
     phases' identically-numbered amendments — phase-scoped by
@@ -759,18 +775,144 @@ Entry below reflects the state as of Phase 7 (Decision analysis),
     (A1–A4 exactly as pre-sanctioned). Recorded per the constitution:
     recorded events, not assumed ones.
 
-## Not yet applicable (as of Phase 7)
+## Phase 8
 
-Forecast, storage, API, feature, and decision-report limitations are
-now listable and listed above (pipeline stage 6 FORECAST DISTRIBUTIONS,
-its durable write-once sqlite store, the read-only serving surface,
-pipeline stage 4 FEATURE EXTRACTION — `app/features/` — and pipeline
-stage 8 DECISION ANALYSIS — `app/decisions/` — all exist; decision
-reports became listable at Phase 7). Still not yet listable: pre-match-
-state, backtesting, evaluation, and model-improvement limitations —
-pipeline stages 3, 9, 10 are unbuilt; there are no pre-match snapshots,
-and no evaluation metrics to mis-trust yet (Phase 7 ships zero scoring
-— evaluated n = 0). Model-calibration and predictive limitations (as
+1. **Phase 8 is tests + documentation only — zero production code,
+   zero predictions, zero baselines, zero metrics; evaluated n remains
+   0.** The temporal-integrity defenses (HANDOFF Part IX item 8) ship
+   entirely as tests (`tests/test_temporal_integrity.py`,
+   `tests/test_vocab_guards.py`) plus one declared line in an existing
+   test file: `git diff 1e1c1ac -- app/` is **empty** (exit 0), no new
+   `app/` package exists, and — the first phase since Phase 2 — there
+   was **zero hygiene growth** (no `ALLOWED_APP_IMPORTS`/`PURE_PACKAGES`
+   amendments; nothing new landed under `app/`). No `app/backtesting/`
+   or `app/evaluation/` was created (both remain PLANNED — Phase 9's
+   and Phase 11's). Log loss, Brier, RPS, hit rate, calibration, and
+   baselines still ship nowhere; the evaluated observation count stays
+   exactly 0. The corrected three-step line (quant ruling A0): Phase 8
+   = defenses only → Phase 9 = machinery (still no metrics) → Phase 11
+   = first scoring. "Phase 8 adds nothing evaluation needs" — the
+   evaluation substrate was complete at Phase 5; this phase audits it.
+
+2. **AMENDMENT A1 declared — one line changed in place in a
+   reviewed-and-frozen Phase 7 test file, strictly stronger (brief
+   pre-sanctioned; declared at checkpoint, review, and monitor
+   sweep).** `tests/test_phase7_separation.py`: exactly the
+   `_SCORING_PATTERN` compile line changed from the `\b`-form to the
+   segment-boundary lookaround form (criterion 9's fix of the Phase 7
+   item-11 suffixed-form gap — see that item's Phase 8 update), plus
+   the adjacent comment updated to cite the amendment. **440 → 440
+   lines**, every legacy assertion retained; the pattern flags a strict
+   superset of every `\b`-form match on ASCII text (empirically
+   verified: all Phase 7 positive controls still flag, negatives stay
+   clean, and the strict-segment scan over `app/` returns exactly the
+   pre-existing allowlisted line, zero new hits). Not standing
+   precedent — a future collision needs its own named amendment.
+
+3. **The app-wide scoring-token guard runs on an exactly-one-entry
+   pinned negation allowlist — the honest docstring is preserved by
+   design, never deleted.** The strict-segment scan over the source of
+   every `.py` under `app/` returns hits at exactly one pinned
+   `(file, exact sentence)` pair: `app/simulation/__init__.py`, "MC
+   noise never contaminates log loss, Brier, or RPS." — the honest
+   negation (Phase 4's honesty). The allowlist is pinned exact and
+   singular: deleting or rewording the docstring sentence fails the
+   allowlist-reference assertion, and adding a second allowlisted site
+   without a named amendment fails the exactness assertion. **Deletion
+   is not the route** — the allowlist mechanism is the record that the
+   negation was deliberated, not stumbled over.
+
+4. **The accuracy trio (`validated`/`accurate`/`beating`) is banned at
+   IDENTIFIER scope app-wide — source-text scope is deliberately NOT
+   claimed for it.** A whole-word source-text scan of `app/` for the
+   trio trips on **five legitimate validation-vocabulary uses** in
+   comments/docstrings (`app/domain/models.py:98,169`,
+   `app/scenarios/spec.py:171`, `app/ingestion/openfootball.py:103`,
+   `app/models/poisson.py:84` — all the "validated at ingestion"
+   sense), so an app-wide source-text ban would be false-positive by
+   construction. The shipped guard is an AST identifier scan (no
+   function/class/argument/attribute/keyword name or dataclass field
+   equals a trio token; the real composite `validated_records` is
+   pinned as NOT flagged). Phase 7's in-package source-text trio scan
+   (`_ACCURACY_PATTERN`) stays untouched and green — coverage extends,
+   never replaces. "Validated" remains overloaded (validation-stage
+   vocabulary vs. accuracy claim) — precisely why the identifier
+   surface is banned and comment prose is not.
+
+5. **`score`/`scoreline`/`scored` are NEVER source-banned and never
+   field-banned — the ban must not overreach.** Score vocabulary is
+   load-bearing domain language: 75 real score-shaped identifier
+   occurrences across `app/` (`Score`, `invalid_score_shape`,
+   `scoreline.py`, …). The field-name shape-ban ships exactly the
+   performance/rank/correct/best shapes (`performance`, `rank`,
+   `ranking`, `correct`, `correctness`, `best` as segments), and a
+   pinned negative regression proves no guard this phase flags real
+   score-shaped vocabulary; `baseline`, `metric`, and `word` are
+   likewise pinned outside every banned source-token set (sanctioned
+   docstring negations and Phase 4/IX-9 vocabulary stay legal).
+
+6. **Day-granularity same-day invisibility is DECLARED DESIGN, never a
+   fix (registry scope statement).** A match dated exactly at the
+   target date changes no field of `fit`, `build_forecast`, or
+   `compute_features` output (strict `date <`, behavioral), and the
+   day-granularity strict-`<` discipline remains source-pinned in the
+   builders' docstrings. Within-day ordering is impossible by domain
+   (Phase 5 item 1 rides): "fixing" same-day invisibility to intra-day
+   ordering would be a domain change requiring its own brief — never a
+   silent change. The poison-coverage registry extends this discipline
+   forward: any future history-consuming entry point must register and
+   ship a poison test or the suite fails.
+
+7. **`get_forecast()` is single-row-per-natural-key — ambiguous once
+   Phase 9 stores many predictions per fixture; flagged, deliberately
+   not fixed here (Phase 9/11 brief note).** The read path fetches one
+   row per natural key (`ORDER BY as_of, input_digest`, single fetch),
+   which is unambiguous with today's one-forecast-per-fixture store but
+   would be ambiguous under Phase 9's walk-forward predictions. Per
+   quant ruling A5 this is a note for the Phase 9 and 11 briefs to
+   address explicitly, not a Phase 8 change.
+
+8. **Storage is unchanged: `SCHEMA_VERSION` still 1 — no table, no
+   column, no storage write path added.** Phase 9's backtest
+   predictions are pre-recorded (STATISTICAL-ASSUMPTIONS §11d) to go
+   through the existing write-once forecasts table (they ARE
+   `Forecast`s); the evaluation-record table remains Phase 11's schema
+   bump. Nothing in this phase persists anything new.
+
+9. **The nothing-to-tune surface is now pinned, not just true.** The
+   signature of `fit` is exactly `(matches, as_of, *, config=None)`,
+   `FitConfig`'s field names are exactly the five pinned, non-None
+   `ridge` still raises `ValueError` (the existing refusal, now
+   pinned), and no `spec`/`specs`/`config`/`variant`/`seed`-shaped
+   parameter exists on any history-consuming entry point — the Phase 9
+   single-spec contract's substrate (§11b), test-first gate included.
+
+10. **Load-driven runtime watch item (carried — the A2-standing 300 s
+    health-test valve, not tripped).** Suite outcomes are identical
+    across all recorded executions this phase (6+, including an
+    offline run), but wall-clock is load-driven: direct-suite runs
+    ranged roughly 100–225 s, and the health test's module-scoped setup
+    inner time went 24.7 s (Phase 7 sweep) → ~35 s under load —
+    setup-dominated, valve margin ~1.9×. Any future trip re-scopes the
+    mechanism with fresh evidence in the responsible phase's brief
+    (the Phase 4 clause), never weakens, skips, or xfails.
+
+## Not yet applicable (as of Phase 8)
+
+Forecast, storage, API, feature, decision-report, and temporal-integrity
+limitations are now listable and listed above (pipeline stage 6 FORECAST
+DISTRIBUTIONS, its durable write-once sqlite store, the read-only
+serving surface, pipeline stage 4 FEATURE EXTRACTION — `app/features/`
+— pipeline stage 8 DECISION ANALYSIS — `app/decisions/` — and Phase 8's
+temporal-integrity defenses — test-side, no module — all exist).
+Still not yet listable: pre-match-state, backtesting, evaluation, and
+model-improvement limitations — pipeline stages 3, 9, 10 are unbuilt
+(`app/backtesting/` and `app/evaluation/` remain PLANNED, Phase 9's and
+Phase 11's respectively); there are no pre-match snapshots, and no
+evaluation metrics to mis-trust yet (Phase 8 ships zero scoring —
+evaluated n = 0). "Temporal integrity" itself is deliberately NOT
+listed here: Phase 8's defenses are shipped tests and documentation,
+listed above. Model-calibration and predictive limitations (as
 distinct from the in-sample assumptions above) arrive with Phases 9 and
 11 and will be documented in `docs/EVALUATION.md` (which does not exist
 yet — there is no evaluation to document) and in this file. Data
@@ -779,4 +921,5 @@ model's statistical assumptions and their weaknesses are in
 `docs/STATISTICAL-ASSUMPTIONS.md` (exists since Phase 3; §7 covers
 simulation and scenarios; §8 covers forecasts, storage, and serving;
 §9 covers feature extraction, added at Phase 6; §10 covers decision
-analysis, added at Phase 7).
+analysis, added at Phase 7; §11 covers the temporal-integrity
+pre-registrations binding Phases 9 and 11, added at Phase 8).

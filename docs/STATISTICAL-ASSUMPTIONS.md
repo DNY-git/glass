@@ -1053,3 +1053,142 @@ the fixed disclaimer plus the version-local golden report content hash
 `00929af76bb833b741db5ae038a08913321eed976d775e654c36094009224768`
 (f). Reports remain exactly what (a) declares them: in-process,
 unstored, deterministic re-derivable views of frozen §8 forecasts.
+
+## 11. Temporal integrity (IX-8) — pre-registrations binding Phases 9 and 11 — IMPLEMENTED AND TESTED (authored pre-build, Phase 8; verified 2026-10-19)
+
+Status: **authored BEFORE any Phase 8 build code**, per Phase 8 brief
+decision 3 (the Phase 3 §3 / Phase 4 §7 / Phase 5 §8 / Phase 6 §9 /
+Phase 7 §10 pre-build pattern; a fresh section chosen over amending
+§8/§9 so those phases' implemented-and-tested records stay untouched):
+every pre-registration below was committed to in prose before any Phase 8
+test existed and before any Phase 9 or 11 machinery exists — and at the
+Phase 8 DOCS step (2026-10-19, suite **133 passed**, clean-env run) this
+section was flipped to **implemented-and-tested reality for Phase 8's
+own scope**, exactly as §§7–10 were. What that flip means here is
+deliberately narrow: **Phase 8 itself ships no statistics** — it is a
+tests-and-docs-only phase (zero production code under `app/` — `git
+diff 1e1c1ac -- app/` empty, exit 0; no new `app/` package; zero
+predictions, zero baselines, zero metrics, zero storage; the evaluated
+observation count stays exactly 0, §10e). The temporal-integrity
+defenses that guard the discipline below are now **shipped tests**
+(`tests/test_temporal_integrity.py`, `tests/test_vocab_guards.py`, plus
+the one-line AMENDMENT A1 in `tests/test_phase7_separation.py`), while
+the forward contracts (a)–(d) remain **standing pre-registrations** —
+binding prose gates for Phases 9 and 11, deliberately NOT built in this
+phase (nothing yet exists to build them against: no `app/backtesting/`,
+no `app/evaluation/`). The bindings cited are the Phase 8 brief's
+glass-quant rulings A0–A9 (consulted 2026-10-19 at conductor top level;
+no open developer questions). Sections 1–10 are untouched by this
+section. Flipping this section's status changed no claim below.
+
+**The three-step line (A0) — stated here so no phase can blur it:**
+Phase 8 = defenses only → Phase 9 = machinery (walk-forward harness,
+frozen predictions, baselines — **still no metrics**) → Phase 11 =
+first scoring (the evidence gate). **"Phase 8 adds nothing evaluation
+needs"** — the evaluation substrate was complete at Phase 5 (frozen,
+write-once, hashed forecasts; §8); Phase 8 merely audits it. No metric
+of any kind, no baseline, no realized-result join, and no walk-forward
+deliverable exists anywhere in this phase.
+
+**(a) Sample-size pre-registrations (A6) — the scored population is
+fixed before Phase 11 computes anything.**
+*Statement:* the frozen checked-in fixtures contain **exactly 60
+matches** — 20 dates × 3 matches per date, 6 teams, 156 goals — **not
+120**: 120 counts team-appearances (6 teams × 20 each), and no figure
+in this register may say "120 matches". Walk-forward-eligible
+**unflagged** fits number **exactly 30 of 60**: the first 30 fixtures
+trip at least one §5 insufficient-data flag (all per-team priors fall
+below `MIN_MATCHES_PER_TEAM` in the early window), and fixture 1
+returns `NO_DATA` (no strictly pre-cutoff history). Ceilings,
+registered now: at most **60 predictions**, at most **30 clean**
+(unflagged). The **scored population must be PRE-REGISTERED in a brief
+before Phase 11 computes any metric**, and evaluation bin counts are
+fixed pre-score — no post-hoc regrouping. Variant ranking is
+**infeasible** at this n: with ≤ 30 clean observations the per-model
+score SE (~0.15–0.25) is at or above the §2d noise floor (~±0.05 log
+loss), so no variant difference is resolvable — consequently "beating"
+claims stay banned on sample-size grounds **even after Phase 11 runs**.
+The synthetic-hand-authored caveat (fictional league, hand-authored
+fixtures) and §2e's stationarity caveat ride **every** walk-forward
+number. All figures here are pinned to the frozen fixtures: if the
+fixtures ever change, every registration in this paragraph is
+re-derived by named brief before Phase 9 or 11 relies on it.
+
+**(b) Phase 9 forward contracts (A2) — test-first gate and the single
+model spec.**
+*Statement:* two commitments bind the Phase 9 brief as gates, not
+suggestions: (i) **test-first** — the harness's first acceptance test,
+*poison the entire remaining future → every earlier frozen prediction
+is byte-identical*, must exist **before the harness may emit any
+output**; (ii) the walk-forward harness takes **exactly one model
+spec** — no `specs` parameter, no config loop, no best-of-N selection
+— so Phase 12/stage-10's protected improvement loop is structurally
+unbuildable from this surface (§10c's no-threshold position extended).
+Phase 8's runtime nothing-to-tune pin (single `FitConfig` identity,
+non-None ridge refused) is now a shipped, test-pinned fact (criterion 8)
+and the substrate of (ii).
+
+**(c) Run-manifest contract (A7) — documented now, built in Phase 9.**
+*Statement:* each walk-forward run's manifest records: sha256 of every
+consumed fixture file; the consumed history's `canonical_state()`
+digest; per prediction the fixture's `input_digest` and `content_hash`
+(§8 fields, unchanged); `model_version`, the `FitConfig` identity, and
+the interpreter/dependency versions. The **run-level digest** is
+sha256 over the **ordered** list of `(fixture key, content_hash)`
+pairs. **No timestamp and no wall-clock value may appear in any
+hashed payload** (S2's no-clock rule, §8c/§8d, extended verbatim to
+manifests). Re-running an identical run must reproduce an identical
+manifest and run-level digest — that identity **is** the idempotence
+proof.
+
+**(d) Storage forward record (A5) — none this phase; the Phase 9/11
+inheritance, recorded.**
+*Statement:* Phase 9's backtest predictions go through the **existing
+write-once forecasts table** — they ARE `Forecast`s (§8), so
+`insert_forecast`'s idempotence and identity-collision detection apply
+unchanged; baselines (long-run home/draw/away frequencies, computed
+from realized results — IX-9/Phase 9's) are **in-process
+re-derivable and never stored** (the §10a Phase 7 report pattern); the
+evaluation-record table is **Phase 11's** schema bump —
+`SCHEMA_VERSION` stays 1 until then. Flagged for the Phase 9 and 11
+briefs, **not fixed here**: `get_forecast()` fetches a single row per
+natural key (`ORDER BY as_of, input_digest`, single fetch) —
+ambiguous once Phase 9 stores many predictions per fixture; those
+briefs must address it explicitly.
+
+**(e) Honesty — the boundary carries forward unchanged.**
+*Statement:* until Phase 9's machinery runs as specified and Phase 11's
+scoring runs against its pre-registered population, evaluated n remains
+exactly 0 (§6, §10e), and `validated`/`accurate`/`beating` remain
+banned — now additionally on the registered sample-size grounds of (a).
+Nothing in this section is betting functionality (constitution
+prohibition 3); every Phase 9/11 number remains an estimate carrying
+the weaknesses §§2–6 record.
+
+*Phase-end verification (2026-10-19, docs step):* Phase 8's temporal-
+integrity defenses are implemented and pinned by the shipped acceptance
+tests (criteria 1–13 mapped 1:1 in `tests/test_temporal_integrity.py`
+(8) and `tests/test_vocab_guards.py` (5), plus AMENDMENT A1's one-line
+segment-boundary fix in `tests/test_phase7_separation.py`, **440 → 440
+lines**): the five-entry poison-coverage registry with its AST census
+and negative probes — a future history-consuming entry point fails the
+suite until it is registered and poisoned (the standing-regression
+clause of PLAN §6 layer 4); cutoff-at-source **bit-identity** over
+fully unfiltered pools (same-day siblings and future matches included)
+for `fit`, `build_forecast`, and `compute_features`; same-day
+invisibility pinned as **declared design, never a "fix"**; the
+independent snapshot-immutability audit (raw UPDATE/DELETE refusal plus
+read-path hash recompute catching a hostile trigger-dropping tamper);
+the seedless-by-construction pin (no `random` reference of any spelling
+in the history-consuming calculation surface, with positive-control
+probes); the nothing-to-tune signature/`FitConfig`/ridge-refusal pin
+backing (b); and the hardened vocabulary guards (app-wide strict-
+segment scoring scan with the exactly-one pinned honest-negation
+allowlist, the accuracy-trio identifier scan, and the
+performance/rank/correct/best field-shape bans with the score-vocabulary
+negative regression — `score`/`scoreline`/`scored` never banned).
+Suite: `env -u PYTEST_ADDOPTS .venv/bin/python -m pytest -q` →
+**133 passed** (2026-10-19, clean-env docs run) — 120 prior + 13 new.
+Every pre-registration above (a)–(d) now binds Phases 9 and 11 as
+standing contract; none of it was consumed, computed, or relaxed this
+phase, and the evaluated observation count remains exactly 0.

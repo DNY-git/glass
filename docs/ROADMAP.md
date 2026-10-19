@@ -23,8 +23,8 @@ Developer acceptance is recorded per BLOCK, not per phase.
 | 4     | Simulation and scenarios        | committed   |
 | 5     | Forecasting API                 | committed   |
 | 6     | Feature engine                  | committed   |
-| 7     | Decision analysis               | in progress |
-| 8     | Temporal integrity              | planned   |
+| 7     | Decision analysis               | committed   |
+| 8     | Temporal integrity              | in progress |
 | 9     | Backtesting                     | planned   |
 | 10    | Operational reliability         | planned   |
 | 11    | Forecast evaluation             | planned   |
@@ -115,7 +115,10 @@ Status notes:
   developer at the Phases 4–6 boundary (recorded per BLOCK, not per
   phase; no Block 2 acceptance row yet — acceptance follows the
   monitor sweep of this commit).
-- Phase 7 is `in progress` (checkpoint **PENDING**): built and passed
+- Phase 7 is `committed`: checkpoint hash **1e1c1ac** (full hash
+  1e1c1ac3ba4968fa7d69f46467c0d79452ae1b54; `phase 7: decision
+  reports, scenario comparison without collapse, no-scoring
+  boundary`; 2026-10-19 19:25 +0100, master). Built and passed
   independent review (PASS, 2026-10-19, first pass, criteria 1–18,
   after tester PASS ×18 with the golden report content hash
   independently re-derived, scenario deltas bit-exact, and an offline
@@ -132,12 +135,31 @@ Status notes:
   (tests/test_phase6_separation.py pins updated in place, **510 →
   510**); glass-quant consulted (2026-10-19, rulings A1–A8 binding);
   developer answered Q1 = a (`REPORT_VERSION =
-  "decision-report-v1"`). The docs agent replaces PENDING in
-  docs/PROGRESS-LOG.md with the checkpoint hash and flips this row to
-  `committed` after the checkpoint, as in Phases 4–6. Block 3
+  "decision-report-v1"`). Hash recorded in docs/PROGRESS-LOG.md per
+  the Phase 1–6 convention. Block 3
   developer acceptance belongs to the developer at the Phases 7–9
   boundary (recorded per BLOCK, not per phase; no Block 3 acceptance
   row).
+- Phase 8 is `in progress` (checkpoint **PENDING**): built and passed
+  independent review (PASS, 2026-10-19, first pass, criteria 1–14,
+  after tester PASS ×14 with a 131-check probe suite, three honest
+  probe-bug disclosures, and suite runs including an offline run);
+  suite **133 passed**; builder green with **zero deviations** (one
+  self-resolved brief ambiguity, adjudicated coherent by tester and
+  reviewer); tests + docs only — **zero production code**
+  (`git diff 1e1c1ac -- app/` empty; no new `app/` package); brief-
+  pre-sanctioned AMENDMENT **A1**
+  (tests/test_phase7_separation.py `_SCORING_PATTERN` compile line,
+  `\b`-form → segment-boundary, **440 → 440**, strictly stronger,
+  empirically verified superset); glass-quant consulted (2026-10-19,
+  rulings A0–A9 binding, including the ADV-0 scope-anchor correction:
+  Phase 8 = IX-8 temporal integrity, not backtesting — machinery is
+  Phase 9, first scoring Phase 11); zero developer questions. The docs
+  agent replaces PENDING in docs/PROGRESS-LOG.md with the checkpoint
+  hash and flips this row to `committed` after the checkpoint, as in
+  Phases 4–7. Block 3 developer acceptance belongs to the developer at
+  the Phases 7–9 boundary (recorded per BLOCK, not per phase; no Block
+  3 acceptance row).
 
 ## Block acceptance record
 

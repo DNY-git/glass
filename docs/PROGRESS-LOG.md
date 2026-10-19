@@ -736,7 +736,7 @@ No phases completed yet. (Update: Phase 1 committed at 45ed27e — 2026-10-16.)
   The docs agent then replaces PENDING in docs/ROADMAP.md with cfde3a6
   and flips ROADMAP Phase 6 `in progress` → `committed`.
 
-## 2026-10-19 — Phase 7 (Decision analysis) — built, reviewed PASS (first pass); checkpoint PENDING
+## 2026-10-19 — Phase 7 (Decision analysis) — built, reviewed PASS (first pass); checkpoint 1e1c1ac
 
 - Built (per docs/briefs/phase-7.md, criteria 1–18, design decisions
   1–13, glass-quant rulings A1–A8, developer answer Q1 = a, declared
@@ -855,9 +855,10 @@ No phases completed yet. (Update: Phase 1 committed at 45ed27e — 2026-10-16.)
   form, all six block hashes); `docs/PLAN.md` §2 `decisions/` line
   planned → EXISTS (Phase 7), **nothing else**; `docs/ROADMAP.md`
   (Phase 7 `in progress`, PENDING-hash convention; **block table
-  byte-identical; Block 2 acceptance row untouched; NO Block 3
-  acceptance row — that is the developer's at the Phases 7–9
-  boundary**). The three protocol records (docs/HEALTH-LOG.md,
+  byte-identical; Block 2 acceptance row recorded pre-brief, riding
+  this checkpoint; NO Block 3 acceptance row — that is the
+  developer's at the Phases 7–9 boundary**). The three protocol
+  records (docs/HEALTH-LOG.md,
   docs/PROGRESS-LOG.md, docs/ROADMAP.md — monitor finding 1,
   **including the Block 2 row**) and the phase brief must ride the
   Phase 7 checkpoint commit.
@@ -912,8 +913,179 @@ No phases completed yet. (Update: Phase 1 committed at 45ed27e — 2026-10-16.)
   numeric/ML stack, any third-party package, `random` under
   `app/decisions`, `app.simulation`, `sqlite3`/`http` exception map
   untouched at its two Phase 5 entries).
-- Checkpoint hash: **PENDING** (glass-git records the real hash at
-  the Phase 7 checkpoint, immediately after this docs step; the docs
-  agent then replaces PENDING here and in docs/ROADMAP.md with that
-  hash and flips ROADMAP Phase 7 `in progress` → `committed`, as in
-  Phases 4–6).
+- Checkpoint hash: **1e1c1ac** (full hash
+  1e1c1ac3ba4968fa7d69f46467c0d79452ae1b54; "phase 7: decision reports,
+  scenario comparison without collapse, no-scoring boundary";
+  2026-10-19 19:25 +0100, master; 21 files, +2755/−92; 120 passed in
+  153.07s in the pre-commit clean-env run).
+  The docs agent then replaces PENDING in docs/ROADMAP.md with 1e1c1ac
+  and flips ROADMAP Phase 7 `in progress` → `committed`, as in Phases
+  4–6.
+
+## 2026-10-19 — Phase 8 (Temporal integrity) — built, reviewed PASS (first pass); checkpoint PENDING
+
+- Built (per docs/briefs/phase-8.md, criteria 1–14, design decisions
+  1–14, glass-quant rulings A0–A9, AMENDMENT A1) — **tests and
+  documentation only: ZERO production code changed** (`git diff 1e1c1ac
+  -- app/` **empty, exit 0**, version-local byte-pin; no new `app/`
+  package — the first phase since Phase 2 with **zero hygiene growth**,
+  no `ALLOWED_APP_IMPORTS`/`PURE_PACKAGES` amendments):
+  - `tests/test_temporal_integrity.py` (**NEW**, 440 lines, 8 tests,
+    criteria 1–8): the five-entry poison-coverage registry bijection +
+    AST census of every public `matches`-parameter entry point +
+    negative probes (a future history-consuming entry point fails the
+    suite until registered and poisoned — PLAN §6 layer 4's standing
+    regression clause); cutoff-at-source **bit-identity** over fully
+    unfiltered pools (same-day siblings + future matches + extreme
+    scorelines, poisons never raise) for `fit`, `build_forecast`,
+    `compute_features` incl. `input_digest`/`content_hash`; same-day
+    invisibility pinned as **declared design, never a fix** (behavioral
+    + docstring source pin); independent snapshot-immutability audit
+    (raw UPDATE/DELETE → `IntegrityError`; hostile trigger-dropping
+    tamper caught by read-path hash recompute naming the fixture key;
+    re-armed triggers refuse again); seedless-by-construction AST pin
+    (no `random` of any spelling under `app/models|forecasts|features|
+    decisions`, positive-control probes, `app/simulation/simulate.py`
+    the sanctioned home) + the `git diff 1e1c1ac -- app/` empty
+    byte-pin; nothing-to-tune pin (signature exactly `(matches, as_of,
+    *, config=None)`, `FitConfig` exactly the five pinned fields,
+    non-None ridge → `ValueError`, no spec/config/variant/seed-shaped
+    parameter on any entry point).
+  - `tests/test_vocab_guards.py` (**NEW**, 321 lines, 5 tests, criteria
+    9–13): the segment-boundary guard asserted on the imported
+    `_SCORING_PATTERN.pattern` with `brier_score`/`_rps_`/`x_brier`
+    positive controls and `log_probs`/`probability`-class negatives;
+    app-wide strict-segment scoring scan with an **exactly-one pinned
+    negation allowlist** — `app/simulation/__init__.py`, "MC noise
+    never contaminates log loss, Brier, or RPS." — the honest docstring
+    preserved **by design** (deletion or rewording fails; a second
+    allowlisted site fails); accuracy-trio **identifier-scope** scan
+    (the five recorded validation-vocabulary "validated" uses pinned as
+    the reason source-text scope is not claimed app-wide;
+    `validated_records` composite pinned NOT flagged); field-name bans
+    exactly for performance/rank/correct/best shapes with the
+    **score-vocabulary negative regression** (`score`/`scoreline`/
+    `scored` never banned — 75 real identifier uses are legitimate
+    domain vocabulary); non-bans pinned (`baseline`, `metric`, `word`).
+  - `tests/test_phase7_separation.py` — **AMENDMENT A1 ONLY**: the
+    `_SCORING_PATTERN` compile line changed in place, `\b`-form →
+    segment-boundary lookarounds (closing the Phase 7 item-11
+    suffixed-form gap, pulled forward from Phases 9/11 per A4);
+    **440 → 440 lines**, every legacy assertion retained, strictly
+    stronger (empirically verified superset — reviewer re-verified).
+  - **Scope anchor (recorded honestly):** quant ruling **ADV-0**
+    corrected the conductor's framing error — Phase 8 is **IX-8
+    temporal integrity, NOT backtesting**: backtesting machinery is
+    Phase 9, first scoring is Phase 11; zero predictions, zero
+    baselines, zero metrics ship — **evaluated n remains exactly 0**.
+- Docs (this step): `docs/STATISTICAL-ASSUMPTIONS.md` **§11 authored
+  BEFORE any build code** (+102/−0, single hunk appended after §10;
+  the Phase 3 §3 / Phase 4 §7 / Phase 5 §8 / Phase 6 §9 / Phase 7 §10
+  pre-build pattern) and flipped at this step from SPECIFICATION to
+  implemented-and-tested reality (**§§1–10 untouched — single hunk
+  confined to §11**, verified `git diff | grep -c '^@@'` → 1,
+  +139/−0 total): the three-step line and "Phase 8 adds nothing
+  evaluation needs"; the A6 sample pre-registrations (60 matches = 20
+  dates × 3, 6 teams, 156 goals — 120 is team-appearances, never
+  "matches"; walk-forward-eligible unflagged fits exactly 30/60;
+  ceilings ≤ 60 predictions ≤ 30 clean; scored population
+  pre-registered before Phase 11; bins fixed pre-score; variant ranking
+  infeasible at this n → "beating" banned on sample-size grounds even
+  after Phase 11); the A2 forward contracts (test-first gate —
+  *poison the entire remaining future → earlier predictions
+  byte-identical* must exist before the harness may emit output — and
+  the single-model-spec/no-config-loop/no-best-selection commitment);
+  the A7 run-manifest contract (fixture sha256s, `canonical_state()`
+  digest, per-fixture `input_digest` + `content_hash`, model_version +
+  FitConfig identity + versions, ordered-list run digest, **no
+  timestamp in hashed payload**, re-run = idempotence proof); the A5
+  storage forward record (predictions → the existing write-once
+  forecasts table; baselines in-process re-derivable; evaluation table
+  = Phase 11's schema bump; `get_forecast()` single-row-per-natural-key
+  ambiguity flagged for the Phase 9/11 briefs, not fixed here) — plus
+  the phase-end verification paragraph pinning every §11 claim to the
+  shipped tests. `docs/KNOWN-LIMITATIONS.md`: intro + "Not yet
+  applicable" header flipped to Phase 8 (stages 3, 9–10 + evaluation
+  remain unbuilt; backtesting/evaluation remain planned; "temporal
+  integrity" deliberately NOT listed — nothing to retire), new
+  **Phase 8** section (10 items: tests+docs-only/evaluated-n-0;
+  AMENDMENT A1 declared; the exactly-one-entry scoring allowlist with
+  the honest docstring preserved by design; the accuracy-trio
+  identifier-scope decision with the five recorded "validated" uses;
+  score/scoreline/scored never source-banned; same-day invisibility =
+  declared design; the `get_forecast()` Phase 9/11 note; SCHEMA_VERSION
+  still 1; the pinned nothing-to-tune surface; the load-driven runtime
+  watch item), and the **Phase 7 item 11 disposition UPDATED by
+  appended follow-through only** (the original item text untouched).
+  `docs/ARCHITECTURE.md` (Phase 8 status line: temporal-integrity
+  defenses exist as tests + docs; no new module; stage map unchanged;
+  `app/backtesting/`/`app/evaluation/` remain PLANNED; test counts
+  refreshed to 24 modules / 133 tests). `README.md` (Phase 8, 133
+  tests, clean-env note + offline lo-up form, all **seven** commit
+  hashes 45ed27e/1c5067b/a5d7f56/f208e43/44b43ea/cfde3a6/1e1c1ac).
+  `docs/ROADMAP.md` (Phase 8 `in progress`, PENDING-hash convention;
+  **block table byte-identical; Block 2 acceptance row untouched; NO
+  Block 3 acceptance row — the developer's at the Phases 7–9
+  boundary**). `docs/PLAN.md` **verified untouched** (Phase 8 adds no
+  module). The three protocol records (docs/HEALTH-LOG.md,
+  docs/PROGRESS-LOG.md, docs/ROADMAP.md — monitor finding 1) plus the
+  phase brief and the two new test files must ride the Phase 8
+  checkpoint commit.
+- Suite: `env -u PYTEST_ADDOPTS .venv/bin/python -m pytest -q` →
+  **`133 passed in 100.34s`** (this docs run, 2026-10-19; 0 failed, 0
+  skipped, 0 xfailed) — 120 prior + 13 new; load-driven wall-clock
+  this phase ranged roughly **100–225 s** depending on machine load,
+  outcomes **identical across 6+ recorded executions** (tester ×3,
+  reviewer ×2, docs ×2). Criterion 14 (suite gate) verified by
+  recorded direct runs (tester, reviewer ×2, docs agent).
+- Offline protocol record (docs-agent run, 2026-10-19): `unshare -rn
+  bash -c 'ip link set lo up && env -u PYTEST_ADDOPTS .venv/bin/python
+  -m pytest -q'` → **`133 passed in 128.77s`** (the working lo-up
+  form; plain `unshare -rn` still fails the six localhost API tests —
+  harness artifact, not a bug, Phase 6 item 11).
+- Health (docs run, `bash scripts/health-check.sh`, 2026-10-19): ran
+  to completion; compile clean; inner pytest runs **`130 passed, 3
+  deselected`** (14.21 s and 16.29 s); skips/xfails `none`;
+  determinism **`OK: 130 passed, 3 deselected`**; pip check clean
+  ("No broken requirements found."). The A2-standing 300 s health-test
+  valve remained ample all phase (watch item carried: the health
+  test's module-scoped setup inner time went 24.7 s at the Phase 7
+  sweep → ~35 s under load — setup-dominated, ~1.9× margin — recorded
+  in KNOWN-LIMITATIONS Phase 8 item 10).
+- Review history: tester verdict **PASS ×14** — a 131-check probe
+  suite driving the registry/census/allowlist machinery both ways,
+  **three honest probe-bug disclosures** (probe-side defects the
+  tester caught and reported rather than papering over), and the suite
+  run **×3 including an offline run**. Reviewer verdict **PASS
+  (2026-10-19, first pass, criteria 1–14)** — including **empirical
+  verification that AMENDMENT A1's segment-boundary pattern is a
+  strict superset** of the legacy `\b` form and **execution of the §11
+  forward-contract checklist** (test-first-gate sentence, single-model-
+  spec/no-config-loop/no-best-selection declaration, manifest field
+  list + no-timestamp rule, A6 population/bin/ranking pre-registrations
+  — design decision 10's reviewer-checklist route in force).
+- Builder record: **zero deviations**; one self-resolved brief
+  ambiguity — criterion 8's config reading, resolved per design
+  decision 9 — **adjudicated coherent by both tester and reviewer**.
+- **glass-quant was consulted** for this phase (mandatory, brief; run
+  at conductor top level, 2026-10-19): rulings **A0–A9 binding**,
+  zero developer questions (A9); **ADV-0 scope-anchor correction of
+  the conductor's framing error recorded honestly** (Phase 8 = IX-8
+  only — not backtesting, not metrics); A1 poison-matrix registry +
+  cutoff-at-source bit-identity; A2 nothing-to-tune pin + pre-declared
+  Phase 9 test-first gate and single-spec contract; A3 seedless pin;
+  A4 vocabulary hardening (including the architect's resolution of the
+  ruling's own literal-pattern-vs-positive-control tension as
+  segment-boundary semantics, design decision 6, and the
+  identifier-scope trio resolution, design decision 11); A5 storage
+  forward record; A6 sample-size pre-registrations; A7 run-manifest
+  contract; A8 out-of-scope list. **AMENDMENT A1 declared** (one line
+  in place, 440 → 440, strictly stronger, empirically verified
+  superset; declared at checkpoint, review, and monitor sweep).
+- pytest unchanged: 9.1.1; Python 3.12.3; stdlib-only dependencies
+  (refused: numpy/pandas/scipy/scikit-learn or any numeric/ML stack,
+  any third-party package, any new `app/` module, any sqlite schema
+  change — `SCHEMA_VERSION` still exactly 1).
+- Checkpoint hash: **PENDING**. The docs agent (or git agent) replaces
+  PENDING in docs/PROGRESS-LOG.md with the checkpoint hash and flips
+  ROADMAP Phase 8 `in progress` → `committed`, as in Phases 4–7.
