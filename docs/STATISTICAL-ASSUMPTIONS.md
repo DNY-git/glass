@@ -633,3 +633,234 @@ calibration against realized results); until those run, no forecast —
 served or stored — may be described, in code, docs, briefs, or
 reports, as validated, accurate, or beating anything. Nothing here is
 betting functionality.
+
+## 9. Feature extraction (stage 4) — chronological features, versioned specs, availability — implemented and tested (Phase 6)
+
+Status: **authored BEFORE any Phase 6 build code**, per glass-quant
+ruling F6 (Phase 6 brief, decision 12 — the Phase 3 §3 / Phase 4 §7 /
+Phase 5 §8 pre-build pattern): every constraint below was committed to
+before a line of `app/features/` could exist — then **updated at phase
+end to implemented reality**, verified against the shipped code and its
+acceptance tests during the Phase 6 docs step (2026-10-19):
+`app/features/` exists under `app/`, the suite is green (**103
+passed**, clean-env run `env -u PYTEST_ADDOPTS .venv/bin/python -m
+pytest -q`), and independent review passed the phase (PASS, 2026-10-19,
+first pass, criteria 1–21). The pre-build authorship is recorded
+deliberately: every honesty constraint below (MISSING never fabricated,
+historical summaries not evidence, zero fitted transformers) was fixed
+in prose before a feature value could be computed. The bindings cited
+are the Phase 6 brief's glass-quant rulings F1–F7 (consulted 2026-10-18
+at conductor top level; no-objections recorded) and the developer's
+recorded answers of 2026-10-19 — all six open questions accepted as
+recommended: `MISSING_UNTIL_FULL_WINDOW`; keep `xg_form`;
+`WITHIN_SEASON` rest days; the lean decision-4 inventory;
+`FORM_WINDOW = 5`; competition/season-agnostic window scope. Sections
+1–8 are untouched by this section. Shipped surface (all under
+`app/features/`, AST-enforced pure): `compute_features` in
+`app/features/compute.py`; the frozen **22-field** `FeatureVector` in
+`app/features/record.py` (`content_hash` computed at construction,
+`init=False`); the named policy constants in
+`app/features/constants.py` (each with a why-comment); the package's
+own canonicalization spec of record in
+`app/features/canonicalization.py` (no import crosses the stage
+boundary); 20 new acceptance tests — `tests/test_features.py` (7,
+criteria 1–7), `tests/test_features_policies.py` (7, criteria 8–14),
+`tests/test_phase6_separation.py` (6, criteria 15–20), with criterion
+21 the suite gate; and one version-local golden feature-vector content
+hash literal
+`8da6751447bd0320ed61839cd5d97562127ff80948e878ac5f07d53eb7a10b05`
+(criterion 13 — re-derive on spec/interpreter change, never widen).
+Declared amendments riding this section's claims (brief pre-sanctioned,
+exact figures): **A1** adds the single dictionary entry
+`ALLOWED_APP_IMPORTS["app.features"] = {"app.domain", "app.features"}`
+and strengthens `PURE_PACKAGES` in place to `{"app.domain",
+"app.validation", "app.features"}` — line-neutral, strictly stronger,
+and the reason the (e)/(f) purity rules below are AST-enforceable for
+this package (`import os` under `app/features` now flags) —
+`tests/test_fixtures_and_hygiene.py` **623 → 624 lines**; **A2** and
+**A3** update the Phase 4/5 exact key-set pins to the new 11-key
+universe — **831 → 832** (`tests/test_phase4_separation.py`) and
+**571 → 572** (`tests/test_phase5_separation.py`) — every legacy
+assertion retained (strictly stronger pins). Independently re-derived at
+this docs step by a real census run over the checked-in fixtures —
+every figure of the (d) table reproduced exactly (xG 10/60, season 2
+only, 4 dates; kickoff 30/60, all season 1; strict last-5-all-xG
+0/120; no prior ever 6/120; no same-season prior 12/120; fewer than
+`FORM_WINDOW` priors 30/120; immediate-prior-had-xG 20/120) — and
+`app/models/`, `app/forecasts/`, and `app/storage/` are byte-identical
+to checkpoint `44b43ea` (0-byte diff, criterion 16).
+
+Scope: HANDOFF Part IV stage 4 (FEATURE EXTRACTION — *"chronological
+features computed from history with explicit cutoffs"*), delivered as
+one new pure package `app/features/` with the single entry point
+`compute_features(matches, fixture)` and one frozen `FeatureVector`
+record living **beside** the Forecast, never inside it. This phase is
+**data-layer only**: features are computed and documented, consumed by
+nothing (f) — no file under any other `app/` package imports
+`app.features` (AST-enforced both directions, criterion 17), and the
+first consumer arrives only via its own future brief with its own
+version/identity implications. Nothing below is a claim about
+predictive quality — features are historical summaries with zero
+predictive claim (g), and "validated"/"accurate" remain banned until
+Phases 9/11 (§6, §7f, §8g).
+
+**(a) Cutoff discipline — the cutoff IS the fixture date, derived
+inside; no caller-supplied time parameter exists (F1).**
+*Statement:* the signature is exactly `compute_features(matches,
+fixture)` — no `as_of`, `cutoff`, `date`, or any time-like parameter
+exists to forget (the builder pattern of §8a: `fit` takes `as_of` as an
+argument, `build_forecast` derives it inside; features follow the
+builder). The cutoff **is `fixture.date`**, computed inside, and a
+strict `date < fixture.date` filter is applied inside to every consumed
+match. Nothing dated on or after the fixture date can enter any window:
+on/after-cutoff matches sit silently outside it (the leakage defense,
+never an error), while the fixture's own natural key appearing in
+`matches` is refused with `ValueError` — the target must not be its own
+history. Windows are selected in `canonical_sort_key` order (same-date
+ties resolved there, never by input order), so neither input order nor
+poisoned future matches can change any field.
+*Cutoff-drift guard:* the model package's pre-cutoff helper is private
+and byte-pinned (f), so the strict-`<` filter is reimplemented inside
+`app/features`; the sanctioned equivalence guard is the **digest-parity
+cross-check** — for the same `(matches, fixture)`,
+`compute_features(...).input_digest == build_forecast(...).fitted
+.input_digest` exactly, both sides having consumed the byte-identical
+strictly-pre-cutoff set under the same `canonical_state()` definition.
+A shared helper is impossible without touching the 0-byte-pinned
+`app/models`; the parity test is the sanctioned alternative, recorded
+as such. The poisoned-future byte-identity test (appended on-date and
+later matches, extreme scorelines, injected teams change nothing,
+including `content_hash`) is this stage's PLAN §6 layer-4 regression.
+
+**(b) The `FeatureVector` record — frozen, beside the Forecast,
+versioned (F3/F7).**
+*Statement:* `FeatureVector` is a separate frozen dataclass; features
+are never folded into `Forecast` (that would require a declared
+`FORECAST_VERSION` bump plus golden re-derivation — explicitly out of
+scope). Field contract: the fixture natural key (competition, season,
+date, home, away); `kickoff` as an `OptionalValue` **echo of
+availability only** — MISSING never defaulted to a fabricated time, and
+the computation reads dates only, because the domain has day
+granularity and no within-day ordering discipline (§8a), so consuming
+`HH:MM` would claim precision the domain does not have; `as_of ==
+fixture.date`; `feature_version`; `input_digest`; per side the six
+feature fields (c); and `content_hash`.
+- `FEATURE_VERSION = "features-chronological-v1"` — the versioned
+  feature spec (HANDOFF IX-6) is this constant plus the named policy
+  constants plus this section's inventory. **Bump discipline worded
+  identically to `FORECAST_VERSION`'s (§8c): any change to the hashed
+  field set, the canonicalization spec, or the derivation semantics
+  requires a `FEATURE_VERSION` bump — the constant is the contract's
+  version.**
+- `input_digest` has the **identical definition to
+  `FittedParams.input_digest`** (§8b): sha256 over the strictly-pre-
+  cutoff match set's `canonical_state()` — parity pinned by (a)'s
+  cross-check test, not by shared code (the helper may not be extracted
+  without touching the byte-pinned `app/models`).
+- `content_hash` is computed at construction under **Phase 5's
+  canonicalization style** (§8c) in the package's **own**
+  canonicalization module, whose docstring is the spec of record — no
+  import crosses the stage boundary and `app/forecasts/
+  canonicalization.py` is untouched.
+- History-dependent fields are `OptionalValue`s under the domain's
+  two-state availability taxonomy (MISSING ⇔ `value is None`); the two
+  count fields are plain `int` where 0 is a true exact fact (c).
+  Untouched by this stage: `app/forecasts/`, `app/models/`, the storage
+  schema, `FORECAST_VERSION`, and every Phase 5 golden. **No storage of
+  features this phase** — re-derivation from fixtures by
+  `compute_features` suffices; persistence is a future brief's decision.
+
+**(c) Feature inventory and named policies — the versioned spec,
+developer-decided 2026-10-19.**
+*Statement:* per side, from the team's strictly-pre-cutoff matches in
+canonical order; **all prior matches count regardless of competition or
+season** (one simple scope, a documented limitation — today's fixtures
+are single-competition; a mixed-competition history would blend):
+
+| Field | Definition | Policy constant | MISSING policy |
+|---|---|---|---|
+| `*_goals_scored_form` | mean goals scored over the team's last `FORM_WINDOW` pre-cutoff matches | `FORM_WINDOW = 5`; `FORM_WINDOW_POLICY = "MISSING_UNTIL_FULL_WINDOW"` | MISSING until the full window exists (0–4 priors); never a partial-window mean |
+| `*_goals_conceded_form` | same window, goals conceded | same | same |
+| `*_rest_days` | calendar days from the team's most recent **same-season** pre-cutoff match to the fixture date | `REST_DAYS_POLICY = "WITHIN_SEASON"` | MISSING at season start; the cross-season alternative — reporting the ~301-day off-season gap as "rest" — is **rejected as a different quantity** |
+| `*_xg_form` | mean xG over the window's **xG-available** matches only | `XG_FORM_POLICY = "MEAN_OVER_AVAILABLE_WITH_N"` | MISSING at `n_xg = 0`; missing xG never participates as 0.0 |
+| `*_xg_n` | count of xG-available matches in the window (0..`FORM_WINDOW`) | — | plain `int`, exact fact |
+| `*_prior_matches` | count of strictly-pre-cutoff matches (any competition/season) | — | plain `int`, 0 allowed and honest |
+
+*Counts vs estimates:* `xg_n` and `prior_matches` are plain `int`s
+because 0 is a true exact fact — no prior matches *is* the count —
+never an imputed estimate: estimates are MISSING, counts are facts, and
+a zero count is a disclosure, never a fabricated zero-value standing in
+for a missing estimate.
+*xG estimator honesty:* strict rolling-xG (last `FORM_WINDOW` matches
+all carrying xG) measures **0/120** team appearances on this data and
+is **NOT shipped** (it would be MISSING everywhere, d). `xg_form` under
+`MEAN_OVER_AVAILABLE_WITH_N` is a **different estimator-of-form** —
+the mean over the available subset with `n_xg` disclosed — and is
+documented as such wherever it appears; it is a different quantity
+measured on fewer matches, not a substitute for the strict window.
+*Determinism:* identical `(matches, fixture)` ⇒ field-for-field
+identical records including `content_hash`; no RNG anywhere in the
+package, no wall clock (ISO date arithmetic only), accumulation in
+exactly canonical window order at full float precision (no rounding, no
+sort-dependent reduction).
+
+**(d) Measured availability — the binding table** (re-derived by real
+run over the checked-in fixtures, 2026-10-18; 60 matches, 6 teams × 20,
+156 goals, 2024-08-10 → 2025-10-11):
+
+| Quantity | Measured coverage | Feature consequence |
+|---|---|---|
+| xG present | **10/60** matches (season 2 only; 4 distinct dates) | xG features MISSING for every season-1 fixture |
+| Strict last-5-all-xG window | **0/120** team appearances | strict rolling-xG feature **not shipped** (MISSING everywhere) |
+| "Immediately prior match had xG" | **20/120** | upper bound on early-window xG usefulness |
+| Kickoff | **30/60** (all season 1) | echo only; every stored Forecast fixture MISSING (Phase 5 item 12 dormancy rides) |
+| No prior match ever | **6/120** appearances | form/rest/xG MISSING (never 0) |
+| No same-season prior | **12/120** appearances | `rest_days` MISSING (WITHIN_SEASON policy) |
+| Fewer than `FORM_WINDOW` prior matches | **30/120** appearances (derived) | goals-form MISSING under the default full-window policy |
+
+Every feature declares measured availability; **MISSING propagates
+visibly**; the synthetic-data caveat rides every feature (fictional
+league, hand-authored fixtures — historical summaries of synthetic
+history, never evidence).
+
+**(e) Zero fitted transformers (F2) — a commitment, not a phase.**
+*Statement:* every feature is a **pure function of `(matches,
+fixture)`** — no scaling, encoding, normalization, or dataset-level
+statistics of any kind; team identity is the team-name string (sorted
+names, never encoded to integers); nothing is fitted at import time or
+call time. Any future fitted transformer must fit **inside the cutoff,
+per fixture**, with its fitted state hash-covered on the record —
+recorded here as the commitment to how it would be done honestly,
+**never built this phase**.
+
+**(f) Data-layer only (F4) — nothing consumes features yet.**
+*Statement:* `fit`, `FitConfig`, `MODEL_VERSION`, and `build_forecast`
+are unmodified and never consume a feature; no estimator change, no
+features-into-fit, no new model, no Elo (a deterministic recursive
+summary is at most a feature, never a second forecast source — the
+Phase 7 ensembles rule), no feature-selection research (Phase 10's),
+and no `app/state/` (stage 3 stays unbuilt per roadmap order; features
+compute directly from match history plus domain types, and no
+dependency is invented to paper over the order). §3's convergence and
+insufficient-data flags ride unchanged on every fit. Vectors are
+computed in memory and stored nowhere — no sqlite table, no
+serialization, no persistence (`data/` remains not created); the
+in-memory `content_hash` is hashing, not storage.
+
+**(g) Honesty — historical summaries, not evidence.**
+*Statement:* every field of a `FeatureVector` is a **historical
+summary of past matches — not a probability, not a model output, not
+evidence** of anything predictive: a rolling mean describes what
+happened, nothing more. A well-formed, hash-verified feature vector
+demonstrates provenance and determinism only — *normalized ≠ accurate*
+(§6) applies to it verbatim. **MISSING propagates visibly and is never
+rendered as 0** (constitution prohibition 4): a missing window, a
+missing xG record, and a season-opening absence of rest-day history are
+reported as MISSING, never smoothed into plausible numbers. Features
+are consumed by no forecast, so nothing in the system can currently
+emit them as a probability — and any future consumer arrives via its
+own brief with its own version and identity implications. The
+synthetic-data caveat rides every feature. Until Phases 9/11, no
+feature may be described — in code, docs, briefs, or reports — as
+validated, accurate, or evidence of predictive value. Nothing here is
+betting functionality (constitution prohibition 3).

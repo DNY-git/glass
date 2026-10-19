@@ -49,7 +49,7 @@ Subpackages are created when their phase begins, never speculatively:
     │   ├── validation/          # stage 2 VALIDATION: defect reports
     │   ├── storage/             # cross-cutting: local persistence — EXISTS (Phase 5): sqlite write-once snapshots via stdlib
     │   ├── state/               # stage 3 PRE-MATCH STATE: as-of-kickoff views
-    │   ├── features/            # stage 4: chronological features, versioned specs
+    │   ├── features/            # stage 4: chronological features, versioned specs — EXISTS (Phase 6): pure compute_features, cutoff inside, unconsumed
     │   ├── models/              # stage 5: pure statistics (stdlib only)
     │   ├── forecasts/           # stage 6: immutable distributions, cutoff inside
     │   ├── scenarios/           # stage 7: bounded hypothetical multipliers

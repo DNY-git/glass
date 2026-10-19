@@ -15,9 +15,33 @@ history, never the current state of this repository.
 
 ## Current state
 
-**Phase 5 (Forecasts and API): built and reviewed (PASS, 2026-10-17,
-first pass, criteria 1–27); checkpoint pending.** Pipeline stage 6
-exists — `app/forecasts/`: `build_forecast(matches, fixture)` with the
+**Phase 6 (Feature engine): built and reviewed (PASS, 2026-10-19,
+first pass, criteria 1–21); checkpoint pending.** Pipeline stage 4
+exists — `app/features/`: `compute_features(matches, fixture)` with
+the cutoff **inside** the function (the cutoff IS `fixture.date`,
+derived inside — no `as_of`/`cutoff`/time parameter exists to forget;
+nothing dated on or after the fixture date can enter any window),
+producing a frozen, deterministic 22-field `FeatureVector` with a
+sha256 `content_hash` computed at construction
+(`FEATURE_VERSION = "features-chronological-v1"`; named policy
+constants `FORM_WINDOW = 5`, `FORM_WINDOW_POLICY =
+"MISSING_UNTIL_FULL_WINDOW"`, `REST_DAYS_POLICY = "WITHIN_SEASON"`
+— never the ~301-day off-season gap, `XG_FORM_POLICY =
+"MEAN_OVER_AVAILABLE_WITH_N"` with `n_xg` disclosed). Every feature is
+a **historical summary of synthetic history — not a probability, not a
+model output, not evidence**; MISSING propagates visibly and is never
+rendered as 0 (measured availability: xG on 10/60 matches, season 2
+only; strict rolling-xG covers 0/120 appearances and is therefore not
+shipped — see `docs/STATISTICAL-ASSUMPTIONS.md` §9 and
+`docs/KNOWN-LIMITATIONS.md` Phase 6). The package is pure and
+**consumed by nothing**: no file outside `app/features/` imports it
+(AST-enforced both directions), features are computed in memory and
+stored nowhere, and `app/models/`, `app/forecasts/`, and
+`app/storage/` are byte-identical to checkpoint 44b43ea.
+
+**Phase 5 (Forecasts and API), committed at 44b43ea** — pipeline
+stage 6 exists — `app/forecasts/`: `build_forecast(matches, fixture)`
+with the
 cutoff **inside** the builder (the cutoff IS `fixture.date`, a strict
 day-granularity date string — no `as_of`/`cutoff`/time parameter exists
 to forget; nothing dated on or after the fixture date can enter the
@@ -55,10 +79,11 @@ maximum likelihood inside `fit` (cutoff enforced inside the
 calculation), with analytic scoreline matrices (truncation mass always
 reported) and outcome probabilities exact under any truncation.
 Deterministic and stdlib-only by construction (no third-party
-dependency ships). Phases 1 (Foundation), 2 (Domain and data),
-3 (Core statistics), and 4 (Simulation and scenarios) are committed at
-**45ed27e**, **1c5067b**, **a5d7f56**, and **f208e43**. The local,
-offline, deterministic test loop is operational: 83 tests, all green.
+dependency ships). Phases 1–5 are committed at **45ed27e**
+(Foundation), **1c5067b** (Domain and data), **a5d7f56** (Core
+statistics), **f208e43** (Simulation and scenarios), and **44b43ea**
+(Forecasts and API). The local,
+offline, deterministic test loop is operational: 103 tests, all green.
 See `docs/ROADMAP.md` for phase status and `docs/PROGRESS-LOG.md` for
 the record.
 
@@ -101,15 +126,27 @@ From the repository root:
 .venv/bin/python -m pytest -q
 ```
 
-Verified output (2026-10-17, Phase 5 docs run, clean environment —
+Verified output (2026-10-19, Phase 6 docs run, clean environment —
 `env -u PYTEST_ADDOPTS .venv/bin/python -m pytest -q`):
-`83 passed in 66.28s`. Zero skips, zero xfails — no test in this suite
+`103 passed in 61.92s`. Zero skips, zero xfails — no test in this suite
 may use skip or xfail (constitution). Run time varies with machine load
-(recorded this phase roughly 59–90 s light load, higher under
+(recorded this phase roughly 61–68 s light load, higher under
 contention). If your shell inherits a stray `PYTEST_ADDOPTS` (e.g. from
 a health-script environment), unset it as
 above so the health tests are not silently deselected; the health
 script's own inner runs deselect them on purpose (recursion guard).
+
+Fully offline verification (e.g. under a fresh network namespace):
+
+```sh
+unshare -rn bash -c 'ip link set lo up && env -u PYTEST_ADDOPTS .venv/bin/python -m pytest -q'
+```
+
+Verified 2026-10-19: `103 passed in 61.73s`. The loopback step is
+required — a plain `unshare -rn` (interface down) fails the six
+localhost-binding API tests with `OSError`; that is a namespace-harness
+artifact, **not** a bug (see `docs/KNOWN-LIMITATIONS.md` Phase 6,
+item 11).
 
 ## Running the health check
 
@@ -119,17 +156,18 @@ From the repository root:
 bash scripts/health-check.sh
 ```
 
-Verified on 2026-10-17 (Phase 5 docs run): ran to completion; compile
-clean; its own pytest invocations report `80 passed, 3 deselected`
-(9.91 s and 10.07 s in this run): the script exports a
+Verified on 2026-10-19 (Phase 6 docs run): ran to completion; compile
+clean; its own pytest invocations report `100 passed, 3 deselected`
+(9.84 s and 10.11 s in this run): the script exports a
 `PYTEST_ADDOPTS` recursion guard so its internal suite runs never
 re-execute the tests that spawn the script; those health tests run in
 the direct suite above; skips/xfails `none`; determinism comparison
-`OK: 80 passed, 3 deselected`; `pip check` clean ("No broken
-requirements found."). Expect roughly half a minute to a couple of
+`OK: 100 passed, 3 deselected`; `pip check` clean ("No broken
+requirements found.). Expect roughly half a minute to a couple of
 minutes — the script runs the non-health suite five times internally
-(recorded totals this phase ~20–96 s light load; Phase 4 recorded up
-to 128 s under heavy external load, the run that tripped the health
+(full invocation measured this phase: **52.85 s** light load, second
+run's inner pairs 10.19 s and 10.20 s; Phase 4 recorded up to
+128 s under heavy external load, the run that tripped the health
 test's then-120 s timeout and prompted the
 evidence-based re-scope to 300 s under AMENDMENT A2 — see
 `docs/KNOWN-LIMITATIONS.md` item 2).
@@ -143,11 +181,11 @@ run of `.venv/bin/python -m pytest -q` (Phase 1 criterion 10). See
 ## Repository layout (what exists now)
 
     lookingglass/
-    ├── app/                     # the engine; Phase 5: domain/, ingestion/,
+    ├── app/                     # the engine: domain/, ingestion/,
     │                            # validation/, models/, forecasts/, storage/,
-    │                            # api/, scenarios/, simulation/
+    │                            # api/, scenarios/, simulation/, features/
     ├── fixtures/                # synthetic OpenFootball-shaped JSON (Phase 2)
-    ├── tests/                   # 83 tests, 1:1 with acceptance criteria
+    ├── tests/                   # 103 tests, 1:1 with acceptance criteria
     ├── scripts/health-check.sh  # mechanical health sweep
     ├── pytest.ini               # testpaths=tests, --strict-markers
     ├── conftest.py              # repo root importability for bare pytest
@@ -170,8 +208,9 @@ phase by phase — never speculatively.
 - `docs/DATA-SOURCES.md` — data formats, fixture provenance, licenses.
 - `docs/STATISTICAL-ASSUMPTIONS.md` — the Poisson model's assumptions
   and their weaknesses (Phase 3), simulation and scenarios (Phase 4,
-  §7), and forecasts, snapshot immutability, and serving honesty
-  (Phase 5, §8).
+  §7), forecasts, snapshot immutability, and serving honesty
+  (Phase 5, §8), and chronological features, versioned feature specs,
+  and measured availability (Phase 6, §9).
 - `docs/PROGRESS-LOG.md` — what was built, real test counts, checkpoint
   hashes.
 - `docs/KNOWN-LIMITATIONS.md` — the honest list, updated every phase.

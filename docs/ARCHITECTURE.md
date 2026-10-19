@@ -1,9 +1,18 @@
 # ARCHITECTURE — SPORTS LOOKING GLASS
 
-Status as of 2026-10-17 (Phase 5): **pipeline stages 1–2, 5–7 and the
+Status as of 2026-10-19 (Phase 6): **pipeline stages 1–2, 4–7 and the
 cross-cutting layers exist** — `app/domain/` (immutable models,
 match collection, canonical state), `app/ingestion/` (stage 1 DATA),
-`app/validation/` (stage 2 VALIDATION), `app/models/` (stage 5
+`app/validation/` (stage 2 VALIDATION), `app/features/` (stage 4
+FEATURE EXTRACTION: the pure, cutoff-inside feature engine —
+`compute_features(matches, fixture)` and the frozen 22-field
+`FeatureVector` with `FEATURE_VERSION = "features-chronological-v1"`;
+**instantiated but currently unconsumed** — no file outside the package
+imports it (AST-enforced both directions), and the natural future
+consumer is the `Forecast` record (stage 6), which arrives only via its
+own future brief with its own version/identity implications — the
+Phase 6 brief's F4 foreclosed in-phase wiring), `app/models/`
+(stage 5
 STATISTICAL MODELS: Poisson MLE fitter, fitted-parameter records,
 analytic scoreline/outcome evaluation), `app/forecasts/` (stage 6
 FORECAST DISTRIBUTIONS: the pure, deterministic, frozen forecast
@@ -14,7 +23,11 @@ of the ten pipeline stages), plus the cross-cutting durable store
 `app/storage/` (sqlite write-once snapshots via stdlib) and the
 read-only serving surface `app/api/` (stdlib `http.server`, bound to
 `127.0.0.1`), plus checked-in synthetic fixtures under `fixtures/`.
-Everything else in the module map and directory tree below
+`app/state/` (stage 3 PRE-MATCH STATE) remains **planned**: stage 4
+legitimately precedes stage 3 per roadmap order, features compute
+directly from match history plus domain types, and no dependency on
+stage 3 is invented (Phase 6 brief F4). Everything else in the module
+map and directory tree below
 is the **target/planned structure**, declared in `docs/PLAN.md`
 (status: proposed) and `docs/HANDOFF.md` Part IV. Modules are
 instantiated by the phase that needs them, never speculatively. Nothing
@@ -30,7 +43,7 @@ code imports no storage, no HTTP, no I/O.
 | 1 | DATA | Fixtures, loaders, provenance. | `app/ingestion/` (exists since Phase 2) |
 | 2 | VALIDATION | Schema and integrity checks; defects reported, not guessed around. | `app/validation/` (exists since Phase 2) |
 | 3 | PRE-MATCH STATE | As-of-kickoff view of the world. | `app/state/` |
-| 4 | FEATURE EXTRACTION | Chronological features computed from history with explicit cutoffs. | `app/features/` |
+| 4 | FEATURE EXTRACTION | Chronological features computed from history with explicit cutoffs. | `app/features/` (exists since Phase 6) |
 | 5 | STATISTICAL MODELS | Pure computation: Poisson goal models, strength parameters, calibration. | `app/models/` (exists since Phase 3) |
 | 6 | FORECAST DISTRIBUTIONS | Full scoreline/outcome distributions, frozen at creation (immutable). | `app/forecasts/` (exists since Phase 5) |
 | 7 | SCENARIO EXPLORATION | Bounded, labeled-hypothetical multipliers. | `app/scenarios/` (exists since Phase 4) |
@@ -90,7 +103,7 @@ verb, routers containing no logic.
     │   ├── validation/          # EXISTS (Phase 2) — stage 2: defect reports
     │   ├── storage/             # EXISTS (Phase 5) — sqlite write-once snapshots (stdlib); triggers enforce immutability
     │   ├── state/               # PLANNED — stage 3: as-of-kickoff views
-    │   ├── features/            # PLANNED — stage 4: versioned feature specs
+    │   ├── features/            # EXISTS (Phase 6) — stage 4: compute_features, frozen FeatureVector (pure; cutoff inside; currently unconsumed)
     │   ├── models/              # EXISTS (Phase 3) — stage 5: pure statistics (stdlib)
     │   ├── forecasts/           # EXISTS (Phase 5) — stage 6: frozen forecasts, cutoff inside (pure)
     │   ├── scenarios/           # EXISTS (Phase 4) — stage 7: bounded, labeled-hypothetical multipliers
@@ -100,7 +113,7 @@ verb, routers containing no logic.
     │   ├── evaluation/          # PLANNED — stage 9: log loss, Brier, RPS
     │   ├── improvement/         # PLANNED — stage 10: protected tuning loop
     │   └── api/                 # EXISTS (Phase 5) — read-only stdlib http.server on 127.0.0.1; no logic, no generation
-    ├── tests/                   # EXISTS (Phase 5): 83 tests, 1:1 with criteria
+    ├── tests/                   # EXISTS (Phase 6): 103 tests, 1:1 with criteria
     ├── fixtures/                # EXISTS (Phase 2): synthetic OpenFootball-shaped JSON
     ├── data/                    # NOT CREATED — git-ignored working data; the DB path is caller-passed, no data/ dir in-repo
     ├── scripts/health-check.sh  # EXISTS (bootstrap + Phase 1 recursion guard)
@@ -109,7 +122,7 @@ verb, routers containing no logic.
                                  # HEALTH-LOG, ARCHITECTURE, KNOWN-LIMITATIONS,
                                  # DATA-SOURCES, STATISTICAL-ASSUMPTIONS, briefs/
 
-## Instantiation status (2026-10-17, Phase 5)
+## Instantiation status (2026-10-19, Phase 6)
 
 | Item | Status |
 |------|--------|
@@ -117,6 +130,7 @@ verb, routers containing no logic.
 | `app/domain/` (models.py, collection.py) | Exists (Phase 2) — frozen dataclasses, deduplicating `MatchCollection`, `canonical_state()`, availability counts |
 | `app/ingestion/` (openfootball.py) | Exists (Phase 2) — local JSON loader, provenance (repo-relative path + sha256), idempotent import |
 | `app/validation/` (report.py, checks.py) | Exists (Phase 2) — `Defect`/`DefectReport`, pure checks; defects reported, never repaired |
+| `app/features/` (constants.py, canonicalization.py, record.py, compute.py) | Exists (Phase 6) — stage 4: `compute_features(matches, fixture)` with the cutoff **IS `fixture.date`, computed inside** (no time-like parameter exists to forget; strict `date <` over every consumed match; `ValueError` if the fixture's natural key appears in the history; `TypeError` on a non-`Fixture` target; canonical-sort window selection, same-date ties resolved there); frozen **22-field** `FeatureVector` (`content_hash` computed at construction, `init=False`) with `FEATURE_VERSION = "features-chronological-v1"`; named policy constants (`FORM_WINDOW = 5`, `FORM_WINDOW_POLICY = "MISSING_UNTIL_FULL_WINDOW"`, `REST_DAYS_POLICY = "WITHIN_SEASON"`, `XG_FORM_POLICY = "MEAN_OVER_AVAILABLE_WITH_N"`); `input_digest` parity with `FittedParams` pinned by cross-check test; own canonicalization spec of record (no import across the stage boundary); pure — stdlib + `app.domain`/`app.features` only, in `PURE_PACKAGES` (AST-enforced); **descriptive history only, zero predictive claim, consumed by nothing — no file outside the package imports it** (AST-enforced both directions); no storage/persistence — vectors exist in memory only |
 | `app/models/` (constants.py, params.py, poisson.py, scoreline.py) | Exists (Phase 3) — `"poisson-mle-v1"`: unpenalized Poisson MLE by Newton-Raphson with analytic derivatives and a hand-rolled dense solve; frozen `FittedParams`/`FitConfig` with required `convergence_status` (CONVERGED / MAX_ITERATIONS / SINGULAR_SYSTEM / NO_DATA), sha256 input digest, pooling record; analytic scoreline matrices (reported dropped mass) and outcome probabilities exact under truncation; cutoff enforced **inside** `fit` (`date < as_of`); no randomness, no wall clock, no module-level fitted state. Phase 4 refactor: shared `lambda_pair`/`build_scoreline_matrix` constructors extracted (the ONE cell-math path — `scoreline_log_probs` and every scenario matrix both delegate to them; Phase 3 goldens byte-identical) |
 | `app/forecasts/` (constants.py, canonicalization.py, record.py, builder.py) | Exists (Phase 5) — stage 6: `build_forecast(matches, fixture)` with the cutoff **IS `fixture.date`, computed inside** (no `as_of`/`cutoff`/time parameter exists to forget; refuses a fixture present in its own history with `ValueError`; `TypeError` on a non-`Fixture` target); frozen 17-field `Forecast` (`content_hash` computed at construction; no `seed` field exists anywhere); `FORECAST_VERSION = "forecast-poisson-mle-v1"` part of the hashed content; the written canonicalization spec of record (`canonicalization.py`); `ForecastIntegrityError`/`ForecastConflictError`; pure — stdlib + `app.domain`/`app.models` only (AST-enforced); in-sample estimates, never evidence of accuracy |
 | `app/storage/` (forecasts_db.py) | Exists (Phase 5) — durable **write-once** sqlite store, stdlib `sqlite3` only (AMENDMENT A2's sanctioned package): 21-column forecasts table (identity UNIQUE constraint; **no timestamp column**), `SCHEMA_VERSION = 1`, `BEFORE UPDATE`/`BEFORE DELETE` triggers `RAISE(ABORT …)` inside the file (raw-write refusal surfaces as `sqlite3.IntegrityError` — criterion-8 erratum); `insert_forecast` (one INSERT in a `BEGIN IMMEDIATE` transaction; identical identity + identical hash = idempotent no-op, different hash = `ForecastConflictError`, never an overwrite); read path opens `PRAGMA query_only = 1` and recomputes the content hash on **every** returned row; `verify_all`, `backup_forecasts` via `Connection.backup`; caller-passed DB path, never an env lookup |
@@ -124,14 +138,16 @@ verb, routers containing no logic.
 | `app/scenarios/` (spec.py, apply.py) | Exists (Phase 4) — stage 7: frozen `TransformOp`/`Transform`/`Scenario`, `build_scenario` (bounds `MULTIPLIER_MIN = 0.5`/`MULTIPLIER_MAX = 2.0` inclusive, `ValueError` — **never clamping**, canonical transform ordering, duplicate/unknown-team refusal, required non-empty label), `scenario_matrix` (strict applicability; parameter-scale transforms `α′ = m·α` etc.; matrix echoes the baseline's flags); one scenario per call — **no averaging or ensembling anywhere**; no randomness, no cell math, no `FittedParams` construction (AST-enforced) |
 | `app/simulation/` (constants.py, simulate.py) | Exists (Phase 4) — **cross-cutting Monte Carlo module, not one of the ten pipeline stages**: `simulate(fitted, home, away, *, seed, n_sims=10_000, scenario=None)` with required keyword-only int `seed` (fresh `random.Random(seed)` per call, `random()`-only draws, categorical sampling over the truncated renormalized matrix), frozen `SimulationResult` (raw counts, exact `analytic_outcome`, `mc_stderr` = simulation noise only, dropped mass, flags riding through); `SIM_VERSION = "sim-categorical-v1"`; **the only module permitted to import `random`** (AST-enforced with probes); refuses a scenario whose baseline ≠ the given fitted object (value equality) |
 | `fixtures/openfootball/` (3 synthetic JSON files) | Exists (Phase 2) — 60 valid matches + 12-record defect sample, fictional teams, `"synthetic": true` marker |
-| `pytest.ini`, root `conftest.py`, `tests/` (16 modules, 83 tests), `scripts/health-check.sh` | Exists (Phases 1–5) |
+| `pytest.ini`, root `conftest.py`, `tests/` (19 modules, 103 tests), `scripts/health-check.sh` | Exists (Phases 1–6) |
 | `.venv/` (Python 3.12.3, pip 26.2.1, pytest 9.1.1) | Exists, git-ignored |
 | `data/` | **Not created** — git-ignored working data; the sqlite DB path is caller-passed (storage tests use `tmp_path` exclusively), no `data/` directory is created in-repo (Phase 5 brief design decision 1) |
-| Remaining `app/` subpackages (state, features, decisions, backtesting, evaluation, improvement) | **Do not exist — planned, phase by phase** |
+| Remaining `app/` subpackages (state, decisions, backtesting, evaluation, improvement) | **Do not exist — planned, phase by phase** (stage 4 `features` removed from this list at Phase 6 — it exists) |
 
 There is data (synthetic fixtures), a fitted statistical model, a
-scenarios/simulation layer, **durable immutable forecast snapshots
-(the system's first durable artifacts), and a read-only localhost API
+chronological feature layer (stage 4 — descriptive, currently
+unconsumed), a scenarios/simulation layer, **durable immutable forecast
+snapshots (the system's first durable artifacts), and a read-only
+localhost API
 over them** in the repository today.
 `docs/DATA-SOURCES.md` exists (formats, fixture provenance, licenses);
 `docs/STATISTICAL-ASSUMPTIONS.md` exists (the model's assumptions and
@@ -140,6 +156,8 @@ updated to the implemented reality; §7 covers simulation and
 scenarios, authored before the Phase 4 build per quant ruling and
 likewise updated; §8 covers forecasts, snapshot immutability, and
 serving honesty, authored before the Phase 5 build per quant mandate
-and likewise updated to implemented reality); `docs/EVALUATION.md` does
+and likewise updated to implemented reality; §9 covers feature
+extraction, authored before the Phase 6 build per quant ruling F6 and
+likewise updated to implemented reality); `docs/EVALUATION.md` does
 not exist yet because there is no evaluation to document; it arrives
 with the phase that introduces it.

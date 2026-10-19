@@ -366,7 +366,7 @@ No phases completed yet. (Update: Phase 1 committed at 45ed27e — 2026-10-16.)
   docs/ROADMAP.md with f208e43 and flips ROADMAP Phase 4
   `in progress` → `committed`.
 
-## 2026-10-17 — Phase 5 (Forecasts and API) — built, reviewed PASS (first pass); checkpoint PENDING
+## 2026-10-17 — Phase 5 (Forecasts and API) — built, reviewed PASS (first pass); checkpoint 44b43ea
 
 - Built (per docs/briefs/phase-5.md, design decisions 1–16, AMENDMENTS
   A1–A5, criterion-8 erratum):
@@ -556,7 +556,180 @@ No phases completed yet. (Update: Phase 1 committed at 45ed27e — 2026-10-16.)
 - pytest unchanged: 9.1.1 (`python -m pytest --version` re-verified);
   Python 3.12.3; stdlib-only dependencies per brief — **no third-party
   dependency ships** (FastAPI refused per D1 option a).
+- Checkpoint hash: **44b43ea** (full hash
+  44b43ea951fe59db95994da9a34c2ad086139cf8; "phase 5: forecast
+  snapshots, write-once storage, read-only localhost api"; 28 files,
+  +3935/−130; 83 passed in 64.57s in the pre-commit clean-env run).
+  The docs agent then replaces PENDING in docs/ROADMAP.md with 44b43ea
+  and flips ROADMAP Phase 5 `in progress` → `committed`.
+
+## 2026-10-19 — Phase 6 (Feature engine) — built, reviewed PASS (first pass); checkpoint PENDING
+
+- Built (per docs/briefs/phase-6.md — the reconciled 214-line version,
+  criteria 1–21, developer answers all "a", glass-quant rulings F1–F7,
+  declared amendments A1/A2/A3):
+  - `app/features/` — pipeline stage 4 FEATURE EXTRACTION, **pure**
+    (stdlib `{__future__, dataclasses, typing, enum, json, hashlib,
+    datetime}` + `app.domain` + `app.features` only; no `random`, no
+    wall clock, no I/O, no environment lookups — AST-enforced, and
+    `app.features` newly in `PURE_PACKAGES` per A1): `constants.py`
+    (`FEATURE_VERSION = "features-chronological-v1"`, `FORM_WINDOW =
+    5`, `FORM_WINDOW_POLICY = "MISSING_UNTIL_FULL_WINDOW"`,
+    `REST_DAYS_POLICY = "WITHIN_SEASON"` — the ~301-day cross-season
+    figure explicitly rejected, `XG_FORM_POLICY =
+    "MEAN_OVER_AVAILABLE_WITH_N"`, each with a why-comment);
+    `canonicalization.py` (the package's own spec of record — no
+    import crosses the stage boundary; `app/forecasts/canonicalization.py`
+    untouched); `record.py` (frozen **22-field** `FeatureVector`,
+    `content_hash` computed at construction `init=False`, history
+    fields `OptionalValue` with MISSING ⇔ `value is None`, the two
+    count fields plain `int` where 0 is an exact fact);
+    `compute.py` — **`compute_features(matches, fixture)`** with the
+    cutoff **IS `fixture.date`, computed inside** (no time-like
+    parameter exists to forget; strict `date <` over every consumed
+    match; on/after-cutoff matches silently outside the window;
+    `ValueError` naming the collision if the fixture's natural key
+    appears in `matches`; `TypeError` on a non-`Fixture` target;
+    canonical-sort window selection with same-date ties resolved
+    there, never by input order; kickoff echoed, never consumed).
+  - **Data-layer only:** nothing consumes features — `app/models/`,
+    `app/forecasts/`, and `app/storage/` are **byte-identical to
+    checkpoint `44b43ea`** (0-byte diff pins, criterion 16, verified
+    by the docs agent with `git diff 44b43ea --stat -- app/models
+    app/forecasts app/storage` → empty, exit 0); no sqlite table, no
+    serialization, no persistence (`data/` still not created);
+    `compute_features` imported by no file outside `app/features/`
+    (AST-enforced both directions, criterion 17). `input_digest`
+    parity with `FittedParams` pinned by the sanctioned cross-check
+    test (criterion 5 — shared helper impossible under F4's byte
+    pins).
+  - Tests (criteria 1–20 mapped 1:1 in three **NEW** files; 20 new):
+    `tests/test_features.py` (7), `tests/test_features_policies.py`
+    (7), `tests/test_phase6_separation.py` (6). One version-local
+    golden feature-vector content hash literal
+    `8da6751447bd0320ed61839cd5d97562127ff80948e878ac5f07d53eb7a10b05`
+    (criterion 13 — re-derive on spec/interpreter change, never
+    widen).
+  - Declared amendments (all pre-sanctioned in the brief; declared at
+    checkpoint, review, and monitor sweep): **A1** —
+    `tests/test_fixtures_and_hygiene.py` **623 → 624 lines** (net
+    +1): exactly one `ALLOWED_APP_IMPORTS` entry
+    `{"app.features": {"app.domain", "app.features"}}` plus a
+    line-neutral, strictly-stronger `PURE_PACKAGES` edit to
+    `{"app.domain", "app.validation", "app.features"}` (newly bans
+    `os`/`sys`/`pathlib`/`io` in the package — the strength that
+    makes criterion 18's `os` probe fire); **A2** —
+    `tests/test_phase4_separation.py` key-set pin 10 → 11 keys,
+    **831 → 832 lines**; **A3** — `tests/test_phase5_separation.py`
+    criterion-25 pin 10 → 11 keys, **571 → 572 lines**. All three
+    verified by `wc -l` this docs step; every legacy assertion
+    retained (strictly stronger pins).
+- **Brief-composition protocol wrinkle (recorded honestly):** the
+  brief was composed by the quant-holding architect session; an
+  intermediate fresh architect session (subagent depth limit) wrote a
+  divergent QUANT-GATE draft to disk; the original session reconciled
+  it into the single authoritative 214-line brief
+  (docs/briefs/phase-6.md header: "reconciled 2026-10-19 into this
+  single authoritative text — this document supersedes both drafts").
+  Recorded per the constitution: recorded decisions, not assumed ones
+  — the PHASE 6 BUILD AND REVIEW RAN AGAINST THE RECONCILED TEXT ONLY.
+- Docs (this step): `docs/STATISTICAL-ASSUMPTIONS.md` §9 flipped from
+  pre-build SPECIFICATION to implemented-and-tested reality (§1–§8
+  untouched; single hunk confined to §9 — verified `git diff | grep -c
+  '^@@'` → 1, starting after §8), including the shipped-surface and
+  docs-step census/byte-pin reconciliation; `docs/KNOWN-LIMITATIONS.md`
+  new Phase 6 section (12 entries: measured xG scarcity incl. strict
+  0/120 not shipped and `xg_form` as a disclosed different estimator;
+  WITHIN_SEASON rest-days 12/120 MISSING and the ~301-day figure
+  rejected; form-window 30/120 MISSING; competition/season-agnostic
+  window scope; day-granularity rest arithmetic + kickoff echoed,
+  consumed by nothing, not stored; double-header natural-key
+  carry-forward; descriptive-only zero-predictive-claim +
+  unconsumed; stage 4 before stage 3; synthetic caveat; A1/A2/A3
+  exact figures; the two tester-note dispositions — offline lo-up
+  protocol and the criterion-6 comment nit) plus the "Not yet
+  applicable" refresh (features now listable; stages 3, 8–10 and
+  evaluation still not); `docs/ARCHITECTURE.md` (stage 4 exists;
+  `app/features/` instantiated — pure, currently unconsumed, with the
+  `Forecast` record named as the natural future consumer needing its
+  own future brief; "no features" retired; module table, tree, and
+  instantiation status updated); `README.md` (Phase 6, 103 tests,
+  clean-env note + offline lo-up form, all five block hashes);
+  `docs/PLAN.md` §2 `features/` line planned → EXISTS (Phase 6),
+  nothing else; `docs/ROADMAP.md` (Phase 6 `in progress`,
+  PENDING-hash convention; **block table byte-identical; NO Block 2
+  acceptance row — that is the developer's at the Phases 4–6 boundary
+  after the monitor sweep**). The three protocol records
+  (docs/HEALTH-LOG.md, docs/PROGRESS-LOG.md, docs/ROADMAP.md — monitor
+  finding 1) and the phase brief must ride the Phase 6 checkpoint
+  commit.
+- Suite: `env -u PYTEST_ADDOPTS .venv/bin/python -m pytest -q` →
+  **`103 passed in 61.92s`** (0 failed, 0 skipped, 0 xfailed) — this
+  docs run (2026-10-19, light load); recorded range this phase
+  ~61–68 s light load. 83 prior + 20 new; criterion 21 (suite gate)
+  verified by recorded direct runs (tester ×3 incl. an offline run,
+  reviewer ×2, monitor-to-come).
+- Offline protocol record (docs-agent runs, 2026-10-19, both forms
+  executed): `unshare -rn bash -c 'ip link set lo up && env -u
+  PYTEST_ADDOPTS .venv/bin/python -m pytest -q'` → **103 passed in
+  61.73s** (the working offline form); plain `unshare -rn env -u
+  PYTEST_ADDOPTS .venv/bin/python -m pytest -q` → **6 failed, 97
+  passed** — all six failures `tests/test_api.py` socket tests
+  (`OSError` binding 127.0.0.1) because loopback is DOWN in a fresh
+  namespace: a **harness artifact, not a bug** (recorded so future
+  sweeps do not misread it; KNOWN-LIMITATIONS Phase 6 item 11).
+- Health (docs run, `bash scripts/health-check.sh`, 2026-10-19; run
+  twice): ran to completion; compile clean; inner pytest runs
+  **`100 passed, 3 deselected`** (9.84 s and 10.11 s; second run
+  10.19 s and 10.20 s); skips/xfails `none`;
+  determinism **`OK: 100 passed, 3 deselected`**; pip check clean
+  ("No broken requirements found."); full invocation **52.85 s**
+  light load (timed second run).
+- Measured facts (docs agent, independent census re-run this step
+  from the checked-in fixtures): every figure of the binding
+  availability table reproduced — 60 matches, 6 teams × 20, 156
+  goals, 2024-08-10 → 2025-10-11; xG **10/60** (season 2 `2025-26`
+  only, **4** distinct dates); kickoff **30/60** (all season 1);
+  strict last-5-all-xG **0/120**; immediately-prior-had-xG
+  **20/120**; no prior match ever **6/120**; no same-season prior
+  **12/120**; fewer than `FORM_WINDOW` priors **30/120**. Also
+  verified: `FeatureVector` = 22 fields; `ALLOWED_APP_IMPORTS` = 11
+  keys with `PURE_PACKAGES` three-valued and
+  `BANNED_IMPORT_EXCEPTIONS` still exactly its two Phase 5 entries;
+  A2/A3 pins now `== 11`; refusal behavior live (a fixture taken
+  from the history raises `ValueError` naming the collision).
+- Review history: builder suite green with **ZERO deviations** — the
+  first zero-deviation build since Phase 2 (all amendments were
+  pre-sanctioned in the brief); tester verdict **PASS ×21** with three
+  suite runs including an offline run, and **two non-blocking notes**
+  dispositioned (the offline lo-up protocol artifact above; the
+  criterion-6 comment nit in `tests/test_features.py` — "2.6" is
+  arithmetically wrong, the correct hypothetical is 17/6 ≈ 2.833,
+  comment-only, assertions unaffected — recorded in KNOWN-LIMITATIONS
+  Phase 6 item 12 and deliberately not patched on a reviewed-and-
+  frozen test file); reviewer verdict **PASS (2026-10-19, first pass,
+  criteria 1–21)**, including independent recomputation of the
+  availability census and the golden hash and adjudication of the
+  comment nit.
+- **glass-quant was consulted** for this phase (mandatory, brief):
+  rulings **F1–F7 binding** (run at conductor top level, 2026-10-18;
+  no-objections recorded): pure `compute_features(matches, fixture)`
+  with the cutoff inside; zero fitted transformers; features beside
+  the Forecast in a separate frozen record; data-layer only; hygiene
+  allowlist extension; pre-build §9; version-bump discipline +
+  one version-local golden + no storage.
+- **Developer answered all 6 open questions = the recommended
+  defaults (2026-10-19, recorded at brief hand-off):** Q1 = a
+  (`MISSING_UNTIL_FULL_WINDOW`); Q2 = a (keep `xg_form`,
+  `MEAN_OVER_AVAILABLE_WITH_N`, MISSING at `n_xg = 0`); Q3 = a
+  (`WITHIN_SEASON`, never the ~301-day figure); Q4 = a (lean
+  decision-4 inventory); Q5 = a (`FORM_WINDOW = 5`); Q6 = a
+  (competition/season-agnostic window — documented limitation).
+- pytest unchanged: 9.1.1; Python 3.12.3; stdlib-only dependencies
+  per brief (refused: numpy/pandas/scipy/scikit-learn or any
+  numeric/ML stack, `random` under `app/features`, `sqlite3`/`http`
+  exception map untouched at its two Phase 5 entries).
 - Checkpoint hash: **PENDING** — glass-git records the real hash at
-  the Phase 5 checkpoint; the docs agent then replaces PENDING in
-  docs/ROADMAP.md with that hash and flips ROADMAP Phase 5
-  `in progress` → `committed`.
+  the Phase 6 checkpoint (immediately after this docs step); PENDING
+  is then replaced with that hash here and in docs/ROADMAP.md, and
+  ROADMAP Phase 6 `in progress` → `committed` flips with it.

@@ -21,8 +21,8 @@ Developer acceptance is recorded per BLOCK, not per phase.
 | 2     | Domain and data                 | committed   |
 | 3     | Core statistics                 | committed   |
 | 4     | Simulation and scenarios        | committed   |
-| 5     | Forecasting API                 | in progress |
-| 6     | Feature engine                  | planned   |
+| 5     | Forecasting API                 | committed   |
+| 6     | Feature engine                  | in progress |
 | 7     | Decision analysis               | planned   |
 | 8     | Temporal integrity              | planned   |
 | 9     | Backtesting                     | planned   |
@@ -73,24 +73,49 @@ Status notes:
   acceptance is recorded in the block acceptance record below
   (acceptance is recorded per BLOCK, not per phase; Block 2 acceptance
   belongs to the developer at the Phases 4–6 boundary).
-- Phase 5 is `in progress`: checkpoint hash **PENDING** (convention:
-  the docs agent replaces PENDING with the real hash and flips the
-  status to `committed` immediately after the checkpoint commit). Built
-  and passed independent review (PASS, 2026-10-17, first pass, criteria
-  1–27, after tester PASS ×27 with 469 probes and zero bugs, and after
-  the architect ratified AMENDMENTS A3–A5 plus the criterion-8 erratum
-  the builder self-declared — A1/A2 were pre-sanctioned in the brief);
-  suite 83 passed. The checkpoint commit must carry the three protocol
-  records (docs/HEALTH-LOG.md, docs/PROGRESS-LOG.md, docs/ROADMAP.md —
-  monitor finding 1, carried from Phases 1–4 sweeps), the phase brief
-  with AMENDMENTS A1–A5 and the criterion-8 erratum, the
-  AMENDMENT-A1+A2-declared **+9 lines** in
+- Phase 5 is `committed`: checkpoint hash **44b43ea** — `phase 5:
+  forecast snapshots, write-once storage, read-only localhost api`
+  (2026-10-18 06:55 +0100, master). Built and passed independent review
+  (PASS, 2026-10-17, first pass, criteria 1–27, after tester PASS ×27
+  with 469 probes and zero bugs, and after the architect ratified
+  AMENDMENTS A3–A5 plus the criterion-8 erratum the builder
+  self-declared — A1/A2 were pre-sanctioned in the brief); suite 83
+  passed. The checkpoint commit carries the three protocol records
+  (docs/HEALTH-LOG.md, docs/PROGRESS-LOG.md, docs/ROADMAP.md — monitor
+  finding 1, carried from Phases 1–4 sweeps), the phase brief with
+  AMENDMENTS A1–A5 and the criterion-8 erratum, the
+  AMENDMENT-A1+A2-declared **+9 lines** (10 added, 1 removed) in
   tests/test_fixtures_and_hygiene.py (614 → 623), the
-  AMENDMENT-A3-declared **+5 lines** in tests/test_phase4_separation.py
-  (826 → 831), and the AMENDMENT-A4-declared **+11 lines** in
-  tests/test_domain.py. Block 2 developer acceptance belongs to the
+  AMENDMENT-A3-declared **+5 lines** (12 added, 7 removed) in
+  tests/test_phase4_separation.py (826 → 831), and the
+  AMENDMENT-A4-declared **+11 lines** in tests/test_domain.py. Hash
+  recorded in docs/PROGRESS-LOG.md per the Phase 1–4 convention. Block
+  2 developer acceptance belongs to the developer at the Phases 4–6
+  boundary (recorded per BLOCK, not per phase; no Block 2 acceptance
+  row yet).
+- Phase 6 is `in progress`: checkpoint hash **PENDING** (PENDING-hash
+  convention as in Phases 4/5 at this loop point: `in progress` +
+  PENDING now; glass-git records the real hash at the Phase 6
+  checkpoint, immediately after this docs step; PENDING is then
+  replaced with that hash here and in docs/PROGRESS-LOG.md and this
+  row flips to `committed`). Built and passed independent review
+  (PASS, 2026-10-19, first pass, criteria 1–21, after tester PASS ×21
+  with three suite runs including an offline run, and with two
+  non-blocking tester notes dispositioned); suite **103 passed**;
+  builder green with **zero deviations** (first since Phase 2). The
+  checkpoint commit must carry the three protocol records
+  (docs/HEALTH-LOG.md, docs/PROGRESS-LOG.md, docs/ROADMAP.md —
+  monitor finding 1, carried from Phases 1–5 sweeps), the phase brief
+  (reconciled 214-line version), and the brief-pre-sanctioned
+  AMENDMENTS: **A1** (tests/test_fixtures_and_hygiene.py **623 → 624**
+  — exactly one `ALLOWED_APP_IMPORTS` entry for `app.features` plus a
+  line-neutral, strictly-stronger `PURE_PACKAGES` strengthening),
+  **A2** (tests/test_phase4_separation.py key-set pin 10 → 11, **831 →
+  832**), **A3** (tests/test_phase5_separation.py criterion-25 pin 10 →
+  11, **571 → 572**). Block 2 developer acceptance belongs to the
   developer at the Phases 4–6 boundary (recorded per BLOCK, not per
-  phase).
+  phase; no Block 2 acceptance row — acceptance follows this phase's
+  commit and monitor sweep).
 
 ## Block acceptance record
 

@@ -4,8 +4,8 @@ The honest list. Updated every phase (constitution; HANDOFF Part IX item
 13 formalizes this at Phase 13, but the discipline starts now). Nothing
 here is hidden behavior — each item is also recorded where it was found.
 
-Entry below reflects the state as of Phase 5 (Forecasts and API),
-2026-10-17.
+Entry below reflects the state as of Phase 6 (Feature engine),
+2026-10-19.
 
 ## Phase 1
 
@@ -442,15 +442,167 @@ Entry below reflects the state as of Phase 5 (Forecasts and API),
     by the Phase 5 reviewer (2026-10-17); declared here so the dormancy
     is visible, not accidental.
 
-## Not yet applicable (as of Phase 5)
+## Phase 6
 
-Forecast, storage, and API limitations are now listable and listed
-above (pipeline stage 6 FORECAST DISTRIBUTIONS, its durable write-once
-sqlite store, and the read-only serving surface all exist). Still not
-yet listable: pre-match-state, feature, decision, backtesting,
-evaluation, and model-improvement limitations — pipeline stages 3–4,
-8–10 are unbuilt; there are no pre-match snapshots, no features, no
-decision reports, and no evaluation metrics to mis-trust yet.
+1. **Measured xG availability is sparse; strict rolling-xG is not
+   shipped; `xg_form` is a disclosed different estimator.** xG is
+   present on exactly **10/60** fixture matches — season 2
+   (`2025-26`) only, on 4 distinct dates — so every season-1 fixture
+   reports xG features MISSING. A strict last-`FORM_WINDOW`-all-xG
+   rolling window covers **0/120** team appearances on this data,
+   which is why that feature is **not shipped** (it would be MISSING
+   everywhere). The shipped `xg_form` under
+   `XG_FORM_POLICY = "MEAN_OVER_AVAILABLE_WITH_N"` is a **different
+   estimator-of-form** — the mean over the window's xG-available
+   subset only, with `n_xg` disclosed — and is documented as such
+   wherever it appears: a different quantity measured on fewer
+   matches, never a substitute for a strict rolling-xG window; at
+   `n_xg = 0` the field is MISSING, never `0.0` (no missing xG ever
+   participates as an implicit zero). Independent census at the Phase
+   6 docs step reproduced every figure (2026-10-19; also: 20/120
+   appearances had xG on the immediately prior match — an upper bound
+   on early-window xG usefulness)
+   (STATISTICAL-ASSUMPTIONS §9c, §9d).
+
+2. **Rest days are WITHIN_SEASON — season-opening appearances report
+   MISSING, never the ~301-day off-season figure.**
+   `REST_DAYS_POLICY = "WITHIN_SEASON"`: `rest_days` is the calendar
+   days from the team's most recent **same-season** pre-cutoff match;
+   with no same-season prior it is MISSING — measured **12/120**
+   team appearances (the season-opening class). The cross-season
+   alternative — reporting the ~301-day off-season gap as "rest" —
+   is **rejected as a different quantity** and never reported
+   (developer answer Q3 = a). **6/120** appearances have no prior
+   match ever: form, rest, and xG are all MISSING there, never 0
+   (STATISTICAL-ASSUMPTIONS §9c, §9d).
+
+3. **Form-window policy leaves early-career form MISSING.**
+   `FORM_WINDOW_POLICY = "MISSING_UNTIL_FULL_WINDOW"` with
+   `FORM_WINDOW = 5`: a goals-form field is MISSING until the team
+   has 5 strictly-pre-cutoff matches — measured **30/120** team
+   appearances are affected (each team's first five career matches).
+   This is the named policy, not an accident: never a partial-window
+   mean; `prior_matches` discloses the true count beside the MISSING
+   estimate (developer answers Q1 = a, Q5 = a)
+   (STATISTICAL-ASSUMPTIONS §9c, §9d).
+
+4. **The window scope is competition- and season-agnostic — a
+   documented v1 limitation.** The form/rest/xG window counts **all**
+   of the team's prior matches regardless of competition or season
+   (one simple scope, developer answer Q6 = a). Today's fixtures are
+   single-competition, so nothing blends in practice — but a
+   mixed-competition or multi-season history would blend form across
+   competitions and seasons with no separation knob. Stated, not
+   silently accepted (STATISTICAL-ASSUMPTIONS §9c).
+
+5. **Day-granularity arithmetic; kickoff echoed, never consumed, and
+   not stored.** `rest_days` is an integer calendar-day difference
+   (fixture date minus prior-match date); the system has day
+   granularity and no within-day ordering discipline (Phase 5 item 1),
+   so no intra-day ordering exists anywhere in features. The fixture's
+   `kickoff` availability is echoed on the vector for honesty —
+   measured **30/60** matches carry kickoff (all season 1), MISSING
+   never defaulted to a fabricated time — but the computation reads
+   dates only: consuming `HH:MM` would claim precision the domain
+   does not have. The echo is computed in memory and **stored
+   nowhere**, so Phase 5 item 12's kickoff-vs-criterion-20 gate is
+   **not** triggered (STATISTICAL-ASSUMPTIONS §9b, §9d).
+
+6. **Feature identity inherits the double-header natural-key
+   limitation (carried from Phase 2 item 4 and Phase 5 item 2).**
+   `FeatureVector` identity starts with the same natural key
+   (competition, season, date, home, away), so two distinct same-day
+   matches between the same pair (a double-header) are
+   **indistinguishable** in feature identity exactly as in ingestion
+   and forecast identity. Impossible in the synthetic fixtures by
+   construction; documented here, not silently accepted — a real
+   source exhibiting this would need a key extension (e.g. round or a
+   source-unique id) in all places.
+
+7. **Features are descriptive summaries with zero predictive claim —
+   and are consumed by nothing.** Every field of a `FeatureVector` is
+   a historical summary of past matches: **not a probability, not a
+   model output, not evidence** of anything predictive. No file under
+   any other `app/` package imports `app/features` (AST-enforced both
+   directions — criterion 17), so nothing in the system can currently
+   emit a feature as a probability; `build_forecast`, storage, API,
+   scenarios, and simulation are untouched, no `FORECAST_VERSION`
+   changed, and no Phase 5 golden moved. The first consumer arrives
+   via its own future brief with its own version/identity
+   implications. Until Phases 9/11, no feature may be described as
+   validated, accurate, or evidence of predictive value
+   (STATISTICAL-ASSUMPTIONS §9f, §9g).
+
+8. **Stage 4 exists while stage 3 (`app/state/`) does not — roadmap
+   order, deliberately.** `app/features/` is instantiated (Phase 6)
+   while `app/state/` (PRE-MATCH STATE) remains unbuilt per roadmap
+   order; features compute directly from match history plus domain
+   types, and **no dependency on stage 3 was invented** to paper over
+   the order (brief F4; brief risk "Stage-order confusion" —
+   ARCHITECTURE and this entry state it plainly).
+
+9. **The synthetic-data caveat rides every feature.** Every feature is
+   a historical summary of the fictional "Obsidian Coast League"
+   (6 teams, 60 hand-authored matches) — synthetic history, never
+   evidence; a feature computed on real data is untested territory
+   end to end, exactly as the model layer is (Phase 3 item 6,
+   compounded by the Phase 2 loader limitation).
+
+10. **Declared amendments A1/A2/A3 — exact figures (brief
+    pre-sanctioned; declared at checkpoint, review, and monitor
+    sweep).** **A1**: `tests/test_fixtures_and_hygiene.py` **623 →
+    624** — exactly one new `ALLOWED_APP_IMPORTS` entry
+    `{"app.features": {"app.domain", "app.features"}}`
+    (dictionary-coverage gap the new package would otherwise crash
+    against with `KeyError`) **plus** a line-neutral,
+    strictly-stronger `PURE_PACKAGES` edit to `{"app.domain",
+    "app.validation", "app.features"}` (newly bans `os`/`sys`/
+    `pathlib`/`io` in the package — the strength that makes criterion
+    18's `os` probe fire); net +1 line only. **A2**:
+    `tests/test_phase4_separation.py` key-set pin 10 → 11 keys, **831
+    → 832**. **A3**: `tests/test_phase5_separation.py` criterion-25
+    key-set pin 10 → 11 keys, **571 → 572**. A2/A3 are the same
+    mechanical pin-collision class as Phases 3–5; every legacy
+    assertion retained in all three files (strictly stronger, never a
+    weakening).
+
+11. **Offline-check protocol — plain `unshare -rn` produces 6 API
+    failures that are a harness artifact, not a bug (tester note,
+    disposition recorded).** Under a fresh network namespace the
+    loopback interface starts DOWN, so plain
+    `unshare -rn env -u PYTEST_ADDOPTS .venv/bin/python -m pytest -q`
+    reports `6 failed, 97 passed` — all six failures in
+    `tests/test_api.py` (`OSError` binding 127.0.0.1). The working
+    offline form brings loopback up first:
+    `unshare -rn bash -c 'ip link set lo up && env -u PYTEST_ADDOPTS
+    .venv/bin/python -m pytest -q'` → **103 passed** (both forms run
+    and recorded at the Phase 6 docs step, 2026-10-19). Recorded here
+    so future sweeps never misread the plain-form failures as a
+    product defect — the API binds localhost by design (Phase 5 item
+    5); the product is unchanged.
+
+12. **Criterion-6 comment nit — recorded, deliberately not patched on
+    a reviewed-and-frozen test file (tester note, disposition
+    recorded).** In `tests/test_features.py`, the hand-built same-date
+    tie-break history comment says *"a mean including it would be
+    2.6"* — arithmetically wrong: the correct hypothetical is (9+1+2+
+    0+1+4)/6 = **17/6 ≈ 2.833**. Comment-only: the asserted value
+    (8/5 = 1.6) and every assertion are unaffected (reviewer
+    adjudicated the same way). Deliberately **not** patched — the
+    reviewed test file is frozen for this phase (an edit after
+    review would change the reviewed artifact); a future brief that
+    touches the file may correct the comment.
+
+## Not yet applicable (as of Phase 6)
+
+Forecast, storage, API, and feature limitations are now listable and
+listed above (pipeline stage 6 FORECAST DISTRIBUTIONS, its durable
+write-once sqlite store, the read-only serving surface, and pipeline
+stage 4 FEATURE EXTRACTION — `app/features/` — all exist; features
+became listable at Phase 6). Still not yet listable: pre-match-state,
+decision, backtesting, evaluation, and model-improvement limitations —
+pipeline stages 3, 8–10 are unbuilt; there are no pre-match snapshots,
+no decision reports, and no evaluation metrics to mis-trust yet.
 Model-calibration and predictive limitations (as distinct from the
 in-sample assumptions above) arrive with Phases 9 and 11 and will be
 documented in `docs/EVALUATION.md` (which does not exist yet — there is
@@ -458,4 +610,5 @@ no evaluation to document) and in this file. Data provenance and format
 limitations remain in `docs/DATA-SOURCES.md`; the model's statistical
 assumptions and their weaknesses are in
 `docs/STATISTICAL-ASSUMPTIONS.md` (exists since Phase 3; §7 covers
-simulation and scenarios; §8 covers forecasts, storage, and serving).
+simulation and scenarios; §8 covers forecasts, storage, and serving;
+§9 covers feature extraction, added at Phase 6).
