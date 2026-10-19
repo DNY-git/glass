@@ -4,7 +4,7 @@ The honest list. Updated every phase (constitution; HANDOFF Part IX item
 13 formalizes this at Phase 13, but the discipline starts now). Nothing
 here is hidden behavior — each item is also recorded where it was found.
 
-Entry below reflects the state as of Phase 6 (Feature engine),
+Entry below reflects the state as of Phase 7 (Decision analysis),
 2026-10-19.
 
 ## Phase 1
@@ -593,22 +593,190 @@ Entry below reflects the state as of Phase 6 (Feature engine),
     review would change the reviewed artifact); a future brief that
     touches the file may correct the comment.
 
-## Not yet applicable (as of Phase 6)
+## Phase 7
 
-Forecast, storage, API, and feature limitations are now listable and
-listed above (pipeline stage 6 FORECAST DISTRIBUTIONS, its durable
-write-once sqlite store, the read-only serving surface, and pipeline
-stage 4 FEATURE EXTRACTION — `app/features/` — all exist; features
-became listable at Phase 6). Still not yet listable: pre-match-state,
-decision, backtesting, evaluation, and model-improvement limitations —
-pipeline stages 3, 8–10 are unbuilt; there are no pre-match snapshots,
-no decision reports, and no evaluation metrics to mis-trust yet.
-Model-calibration and predictive limitations (as distinct from the
-in-sample assumptions above) arrive with Phases 9 and 11 and will be
-documented in `docs/EVALUATION.md` (which does not exist yet — there is
-no evaluation to document) and in this file. Data provenance and format
-limitations remain in `docs/DATA-SOURCES.md`; the model's statistical
-assumptions and their weaknesses are in
+1. **Decision reports are in-process, ephemeral VIEWS — not stored,
+   not served, re-derivable from frozen forecasts.**
+   `build_decision_report(forecast, *, scenarios=())` renders a frozen
+   `Forecast` in process: no sqlite table, no `SCHEMA_VERSION` bump
+   (still exactly 1), no API route, no CLI — and nothing outside
+   `app/decisions/` imports the package (AST-enforced both directions,
+   criterion 15). Reports are deterministic re-derivable **views**, so
+   ephemerality breaks nothing: Phases 9/11 evaluation joins on
+   **forecasts** (frozen, write-once, hashed, pinned — that substrate
+   is already complete), not on reports. Persistence or serving arrives
+   only via a future brief with developer instruction — if ever
+   (A5/A8; STATISTICAL-ASSUMPTIONS §10a).
+
+2. **Evaluated n = 0: zero scoring metrics ship with this phase —
+   the boundary vs Phases 9/11.** No log loss, no Brier, no RPS, no
+   hit rate, no calibration, no baselines; the evaluated observation
+   count in any report is exactly 0. An AST/token guard over the source
+   of every file under `app/decisions/**` asserts the **absence** of
+   scoring vocabulary (criterion 13, extend-not-weaken — future scoring
+   terms join that guard's tuple, never leave it). A report measures
+   nothing; evidence begins at Phases 9 (backtesting vs baselines) and
+   11 (evaluation vs realized results). The evaluation substrate was
+   already complete and Phase 7 added nothing it needs — stated to kill
+   the temptation to pre-score (A1/A3/A8; §10e).
+
+3. **No thresholds, no decision rules — a position, not a default
+   (A6).** `app/decisions/constants.py` defines **exactly**
+   `REPORT_VERSION` and `DISCLAIMER`, pinned by test (criterion 1): no
+   "flag when P(home)>X", no tuned numeric knob, and no rule converting
+   a probability into a decision exists anywhere in the package.
+   Thresholds would be arbitrary at best, and choosing one by fitting
+   on outcomes would leak directly into Phase 10's protected
+   improvement loop — one step from the banned value-detection framing
+   (§10c).
+
+4. **Anti-ensemble: min/max spread only — never a mean — and no
+   second independent model exists.** The ONLY cross-scenario
+   aggregation shipped is per-outcome `minimum`/`maximum`/`spread`
+   over the labeled comparisons; no field or canonical-payload key is
+   named mean/average/ensemble/aggregate/blend/composite, and the
+   arithmetic-mean triple is pinned **absent** by test (criterion 9).
+   **No second independent model exists in this system** — one Poisson
+   fit per forecast, no Elo, no second forecast source — so no
+   cross-model agreement, no ensemble, and no agreement metric is ever
+   presented; the IX-7 failure mode is answered head-on in the fixed
+   disclaimer, not silenced (§10b).
+
+5. **Scenario comparisons are LABELED HYPOTHETICS, not forecasts.**
+   Each comparison entry echoes its `label` and `transforms` verbatim,
+   must be built from **the forecast's own `FittedParams`** (a
+   mismatched baseline and duplicate labels are refused with
+   `ValueError`, mirroring Phase 4's guard), and carries analytic
+   `outcome_probs` deltas — descriptive arithmetic between a
+   hypothetical and its own baseline, never "value". The
+   `MULTIPLIER_MIN = 0.5`/`MULTIPLIER_MAX = 2.0` knobs are inherited
+   unchanged from Phase 4's arbitrary documented bounds (Phase 4 item
+   3) — every scenario number stays a labeled hypothetical all the way
+   down.
+
+6. **Flag-vs-plausible-number tension is presented structurally,
+   never judged.** Top-level `convergence_status`/`insufficient_data`/
+   `insufficient_teams`/`dropped_mass` flags sit beside plausible-
+   looking normalized probabilities — both visible, neither hidden —
+   and **no threshold judges the tension** (item 3's position).
+   Uncertainty is flag echo only: no confidence-interval, standard-
+   error, interval, or numeric reliability-band field exists anywhere
+   on a report, and `mc_stderr` (simulation noise only, Phase 4 item
+   1) can never enter a report — scenario comparisons are analytic
+   only, never Monte Carlo frequencies (criterion 12; §10d).
+
+7. **The disclaimer's wording is fixed and pinned by test — any
+   wording change is a contract bump.** `disclaimer ==
+   constants.DISCLAIMER` exactly, with its pinned substrings (in-sample
+   estimates, synthetic-data caveat, pending Phases 9/11, not-evidence-
+   of-accuracy, the no-second-independent-model /
+   never-averaged-or-ensembled clause — criterion 5). Changing the
+   wording changes every report's hashed content and therefore
+   requires a `REPORT_VERSION` bump plus re-derivation of the
+   version-local golden hash — **never widened** (§10a bump
+   discipline).
+
+8. **The synthetic-data caveat and in-sample status ride every
+   report.** Every number is an in-sample point estimate on the
+   fictional "Obsidian Coast League" fixtures, copied at full precision
+   from a frozen forecast or a labeled hypothetical — **rendering adds
+   no evidence of any kind** (§9g's "historical summaries … not
+   evidence" continuity). Until Phases 9/11, no report may be
+   described — in code, docs, briefs, or report contents — as
+   validated, accurate, or beating anything; those words are banned in
+   `app/decisions/**` by test (criterion 14; §10f).
+
+9. **Probabilities are estimate properties — no pick-shaped field
+   exists.** Field order shows home, draw, away and nothing derives a
+   favored side: no argmax, no "most likely", no pick-shaped field is
+   present or derivable from the pinned 28-field contract (criterion 2)
+   under the vocabulary bans (criterion 14). No odds, stakes, EV,
+   Kelly, edge, or value framing exists anywhere — constitution
+   prohibition 3 stands.
+
+10. **Declared amendments A1/A2/A3/A4 — exact figures (brief
+    pre-sanctioned; declared at checkpoint, review, and monitor
+    sweep).** **A1**: `tests/test_fixtures_and_hygiene.py` **624 →
+    625** — exactly one new `ALLOWED_APP_IMPORTS` entry
+    `{"app.decisions": {"app.domain", "app.models", "app.forecasts",
+    "app.scenarios", "app.decisions"}}` (dictionary-coverage gap the
+    new package would otherwise crash against with `KeyError`) **plus**
+    a line-neutral, strictly-stronger `PURE_PACKAGES` edit to the
+    four-set `{"app.domain", "app.validation", "app.features",
+    "app.decisions"}` (newly bans `os`/`sys`/`pathlib`/`io` in
+    `app/decisions` — the strength that makes criterion 15's probes
+    fire); net +1 line only. **A2**: `tests/test_phase4_separation.py`
+    key-set pin 11 → 12, **832 → 833**. **A3**:
+    `tests/test_phase5_separation.py` criterion-25 key-set pin 11 →
+    12, **572 → 573**. **A4**: `tests/test_phase6_separation.py`
+    pins updated **in place, line-neutral** — the 12-key union gains
+    `app.decisions`, `PURE_PACKAGES` pinned to the four-set, the
+    source-string pins now read `== 12` and are strengthened to exclude
+    **both** `== 10` and `== 11` — **510 → 510**. All four verified by
+    `wc -l` this docs step; every legacy assertion retained in all four
+    files (strictly stronger, never a weakening; A4's three-generation
+    source-string collision is the same mechanical class ratified at
+    Phases 3–6).
+
+11. **The scoring guard is `\b` word-boundary — suffixed identifiers
+    would evade it (tester note, disposition recorded).** Criterion
+    13's token guard compiles `\b(log_loss|logloss|brier|rps|
+    hit_rate|calibration)\b` (case-insensitive) over `app/decisions/**`
+    source, so a scoring-shaped identifier that **extends** a pinned
+    token with a word character (e.g. a `brier_score`-shaped name)
+    does not match the guard. **Spec-conformant today**: a raw-
+    substring scan of `app/decisions/**` is clean for every pinned
+    token (docs-step verified, 2026-10-19) — nothing ships evading
+    detection in fact. Disposition: recorded, not patched — when
+    scoring vocabulary legitimately ships at Phases 9/11 the guard's
+    tuple must be **extended** (extend-not-weaken, criterion 13's
+    superset pin), and that extension should consider suffixed forms;
+    the guard is never weakened.
+
+12. **The A2/A3 comment-text amendment numbers collide with earlier
+    phases' identically-numbered amendments — phase-scoped by
+    convention, comment-only (tester/reviewer note, disposition
+    recorded).** The amendment-declaring comments inside
+    `tests/test_phase4_separation.py` (A2) and
+    `tests/test_phase5_separation.py` (A3) reuse numbers that earlier
+    phases also used (Phase 5's A3/A4/A5, Phase 6's A2/A3) —
+    amendment numbers are scoped to their own phase's brief by
+    convention, exactly as Phase 6's A2/A3 shadowed Phase 5's. The
+    edits are comment text plus the pinned key counts; **no assertion
+    is affected** (both files execute green in the same 120-test
+    suite).
+
+13. **The build was interrupted mid-phase and completed in a second
+    session; the reviewer audited the test-file compaction — no probe
+    lost (process record).** The first build session was interrupted
+    by a server restart mid-work; a second session completed the phase.
+    To stay within the ~440-line per-file budget, the three new test
+    files were compacted to **440 lines each by comment/docstring
+    condensation only**; the reviewer audited the compaction against
+    the brief's criteria 1–17 mapping and confirmed **no probe was
+    dropped** — catching and restoring two accidental deletions in the
+    process. Zero self-declared deviations remained after the resume
+    (A1–A4 exactly as pre-sanctioned). Recorded per the constitution:
+    recorded events, not assumed ones.
+
+## Not yet applicable (as of Phase 7)
+
+Forecast, storage, API, feature, and decision-report limitations are
+now listable and listed above (pipeline stage 6 FORECAST DISTRIBUTIONS,
+its durable write-once sqlite store, the read-only serving surface,
+pipeline stage 4 FEATURE EXTRACTION — `app/features/` — and pipeline
+stage 8 DECISION ANALYSIS — `app/decisions/` — all exist; decision
+reports became listable at Phase 7). Still not yet listable: pre-match-
+state, backtesting, evaluation, and model-improvement limitations —
+pipeline stages 3, 9, 10 are unbuilt; there are no pre-match snapshots,
+and no evaluation metrics to mis-trust yet (Phase 7 ships zero scoring
+— evaluated n = 0). Model-calibration and predictive limitations (as
+distinct from the in-sample assumptions above) arrive with Phases 9 and
+11 and will be documented in `docs/EVALUATION.md` (which does not exist
+yet — there is no evaluation to document) and in this file. Data
+provenance and format limitations remain in `docs/DATA-SOURCES.md`; the
+model's statistical assumptions and their weaknesses are in
 `docs/STATISTICAL-ASSUMPTIONS.md` (exists since Phase 3; §7 covers
 simulation and scenarios; §8 covers forecasts, storage, and serving;
-§9 covers feature extraction, added at Phase 6).
+§9 covers feature extraction, added at Phase 6; §10 covers decision
+analysis, added at Phase 7).

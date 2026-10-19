@@ -864,3 +864,192 @@ synthetic-data caveat rides every feature. Until Phases 9/11, no
 feature may be described — in code, docs, briefs, or reports — as
 validated, accurate, or evidence of predictive value. Nothing here is
 betting functionality (constitution prohibition 3).
+
+## 10. Decision analysis (stage 8) — report structure, comparison without collapse, the no-scoring boundary — IMPLEMENTED AND TESTED (authored pre-build, Phase 7; verified 2026-10-19)
+
+Status: **authored BEFORE any Phase 7 build code**, per Phase 7 brief
+decision 12 (the Phase 3 §3 / Phase 4 §7 / Phase 5 §8 / Phase 6 §9
+pre-build pattern): every constraint below was committed to before a line
+of `app/decisions/` could exist — and is now **implemented-and-tested
+reality**, verified at the Phase 7 DOCS step against the shipped code
+and its acceptance tests (suite 120 passed, clean-env run 2026-10-19),
+exactly as §§7–9 were. What shipped matches what was specified: one pure
+package `app/decisions/` (`__init__.py`, `constants.py`,
+`canonicalization.py` — its own spec of record, no import crosses the
+stage boundary — `record.py`, `builder.py`) with the single entry point
+`build_decision_report(forecast, *, scenarios=())`; the frozen 28-field
+`DecisionReport` plus the nested `ScenarioComparison` and
+`ScenarioSpread` records, `content_hash` computed at construction; and
+`REPORT_VERSION = "decision-report-v1"` with `DISCLAIMER` as the
+package's **exactly two** module-level constants — A6/decision 8
+shipped verbatim: no threshold, no knob, no decision rule exists
+anywhere in the package. The bindings cited are the Phase 7 brief's
+glass-quant rulings A1–A8 (consulted 2026-10-19 at conductor top level;
+no-objections recorded) and the developer's recorded answer of 2026-10-19
+fixing `REPORT_VERSION = "decision-report-v1"`. Sections 1–9 are
+untouched by this section: a report computes nothing of its own — it
+renders frozen outputs produced under §§1–8, which bind it without
+exception. Flipping this section's status changed no claim below:
+"validated" and "accurate" remain banned until Phases 9/11, and the
+evaluated observation count remains exactly 0.
+
+Scope: HANDOFF Part IX item 7 (IX-7 — *"Decision analysis — comparison
+of model outputs without a silently invented ensemble, disagreement
+reported not collapsed"*), delivered as pipeline stage 8 DECISION
+ANALYSIS: one new pure package `app/decisions/` with the single entry
+point `build_decision_report(forecast, *, scenarios=())`. Nothing below
+is a claim about predictive quality — a report is a presentation
+structure over §8 forecasts and §7 scenario outputs — and
+"validated"/"accurate" remain banned until Phases 9/11 (§6, §7f, §8g).
+
+**(a) What a report IS — a deterministic in-process VIEW of an existing
+frozen Forecast; no `matches`, no time parameter, no new leakage surface
+(A1/A2).**
+
+*Statement:* the signature is exactly `build_decision_report(forecast,
+*, scenarios=())` — **no `matches` argument and no time-like parameter
+exists to forget** (the §8a/§9a builder pattern). The report is a
+**serialization of an already cutoff-enforced artifact**: the cutoff was
+enforced once, inside `build_forecast`, when the Forecast was frozen
+(§8a), and a renderer of frozen bytes **cannot see any history at all**
+— no matches, no scores, no post-cutoff data — so **no new leakage
+surface is opened** (stated explicitly here pre-build per A2; the cheap
+poisoned-future byte-identity regression ships anyway). Determinism:
+identical `(forecast [, scenarios])` ⇒ field-for-field identical report
+including `content_hash`; no RNG, no wall clock, no environment reads.
+The record carries its own `REPORT_VERSION = "decision-report-v1"` and
+`content_hash` computed at construction under the package's **own**
+canonicalization spec of record (no import crosses the stage boundary),
+with bump discipline worded identically to §8c: any change to the hashed
+field set, the canonicalization spec, or the derivation semantics
+requires a `REPORT_VERSION` bump. Provenance chains to the source
+forecast through echoed `forecast_version` + `forecast_content_hash`
+(alongside the model_version / input_digest / as_of / sample echoes) —
+full provenance without re-serializing `FittedParams`.
+*Not stored, not served (A5/A8):* the report is generated **in process
+and never persisted** — no sqlite table, no `SCHEMA_VERSION` bump, no
+API route, no CLI. Ephemerality breaks nothing and pre-scores nothing:
+evaluation joins on **forecasts** (frozen, write-once, hashed, pinned —
+§8's substrate, already complete), so a deterministic re-derivable view
+adds nothing evaluation needs. Persistence or serving arrives only via a
+future brief with developer instruction.
+
+**(b) Comparison without collapse — side-by-side labeled hypotheticals,
+spread reported, the anti-ensemble clause answered head-on (IX-7; A1).**
+
+*Statement:* scenario comparisons are **labeled hypotheticals presented
+side by side with deltas**: each entry echoes its `label` and its
+`transforms` verbatim, must be built from **the forecast's own
+`FittedParams`** (frozen value equality; a mismatched baseline is
+refused with `ValueError`, and duplicate labels are refused too —
+ambiguity never averaged, §7g extended), and each probability is the
+**analytic** `outcome_probs` of the `scenario_matrix` (§7e — never a
+Monte Carlo frequency). **The ONLY cross-scenario aggregation shipped is
+min/max/spread** over the entries' analytic probabilities, per outcome;
+**a mean is an invented ensemble** and exists nowhere in the records or
+their canonical payload. The IX-7 failure mode is answered, not
+silenced: **no second independent model exists in this system** (§9f:
+no second forecast source, no Elo), so **no cross-model agreement, no
+ensemble, and no agreement metric is ever presented** — the fixed
+disclaimer says so on every report. "Disagreement" therefore means
+exactly two structural components: (i) min/max/spread across labeled
+hypotheticals, and (ii) **flag-vs-plausible-number tension** — top-level
+flags screaming beside plausible-looking normalized probabilities, both
+visible, neither hidden, and never judged by any threshold (c).
+
+**(c) No thresholds, no decision rules — a position, not a default
+(A6).**
+
+*Statement:* Phase 7 ships **no threshold and no decision rule of any
+kind** — no "flag when P(home) > X", no tuned constant, no auto-tuning,
+no threshold optimization. The package's constants module defines
+**exactly** `REPORT_VERSION` and `DISCLAIMER`: no numeric knob, and no
+rule converting a probability into a decision, exists anywhere in the
+package. Two reasons, both structural: such a knob is arbitrary at
+best, and choosing it by **fitting on outcomes would leak directly into
+Phase 10's protected improvement loop** (HANDOFF stage 10: a tuning loop
+protected from evaluating itself on its own tuning data) — one step
+from the banned value-detection framing. Consequently the report states
+**estimate properties only**: field order shows home, draw, away and
+nothing derives a favored side — no argmax, no "most likely", no
+pick-shaped field — and each scenario `delta_*` is descriptive
+arithmetic between a labeled hypothetical and its own baseline, never
+"value".
+
+**(d) Vocabulary contract — estimate / probability / flag / caveat, and
+uncertainty as flag echo alone (A4).**
+
+*Statement:* fields say **estimate, probability, flag, caveat** —
+nothing else. **Uncertainty is expressed solely by echoing flags** at
+top level: `convergence_status`, `insufficient_data`,
+`insufficient_teams`, `dropped_mass` — plus the in-sample and synthetic
+caveats in the fixed disclaimer (§8e's serving-honesty rule extends
+verbatim; `dropped_mass` is §4 truncation disclosure, not an
+uncertainty band). **No confidence-interval, standard-error, interval,
+or numeric reliability-band field exists anywhere on a report** (§6,
+§7a, §8e) — no uncertainty quantification ships with a report, and
+`mc_stderr` (**simulation noise only**, §7a) **never enters a report**.
+Scenario comparisons are **analytic-only, never Monte Carlo
+frequencies** (§7e). Field-name bans: the Phase 5 shared betting-token
+list plus `recommendation`, `pick`, `tip`, `advice`; `value` is banned
+as a field name only — the `OptionalValue` type name and `.value`
+attribute access remain legitimate.
+
+**(e) The no-scoring boundary — evaluated n = 0; evidence begins at
+Phases 9/11 (A1/A3; continuity with §6 and §8g).**
+
+*Statement:* Phase 7 performs **zero scoring**: no log loss, no Brier,
+no RPS, no hit rate, no calibration, and no baselines — all of those
+belong to Phases 9 and 11 — and **the evaluated observation count in
+any report is exactly 0**. Until Phases 9/11 run, a report presents
+in-sample estimates only and measures nothing. Long-run
+home/draw/away frequency baselines are never baked into a report
+(§8b). The evaluation substrate is already complete (§8's frozen,
+write-once, hashed, pinned forecasts) and **Phase 7 adds nothing
+evaluation needs — stated here to kill the temptation to pre-score**;
+an AST/token guard over `app/decisions/**` asserts the **absence** of
+scoring vocabulary in the package's source, extend-not-weaken (future
+scoring terms join that guard, never leave it). Evidence begins at
+Phases 9 (chronological backtesting against baselines) and 11 (log
+loss, Brier, RPS, calibration against realized results) — §6's and
+§8g's boundary applied verbatim to reports.
+
+**(f) Honesty — a view of in-sample estimates, never new evidence
+(continuity of §9g).**
+
+*Statement:* **probabilities are estimates, not certainties** (§6):
+every number a report presents is an in-sample point estimate echoed at
+full precision from the §8 forecast or a §7 labeled hypothetical.
+**No pick, recommendation, tip, or advice framing ever**, including
+win-probability-as-pick; and nothing here is betting functionality
+(constitution prohibition 3): no odds, stakes, EV, Kelly, edge, value,
+or wager field or framing. **No accuracy claims:** `validated`,
+`accurate`, and `beating` are banned in reports — in code, docs, briefs,
+and report contents alike — until Phases 9/11 evidence exists (§6, §7f,
+§8g). The fixed **disclaimer rides every report**, stating that the
+numbers are in-sample analytic estimates on synthetic fixtures from a
+single fitted model, pending chronological evaluation (Phases 9/11),
+never evidence of accuracy; that **no second independent model exists
+so no cross-model agreement is claimed**; that scenario comparisons are
+labeled hypotheticals, side by side, never averaged or ensembled; and
+that probabilities are estimates, not certainties. §9g's anchor carries
+forward unchanged: *"historical summaries … not evidence"* — **a report
+is a view of in-sample estimates rendered from an existing forecast;
+rendering adds no evidence of any kind.** A well-formed, hash-verified
+report demonstrates provenance and determinism only — *normalized ≠
+accurate* (§6) applies verbatim to it — and the **synthetic-data caveat
+rides every report** (fictional league, hand-authored fixtures).
+
+*Phase-end verification (2026-10-19, docs step):* every constraint
+above is pinned by the shipped Phase 7 acceptance tests (criteria 1–17
+in `tests/test_decisions.py`, `tests/test_decisions_scenarios.py`,
+`tests/test_phase7_separation.py`; suite 120 passed, clean-env run):
+the signature and structurally-absent history surface (a); min/max-only
+spread with the arithmetic mean pinned absent from every record and the
+canonical payload (b); the exactly-two-names constants module (c); the
+vocabulary contract with word-boundary token and field-name scans (d);
+the scoring-token guard asserting absence, extend-not-weaken (e); and
+the fixed disclaimer plus the version-local golden report content hash
+`00929af76bb833b741db5ae038a08913321eed976d775e654c36094009224768`
+(f). Reports remain exactly what (a) declares them: in-process,
+unstored, deterministic re-derivable views of frozen §8 forecasts.

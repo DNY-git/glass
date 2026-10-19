@@ -453,12 +453,12 @@ def test_no_betting_surface_tokens_in_forecasts_and_api() -> None:
 
 
 def test_hygiene_amendments_pinned_and_full_tree_scan_clean() -> None:
-    # Criterion 25: AMENDMENT A1 pinned — exactly eleven keys; the seven
+    # Criterion 25: AMENDMENT A1 pinned — exactly twelve keys; the seven
     # legacy values are exactly the Phase 1-4 sets (append-only
     # protection); the three Phase 5 values exactly as sanctioned; the
     # A2 relocation exactly the declared exception map — with probes
-    # pinning both directions; AMENDMENT A3 (Phase 6) sets 10 -> 11 for
-    # the app.features entry — and a clean relocated scan proves nothing relaxed.
+    # pinning both directions; AMENDMENT A3, Phase 7, sets 11 -> 12 for
+    # app.decisions after Phase 6's 10 -> 11 (app.features) — scan still clean.
     expected_legacy: dict[str, set[str]] = {
         "app": set(),
         "app.domain": {"app.domain"},
@@ -468,12 +468,13 @@ def test_hygiene_amendments_pinned_and_full_tree_scan_clean() -> None:
         "app.scenarios": {"app.domain", "app.models", "app.scenarios"},
         "app.simulation": {"app.models", "app.scenarios", "app.simulation"},
     }
-    assert len(hygiene.ALLOWED_APP_IMPORTS) == 11
+    assert len(hygiene.ALLOWED_APP_IMPORTS) == 12
     assert set(hygiene.ALLOWED_APP_IMPORTS) == set(expected_legacy) | {
         "app.forecasts",
         "app.storage",
         "app.api",
         "app.features",
+        "app.decisions",
     }
     for package, allowed in expected_legacy.items():
         assert hygiene.ALLOWED_APP_IMPORTS[package] == allowed

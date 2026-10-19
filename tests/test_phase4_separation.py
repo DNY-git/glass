@@ -785,14 +785,14 @@ def test_new_package_import_allowlists() -> None:
 
 
 def test_hygiene_amendment_entries_pinned_and_scan_clean() -> None:
-    # Criterion 19: AMENDMENT A1 pinned — exactly eleven keys (the seven
+    # Criterion 19: AMENDMENT A1 pinned — exactly twelve keys (the seven
     # Phase 1-4 values untouched, append-only protection; AMENDMENT A3,
-    # Phase 5, sanctioned 7 -> 10 for three dictionary-coverage entries;
-    # AMENDMENT A2, Phase 6, sanctions 10 -> 11 the same way: app.features
-    # dictionary coverage + its PURE_PACKAGES strengthening), the two
-    # Phase 4 values exactly as sanctioned; and hygiene.scan_file over
-    # every .py under app/ completes with zero violations and no KeyError
-    # — proof the amendment closed the coverage gap without relaxing any check.
+    # Phase 5, sanctioned 7 -> 10; AMENDMENT A2, Phase 6, 10 -> 11 for
+    # app.features + its PURE_PACKAGES strengthening; AMENDMENT A2,
+    # Phase 7, 11 -> 12 for the app.decisions entry + PURE_PACKAGES),
+    # the two Phase 4 values exactly as sanctioned; and hygiene.scan_file
+    # over every .py under app/ completes with zero violations and no
+    # KeyError — proof no amendment relaxed any check.
     expected_legacy: dict[str, set[str]] = {
         "app": set(),
         "app.domain": {"app.domain"},
@@ -800,7 +800,7 @@ def test_hygiene_amendment_entries_pinned_and_scan_clean() -> None:
         "app.ingestion": {"app.domain", "app.validation", "app.ingestion"},
         "app.models": {"app.domain", "app.models"},
     }
-    assert len(hygiene.ALLOWED_APP_IMPORTS) == 11
+    assert len(hygiene.ALLOWED_APP_IMPORTS) == 12
     assert set(hygiene.ALLOWED_APP_IMPORTS) == set(expected_legacy) | {
         "app.scenarios",
         "app.simulation",
@@ -808,6 +808,7 @@ def test_hygiene_amendment_entries_pinned_and_scan_clean() -> None:
         "app.storage",
         "app.api",
         "app.features",
+        "app.decisions",
     }
     for package, allowed in expected_legacy.items():
         assert hygiene.ALLOWED_APP_IMPORTS[package] == allowed

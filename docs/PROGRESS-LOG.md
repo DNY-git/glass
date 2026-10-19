@@ -563,7 +563,7 @@ No phases completed yet. (Update: Phase 1 committed at 45ed27e — 2026-10-16.)
   The docs agent then replaces PENDING in docs/ROADMAP.md with 44b43ea
   and flips ROADMAP Phase 5 `in progress` → `committed`.
 
-## 2026-10-19 — Phase 6 (Feature engine) — built, reviewed PASS (first pass); checkpoint PENDING
+## 2026-10-19 — Phase 6 (Feature engine) — built, reviewed PASS (first pass); checkpoint cfde3a6
 
 - Built (per docs/briefs/phase-6.md — the reconciled 214-line version,
   criteria 1–21, developer answers all "a", glass-quant rulings F1–F7,
@@ -729,7 +729,191 @@ No phases completed yet. (Update: Phase 1 committed at 45ed27e — 2026-10-16.)
   per brief (refused: numpy/pandas/scipy/scikit-learn or any
   numeric/ML stack, `random` under `app/features`, `sqlite3`/`http`
   exception map untouched at its two Phase 5 entries).
-- Checkpoint hash: **PENDING** — glass-git records the real hash at
-  the Phase 6 checkpoint (immediately after this docs step); PENDING
-  is then replaced with that hash here and in docs/ROADMAP.md, and
-  ROADMAP Phase 6 `in progress` → `committed` flips with it.
+- Checkpoint hash: **cfde3a6** (full hash
+  cfde3a67bc513890115106b2b774515e1735d4e6; "phase 6: chronological
+  feature engine, versioned specs, availability statuses"; 20 files,
+  +3045/−82; 103 passed in 61.90s in the pre-commit clean-env run).
+  The docs agent then replaces PENDING in docs/ROADMAP.md with cfde3a6
+  and flips ROADMAP Phase 6 `in progress` → `committed`.
+
+## 2026-10-19 — Phase 7 (Decision analysis) — built, reviewed PASS (first pass); checkpoint PENDING
+
+- Built (per docs/briefs/phase-7.md, criteria 1–18, design decisions
+  1–13, glass-quant rulings A1–A8, developer answer Q1 = a, declared
+  amendments A1–A4):
+  - `app/decisions/` — pipeline stage 8 DECISION ANALYSIS, **pure**
+    (stdlib `{__future__, dataclasses, typing, enum, json, hashlib}` +
+    `app.domain`/`app.models`/`app.forecasts`/`app.scenarios`/
+    `app.decisions` only; in `PURE_PACKAGES` per A1; **no
+    `app.features`** — Phase 6 criterion 17's pin stays green; **no
+    `app.simulation`** — never imported; no `os`/`sys`/`pathlib`/
+    `io`/`time`/`random`/`sqlite3`/`http`; no wall clock, no I/O, no
+    environment lookups), five modules, 522 lines:
+    - `constants.py` — **exactly two** module-level names:
+      `REPORT_VERSION = "decision-report-v1"` (developer answer Q1 =
+      a) and the fixed `DISCLAIMER` (in-sample analytic estimates,
+      single fitted model, synthetic-fixture caveat, pending Phases
+      9/11, not-evidence-of-accuracy, the no-second-independent-model /
+      never-averaged-or-ensembled clause, estimates-not-certainties) —
+      **no threshold, knob, or decision rule exists anywhere in the
+      package** (A6 position; criterion 1 pins the two-name module).
+    - `canonicalization.py` — the package's **own** spec of record
+      (keys sorted, fixed separators, `ensure_ascii=True`, no trailing
+      newline, floats via shortest round-trip repr, enums as `.value`,
+      tuples as arrays; no timestamp/path/env/seed/MC quantity in the
+      payload); no import crosses the stage boundary;
+      `app/forecasts/canonicalization.py` untouched.
+    - `record.py` — frozen **28-field** `DecisionReport` plus nested
+      frozen `ScenarioComparison` (8 fields) and `ScenarioSpread` (4
+      fields); `content_hash` computed at construction (`init=False`);
+      flags top-level; `kickoff` MISSING never defaulted.
+    - `builder.py` — `build_decision_report(forecast, *,
+      scenarios=())`: **no `matches`, no time-like parameter**
+      (criterion 1 signature pin; the forecast's cutoff was enforced
+      once, inside `build_forecast` — a renderer of frozen bytes sees
+      no history, so no new leakage surface); `TypeError` on a
+      non-`Forecast`; `scenarios` keyword-only; scenario **baseline
+      refusal by frozen value equality** and **duplicate-label
+      refusal** (`ValueError`, mirroring Phase 4); canonical entry
+      order by label (shuffled input ⇒ field-for-field identical
+      report incl. hash); **analytic `outcome_probs` only** via the
+      one cell-math path (`scenario_matrix` + `outcome_probs`), never
+      MC frequencies; per-outcome `min()`/`max()`/spread **only** —
+      no mean/sum/ensemble anywhere (criterion 9 pins the computed
+      mean's absence); provenance chains through echoed
+      `forecast_version` + `forecast_content_hash`.
+  - **Zero-scoring / zero-persistence boundary:** reports are
+    **in-process VIEWS** — no sqlite table, no `SCHEMA_VERSION` bump
+    (still exactly 1), no API route, no CLI; nothing outside
+    `app/decisions/` imports the package (AST-enforced both
+    directions, criterion 15); `git diff cfde3a6` over
+    `app/domain app/models app/forecasts app/scenarios app/simulation
+    app/features app/storage app/api app/ingestion app/validation` →
+    **empty, exit 0** (docs-agent verified this step); **evaluated n =
+    0 — zero scoring ships** (log loss/Brier/RPS/hit rate/calibration/
+    baselines all belong to Phases 9/11; a word-boundary token guard
+    over `app/decisions/**` asserts their absence, extend-not-weaken).
+  - Tests (criteria 1–17 mapped 1:1 in three **NEW** files, 17 new;
+    each compacted to exactly 440 lines): `tests/test_decisions.py`
+    (7), `tests/test_decisions_scenarios.py` (5),
+    `tests/test_phase7_separation.py` (5). Version-local golden report
+    content hash
+    `00929af76bb833b741db5ae038a08913321eed976d775e654c36094009224768`
+    (forecast pair 2024-08-31 Coralgate Athletic vs Harbourlight
+    Comets; forecast hash `53df65d1…`; two labeled scenarios
+    `home-sharper`/`away-leakier`; derivation in comments; re-derive
+    on change, **never widen**).
+  - Declared amendments (all pre-sanctioned in the brief; declared at
+    checkpoint, review, and monitor sweep): **A1** —
+    `tests/test_fixtures_and_hygiene.py` **624 → 625** (net +1):
+    exactly one `ALLOWED_APP_IMPORTS` entry
+    `{"app.decisions": {"app.domain", "app.models", "app.forecasts",
+    "app.scenarios", "app.decisions"}}` plus a line-neutral,
+    strictly-stronger `PURE_PACKAGES` edit to the four-set
+    `{"app.domain", "app.validation", "app.features", "app.decisions"}`
+    (newly bans `os`/`sys`/`pathlib`/`io` in `app/decisions` — the
+    strength that makes criterion 15's probes fire); **A2** —
+    `tests/test_phase4_separation.py` key-set pin 11 → 12, **832 →
+    833**; **A3** — `tests/test_phase5_separation.py` criterion-25 pin
+    11 → 12, **572 → 573**; **A4** — `tests/test_phase6_separation.py`
+    pins updated **in place** (12-key union incl. `app.decisions`,
+    `PURE_PACKAGES` four-set, source-string pins now `== 12` and
+    strengthened to exclude **both** `== 10` and `== 11`), **510 →
+    510**. All four verified by `wc -l` this docs step; every legacy
+    assertion retained in all four files (strictly stronger, never a
+    weakening).
+- **Process record (recorded honestly):** the first build session was
+  **interrupted by a server restart mid-work**; a second session
+  completed the phase. The three new test files were compacted to 440
+  lines each **by comment/docstring condensation only**; the reviewer
+  audited the compaction against the brief's criteria 1–17 mapping and
+  confirmed **no probe dropped** — catching and restoring two
+  accidental deletions in the process. **Zero self-declared deviations
+  remained after the resume** (A1–A4 exactly as pre-sanctioned).
+- Docs (this step): `docs/STATISTICAL-ASSUMPTIONS.md` §10 flipped from
+  pre-build SPECIFICATION to implemented-and-tested reality (§1–§9
+  untouched; **single hunk confined to §10** — verified `git diff |
+  grep -c '^@@'` → 1, +189/−0 starting after §9), including the
+  phase-end verification paragraph pinning every §10 constraint to the
+  shipped tests; `docs/KNOWN-LIMITATIONS.md` new Phase 7 section (13
+  entries: ephemeral unstored in-process views; evaluated n = 0, zero
+  scoring; no thresholds by design (A6); anti-ensemble min/max only +
+  no second independent model exists; scenario comparisons are labeled
+  hypotheticals; flag-vs-plausible tension presented, never judged;
+  disclaimer wording pinned by test = contract bump; synthetic +
+  in-sample caveats ride every report; estimate-properties only, no
+  pick-shaped field; amendments A1–A4 exact figures; and the three
+  tester/reviewer note dispositions — the `\b` word-boundary scoring-
+  guard note, the A2/A3 amendment-number collision note, and the
+  interruption-compaction audit) plus the "Not yet applicable" refresh
+  (decision reports now exist; stages 3, 9–10 and evaluation still do
+  not); `docs/ARCHITECTURE.md` (stage 8 exists; `app/decisions/`
+  instantiated — pure, in-process views over frozen forecasts,
+  currently unconsumed, never stored; module table, tree, and
+  instantiation status updated; "PLANNED" markers retired);
+  `README.md` (Phase 7, 120 tests, clean-env note + offline lo-up
+  form, all six block hashes); `docs/PLAN.md` §2 `decisions/` line
+  planned → EXISTS (Phase 7), **nothing else**; `docs/ROADMAP.md`
+  (Phase 7 `in progress`, PENDING-hash convention; **block table
+  byte-identical; Block 2 acceptance row untouched; NO Block 3
+  acceptance row — that is the developer's at the Phases 7–9
+  boundary**). The three protocol records (docs/HEALTH-LOG.md,
+  docs/PROGRESS-LOG.md, docs/ROADMAP.md — monitor finding 1,
+  **including the Block 2 row**) and the phase brief must ride the
+  Phase 7 checkpoint commit.
+- Suite: `env -u PYTEST_ADDOPTS .venv/bin/python -m pytest -q` →
+  **`120 passed in 152.76s`** (0 failed, 0 skipped, 0 xfailed) — this
+  docs run (2026-10-19, machine load elevated); recorded range this
+  phase ~61–153 s (tester runs 80.04 s and 73.82 s; reviewer runs
+  134.14 s and 145.19 s; offline run 128.55 s). 103 prior + 17 new;
+  criterion 18 (suite gate) verified by recorded direct runs (tester,
+  reviewer ×2, monitor-to-come).
+- Offline protocol record (docs-agent run, 2026-10-19): `unshare -rn
+  bash -c 'ip link set lo up && env -u PYTEST_ADDOPTS .venv/bin/python
+  -m pytest -q'` → **120 passed in 70.49s** (the working offline
+  lo-up form; a plain `unshare -rn` still fails the six localhost API
+  tests — harness artifact, not a bug, Phase 6 item 11).
+- Health (docs run, `bash scripts/health-check.sh`, 2026-10-19): ran
+  to completion; compile clean; inner pytest runs **`117 passed, 3
+  deselected`** (11.41 s and 11.25 s); skips/xfails `none`;
+  determinism **`OK: 117 passed, 3 deselected`**; pip check clean
+  ("No broken requirements found."); full invocation **59.09 s** —
+  ample headroom under the A2-standing 300 s health-test valve.
+- Measured facts (docs agent, real runs this step): signature exactly
+  `(forecast, *, scenarios=())` (no `matches`/time parameter);
+  `DecisionReport` = 28 fields; the constants module = exactly
+  `{REPORT_VERSION, DISCLAIMER}`; `app.simulation` never imported by
+  `app/decisions` (module-load probe); the golden hash reproduces via
+  the suite pin; `wc -l`: 625 / 833 / 573 / 510 (amended files) and
+  440 / 440 / 440 (new files); `app/decisions/` = 522 lines.
+- Review history: tester verdict **PASS ×18** — golden content hash
+  `00929af7…` independently re-derived, scenario deltas bit-exact,
+  plus an offline suite run; reviewer verdict **PASS (2026-10-19,
+  first pass, criteria 1–18)** including the interruption-compaction
+  audit (no probe dropped; two accidental deletions caught and
+  restored). Both non-blocking observations (the `\b` word-boundary
+  scoring-guard note; the A2/A3 amendment-number collision note) ruled
+  **DOCS-level** and dispositioned in KNOWN-LIMITATIONS Phase 7 items
+  11–12.
+- **glass-quant was consulted** for this phase (mandatory, brief;
+  run at conductor top level, 2026-10-19): rulings **A1–A8 binding**,
+  no-objections recorded — prospective report **structure** over
+  frozen outputs; the signature without `matches`/time; the
+  absence-of-scoring blocker criterion; the vocabulary contract; the
+  unstored frozen report with provenance chain; **no thresholds**
+  (position, not default); the IX-7 out-of-scope list; and the
+  evaluation substrate already complete — nothing to pre-score.
+- **Developer answered Q1 = a (2026-10-19, recorded at brief
+  hand-off):** `REPORT_VERSION = "decision-report-v1"`; the three
+  structural questions resolved by brief positions (storage = none,
+  thresholds = none, features-consumer = no).
+- pytest unchanged: 9.1.1; Python 3.12.3; stdlib-only dependencies
+  per brief (refused: numpy/pandas/scipy/scikit-learn or any
+  numeric/ML stack, any third-party package, `random` under
+  `app/decisions`, `app.simulation`, `sqlite3`/`http` exception map
+  untouched at its two Phase 5 entries).
+- Checkpoint hash: **PENDING** (glass-git records the real hash at
+  the Phase 7 checkpoint, immediately after this docs step; the docs
+  agent then replaces PENDING here and in docs/ROADMAP.md with that
+  hash and flips ROADMAP Phase 7 `in progress` → `committed`, as in
+  Phases 4–6).
