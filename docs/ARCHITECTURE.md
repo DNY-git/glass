@@ -1,6 +1,6 @@
 # ARCHITECTURE — SPORTS LOOKING GLASS
 
-Status as of 2026-10-22 (Phase 9): **pipeline stages 1–2, 4–8 and the
+Status as of 2026-10-22 (Phases 9–10): **pipeline stages 1–2, 4–8 and the
 cross-cutting layers exist** — `app/domain/` (immutable models,
 match collection, canonical state), `app/ingestion/` (stage 1 DATA),
 `app/validation/` (stage 2 VALIDATION), `app/features/` (stage 4
@@ -45,7 +45,18 @@ at that phase. Phase 9 (Backtesting, HANDOFF Part IX item 9) added
 535 lines) and nothing
 else under `app/`; `app/evaluation/` remains **PLANNED** (Phase 11's)
 — the one-line prediction-to-outcome join deliberately does not exist
-yet. `app/state/` (stage 3 PRE-MATCH STATE)
+yet. Phase 10 (Operational reliability, HANDOFF Part IX item 10)
+added **no module**: tests + documentation only —
+`tests/test_operational.py` (NEW, 8 tests), the architect-sanctioned
+AMENDMENT-A1 rework of `scripts/health-check.sh`, and the
+AMENDMENT-A2 two-line valve edit in `tests/test_health_script.py` —
+**zero production code under `app/`** at that phase; the health script
+now makes **three inner pytest executions with capture-once
+derivation** (five until Phase 10 — every check preserved, only
+redundant executions eliminated) and its compile checks cover
+`app` + `tests`; `app/improvement/` (stage 10) remains **PLANNED** —
+Phase 10 is HANDOFF Part IX item 10, not pipeline stage 10.
+`app/state/` (stage 3 PRE-MATCH STATE)
 remains **planned**: stage 4
 legitimately precedes stage 3 per roadmap order, features compute
 directly from match history plus domain types, and no dependency on
@@ -136,10 +147,10 @@ verb, routers containing no logic.
     │   ├── evaluation/          # PLANNED — stage 9: log loss, Brier, RPS (Phase 11's)
     │   ├── improvement/         # PLANNED — stage 10: protected tuning loop
     │   └── api/                 # EXISTS (Phase 5) — read-only stdlib http.server on 127.0.0.1; no logic, no generation
-    ├── tests/                   # EXISTS (Phase 9): 147 tests, 1:1 with criteria
+    ├── tests/                   # EXISTS (Phase 10): 155 tests, 1:1 with criteria
     ├── fixtures/                # EXISTS (Phase 2): synthetic OpenFootball-shaped JSON
     ├── data/                    # NOT CREATED — git-ignored working data; the DB path is caller-passed, no data/ dir in-repo
-    ├── scripts/health-check.sh  # EXISTS (bootstrap + Phase 1 recursion guard)
+    ├── scripts/health-check.sh  # EXISTS (bootstrap + Phase 1 recursion guard + Phase 10 A1 rework: 3 inner runs, capture-once derivation; compile covers app + tests)
     ├── README.md                # EXISTS
     └── docs/                    # EXISTS: HANDOFF, ROADMAP, PLAN, PROGRESS-LOG,
                                  # HEALTH-LOG, ARCHITECTURE, KNOWN-LIMITATIONS,
@@ -163,7 +174,7 @@ verb, routers containing no logic.
 | `app/backtesting/` (constants.py, canonicalization.py, record.py, baselines.py, harness.py + `__init__.py`; 535 lines) | Exists (Phase 9) — IX-9 **machinery only, still no metrics**: single public `matches`-parameter function exactly — `run_walk_forward(matches, *, fixture_file_sha256s=(), interpreter_version=None)` (no spec/config/variant/seed knob — the single-model-spec surface is pinned closed) — canonical-chronological targets (`canonical_sort_key`), per-target `Fixture` re-derived as natural key + **kickoff echo** (never the score), pool = matches minus the target, `ValueError` → first-class `RefusalRecord` (`REFUSED_NO_PRE_CUTOFF_HISTORY` — **60 targets = 3 refusals + 27 flagged + 30 clean = 57 predictions**, auditable, never skipped/uniformed); underscore-private chronological baselines in `baselines.py` (the ONLY realized-score consumer: strictly `date < fixture.date`, uniform weighting, MISSING `n = 0` at the first date's three fixtures, **never stored**, in-process re-derivable); frozen `WalkForwardRun`/`BaselineRecord`/`RefusalRecord`/`RunManifest` with construction-time content hashes; version-local golden run digest (re-derive, never widen); double-run + store-level idempotence via the CALLER's `insert_forecast` into a caller-passed DB; own canonicalization spec of record; pure — stdlib + `app.domain`/`app.forecasts` only, **no `app.storage` import**, in `PURE_PACKAGES` (AST-enforced); **no prediction-to-outcome join, no metric of any kind — evaluated n = 0**; **consumed by nothing under `app/`** — the first consumer (scoring) is Phase 11's |
 | `app/simulation/` (constants.py, simulate.py) | Exists (Phase 4) — **cross-cutting Monte Carlo module, not one of the ten pipeline stages**: `simulate(fitted, home, away, *, seed, n_sims=10_000, scenario=None)` with required keyword-only int `seed` (fresh `random.Random(seed)` per call, `random()`-only draws, categorical sampling over the truncated renormalized matrix), frozen `SimulationResult` (raw counts, exact `analytic_outcome`, `mc_stderr` = simulation noise only, dropped mass, flags riding through); `SIM_VERSION = "sim-categorical-v1"`; **the only module permitted to import `random`** (AST-enforced with probes); refuses a scenario whose baseline ≠ the given fitted object (value equality) |
 | `fixtures/openfootball/` (3 synthetic JSON files) | Exists (Phase 2) — 60 valid matches + 12-record defect sample, fictional teams, `"synthetic": true` marker |
-| `pytest.ini`, root `conftest.py`, `tests/` (25 modules, 147 tests), `scripts/health-check.sh` | Exists (Phases 1–9) |
+| `pytest.ini`, root `conftest.py`, `tests/` (26 modules, 155 tests), `scripts/health-check.sh` | Exists (Phases 1–10; health-check.sh reworked at Phase 10 by AMENDMENT A1 — three inner pytest executions with capture-once derivation, five until Phase 10, every check preserved; compile checks extended `app` → `app tests`) |
 | `.venv/` (Python 3.12.3, pip 26.2.1, pytest 9.1.1) | Exists, git-ignored |
 | `data/` | **Not created** — git-ignored working data; the sqlite DB path is caller-passed (storage tests use `tmp_path` exclusively), no `data/` directory is created in-repo (Phase 5 brief design decision 1) |
 | Remaining `app/` subpackages (state, evaluation, improvement) | **Do not exist — planned, phase by phase** (stage 4 `features` removed from this list at Phase 6 — it exists; stage 8 `decisions` removed at Phase 7 — it exists; the stage-9 backtesting harness removed at Phase 9 — `app/backtesting/` exists; `app/evaluation/` stays — Phase 11's) |

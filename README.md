@@ -15,9 +15,29 @@ history, never the current state of this repository.
 
 ## Current state
 
-**Phase 9 (Backtesting): built and reviewed (PASS, 2026-10-22, first
-pass, criteria 1–15, after tester PASS ×15); checkpoint pending.**
-HANDOFF Part IX item 9 ships as a **pure `app/backtesting/` package**
+**Phase 10 (Operational reliability), built and reviewed (PASS,
+2026-10-22, first pass, criteria 1–9, after tester PASS); checkpoint
+pending.** HANDOFF Part IX item 10 ships as **tests + documentation
+only** — zero production code (`git diff 80b8f79 -- app/` empty; no
+new `app/` package) — as: the architect-sanctioned **health-script
+run-structure rework** (AMENDMENT A1: five inner pytest executions →
+three with capture-once derivation; **every check preserved**, only
+redundant executions eliminated — the check-preservation mapping
+verified row by row; compile checks extended `app` → `app tests`),
+the **evidence-based downward valve re-tune** (AMENDMENT A2:
+health-test timeout **1500 → 800 s**, two in-place lines, no assertion
+changed — 800/335 ≈ 2.39× the worst post-restructure script wall at
+load 10.06, inside the pre-declared [2.3, 2.5] band), and TEST-ONLY
+error-handling tests pinning the real sqlite behavior (a corrupted or
+truncated store fails **loudly** with `sqlite3.DatabaseError` at the
+first read, never silently; an interrupted multi-insert batch leaves
+prior rows intact with zero partial row). **155 tests. Evaluated n
+remains exactly 0; no wall-clock SLA is promised anywhere.** See
+`docs/KNOWN-LIMITATIONS.md` Phase 10 for the honest list, including
+the declared amendments A1/A2.
+
+**Phase 9 (Backtesting), committed at 80b8f79** — HANDOFF Part IX
+item 9 ships as a **pure `app/backtesting/` package**
 (six modules, 535 lines) — the strictly chronological **machinery**
 with **still no metrics**: one public walk-forward harness,
 `run_walk_forward(matches, *, fixture_file_sha256s=(),
@@ -151,13 +171,14 @@ maximum likelihood inside `fit` (cutoff enforced inside the
 calculation), with analytic scoreline matrices (truncation mass always
 reported) and outcome probabilities exact under any truncation.
 Deterministic and stdlib-only by construction (no third-party
-dependency ships). Phases 1–8 are committed at **45ed27e**
+dependency ships). Phases 1–9 are committed at **45ed27e**
 (Foundation), **1c5067b** (Domain and data), **a5d7f56** (Core
 statistics), **f208e43** (Simulation and scenarios), **44b43ea**
 (Forecasts and API), **cfde3a6** (Feature engine), **1e1c1ac**
-(Decision analysis), and **ea92667** (Temporal integrity). The local,
+(Decision analysis), **ea92667** (Temporal integrity), and **80b8f79**
+(Backtesting). The local,
 offline, deterministic test loop is
-operational: 147 tests, all green. See `docs/ROADMAP.md` for phase
+operational: 155 tests, all green. See `docs/ROADMAP.md` for phase
 status and `docs/PROGRESS-LOG.md` for the record.
 
 ## Requirements
@@ -199,18 +220,22 @@ From the repository root:
 .venv/bin/python -m pytest -q
 ```
 
-Verified output (2026-10-22, Phase 9 docs run, clean environment —
+Verified output (2026-10-22, Phase 10 docs run, clean environment —
 `env -u PYTEST_ADDOPTS .venv/bin/python -m pytest -q`):
-`147 passed in 723.04s (0:12:03)` (machine load ~11). Zero skips, zero
+`155 passed in 149.60s (0:02:29)` (machine load 9.67 at invocation).
+Zero skips, zero
 xfails — no test in this suite
-may use skip or xfail (constitution). **Runs take roughly 11 minutes
-at load ~10** — the health test spawns the health script, which runs
-the non-health suite five times internally, and Phase 9's backtesting
+may use skip or xfail (constitution). **Runs take roughly 2–8 minutes
+depending on machine load** (recorded this phase 118–514 s at load
+~0.97–12 on 4 cores — a load-driven watch item; outcomes identical
+across every recorded execution) — the health test spawns the health
+script, which runs
+the non-health suite three times internally (Phase 10's
+run-structure rework: five inner runs → three, every check
+preserved), and the backtesting
 tests execute the full 60-target walk-forward harness ~8 times per
 suite run (full harness everywhere — no subsetting, no test-side
-timeout). Run time varies with machine load (recorded this phase
-roughly 647–750 s at load ~9.5–12.7 on 4 cores — a load-driven watch
-item; outcomes identical across every recorded execution). If your
+timeout). If your
 shell
 inherits a stray `PYTEST_ADDOPTS` (e.g. from
 a health-script environment), unset it as
@@ -223,7 +248,8 @@ Fully offline verification (e.g. under a fresh network namespace):
 unshare -rn bash -c 'ip link set lo up && env -u PYTEST_ADDOPTS .venv/bin/python -m pytest -q'
 ```
 
-Verified (Phase 9, recorded offline run): `147 passed in 867.88s`. The
+Verified (Phase 10, recorded offline run): `155 passed in 502.50s`
+(machine load 9.80). The
 loopback step is
 required — a plain `unshare -rn` (interface down) fails the six
 localhost-binding API tests with `OSError`; that is a namespace-harness
@@ -238,26 +264,30 @@ From the repository root:
 bash scripts/health-check.sh
 ```
 
-Verified (Phase 9, recorded runs of this phase): ran to completion
-(script wall ~627 s
-at machine load ~10); compile clean; its own pytest invocations report
-`144 passed, 3 deselected` (117 s and 131 s in the recorded runs — both
-over 60 s, which is the Phase 9 AMENDMENT A4 strip-fix's positive
-proof: pre-A4 the determinism section compared those identical counts
-as `MISMATCH` because the old regex did not strip pytest's
-`(0:MM:SS)` wall-clock parenthetical on runs ≥ 60 s): the script
+Verified (Phase 10, recorded runs of this phase): ran to completion
+(script wall 238–335 s
+at machine load ~6.5–10.7; the pre-rework five-run script wall was
+~627 s at load ~8.9–10.4); compile clean (now covering `app` and
+`tests`); its own pytest invocations report
+`149 passed, 6 deselected` — the 6 deselected are the 3 health tests
+plus the 3 `tests/test_operational.py` source pins whose names contain
+`health_script`, deselected on purpose by the recursion guard and
+executed in every direct suite run: the script
 exports a
 `PYTEST_ADDOPTS` recursion guard so its internal suite runs never
-re-execute the tests that spawn the script; those health tests run in
-the direct suite above; skips/xfails `none`; determinism comparison
-`OK: 144 passed, 3 deselected`; `pip check` clean ("No broken
-requirements found."). Expect roughly ten minutes at load ~10 — the
-script runs the non-health suite five times internally. The health
-test's timeout valve was re-scoped **300 s → 1500 s** by the Phase 9
-AMENDMENT A4 (evidence-based, after the valve tripped during the
-Phase 9 build at load ~11; the script's five-inner-run rework remains
-Phase 10's — see `docs/KNOWN-LIMITATIONS.md` Phase 1 item 2 and Phase
-9 item 11).
+re-execute the tests that spawn the script; skips/xfails `none`;
+determinism comparison
+`OK: 149 passed, 6 deselected`; `pip check` clean ("No broken
+requirements found."). Expect roughly **four to six minutes** — the
+script runs the non-health suite three times internally (the Phase 10
+AMENDMENT A1 rework: five inner runs → three with capture-once
+derivation; every check preserved, only redundant executions
+eliminated). The health
+test's timeout valve was re-scoped **1500 s → 800 s** by the Phase 10
+AMENDMENT A2 (evidence-based DOWN-tune: 800 ≈ 2.39× the worst
+post-restructure script wall, 335 s at load 10.06 — see
+`docs/KNOWN-LIMITATIONS.md` Phase 1 item 2 and Phase
+10).
 
 Important: by design (no `set -e`, so one failing check cannot abort the
 sweep) the health script prints failures but still exits 0. It is a
@@ -273,7 +303,7 @@ run of `.venv/bin/python -m pytest -q` (Phase 1 criterion 10). See
     │                            # api/, scenarios/, simulation/, features/,
     │                            # decisions/, backtesting/
     ├── fixtures/                # synthetic OpenFootball-shaped JSON (Phase 2)
-    ├── tests/                   # 147 tests, 1:1 with acceptance criteria
+    ├── tests/                   # 155 tests, 1:1 with acceptance criteria
     ├── scripts/health-check.sh  # mechanical health sweep
     ├── pytest.ini               # testpaths=tests, --strict-markers
     ├── conftest.py              # repo root importability for bare pytest

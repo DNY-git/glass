@@ -4,7 +4,8 @@ The honest list. Updated every phase (constitution; HANDOFF Part IX item
 13 formalizes this at Phase 13, but the discipline starts now). Nothing
 here is hidden behavior — each item is also recorded where it was found.
 
-Entry below reflects the state as of Phase 9 (Backtesting), 2026-10-22.
+Entry below reflects the state as of Phase 10 (Operational
+reliability), 2026-10-22.
 
 ## Phase 1
 
@@ -85,6 +86,37 @@ Entry below reflects the state as of Phase 9 (Backtesting), 2026-10-22.
    stands for any future trip: evidence-based re-scope in the
    responsible phase's brief, never a weakened, skipped, or xfailed
    test.
+   **Update 2026-10-22 (Phase 10 — AMENDMENT A2, the third exercise of
+   the standing re-scope clause, this time DOWN with fresh
+   post-restructure evidence; prior figures above kept as measured,
+   nothing rewritten).** The full valve chain is now **120 → 300 →
+   1500 → 800 s**, each step a named amendment: **120 → 300 s** by
+   AMENDMENT A2 (Phase 4, after the first predicted trip — evidence
+   and record in this item's 2026-10-17 update); **300 → 1500 s** by
+   AMENDMENT A4 (Phase 9, after the trip the conductor reproduced
+   verbatim — record in this item's 2026-10-22 A4 update); **1500 →
+   800 s** by AMENDMENT A2 (Phase 10) — the standing clause's first
+   DOWNWARD re-scope, taken because the architect-sanctioned A1
+   run-structure rework (Phase 10 item 2 below; full record in
+   `docs/briefs/phase-10.md`) cut the script's inner pytest
+   executions 5 → 3 and halved its measured wall. Exactly two
+   in-place edits in `tests/test_health_script.py` (the
+   `HEALTH_TIMEOUT_S` constant and the matching docstring figure —
+   **105 → 105 lines, no assertion changed**). Evidence, per the
+   brief's pre-declared decision-6 procedure, with every
+   health-script execution of the Phase 10 window recorded with wall
+   time and invocation-start load: builder 317 s at load 9.79, 322 s
+   at load 8.96, 335 s at load 10.06; reviewer 332.43 s at load
+   10.09; tester standalone 238.34 s at load 10.71. W = **335 s**
+   (worst post-restructure wall at load ≥ 8); V = 800 s gives
+   **800/335 ≈ 2.39×**, inside the pre-declared [2.3, 2.5] band (the
+   A2 comment's at-A2-time figure 322 s gives 2.48× — both in band);
+   rejected bounds (700 = 2.09× under band; 750 margin-fragile,
+   eroding to 2.24× at the final W; 850 = 2.54× over band; keeping
+   1500 = 4.48×, not evidence-proportional) recorded in
+   `docs/PROGRESS-LOG.md`. The trigger stands for any future trip:
+   evidence-based re-scope in the responsible phase's brief, never a
+   weakened, skipped, or xfailed test.
 
 3. **Criterion 7 header checks are substring-based** (tester finding G3).
    `test_health_script_runs_to_completion` asserts that the script's
@@ -113,6 +145,23 @@ Entry below reflects the state as of Phase 9 (Backtesting), 2026-10-22.
    concurrent load; Phase 1 idle-machine runs were 13–23 s). Harmless at
    current scale; if it becomes a bottleneck, a later brief must re-scope
    it — never weaken the test.
+   **Update 2026-10-22 (Phase 10 — the re-scope happened, by
+   architect-sanctioned amendment, not by weakening; prior figures
+   above kept as measured, nothing rewritten).** AMENDMENT A1 of the
+   Phase 10 brief reworked the health script's run structure (five
+   inner pytest executions → three, capture-once derivation; the full
+   record and check-preservation mapping are in Phase 10 item 2 and
+   `docs/briefs/phase-10.md`), cutting the **non-health-suite
+   executions per direct-suite cycle from 6 to 4** (inner executions
+   5 → 3; the determinism comparison still runs exactly two
+   identical-flag executions — nothing checked was dropped, only
+   redundant executions). Cost figures of record this phase, all
+   load-labeled: direct-suite clean-env runs **118–514 s at load
+   ~0.97–12** (outcomes identical every run: 155 passed); health-script
+   walls **238–335 s at load ~6.5–10.7** across the phase's recorded
+   executions (Phase 9's five-run script wall was ~627 s at load
+   ~8.9–10.4). No wall-clock SLA is promised anywhere — the figures
+   are load-driven records, never guarantees (Phase 10 item 7).
 
 ## Phase 2
 
@@ -1070,22 +1119,137 @@ Entry below reflects the state as of Phase 9 (Backtesting), 2026-10-22.
     the real app-wide scan find **10**; the shipped guard pins the real
     10 (`accuracy` is field-name-scoped only, never source-banned).
 
-## Not yet applicable (as of Phase 9)
+## Phase 10
+
+1. **Phase 10 is tests + documentation only — zero production code;
+   evaluated n remains exactly 0; no wall-clock SLA exists anywhere.**
+   `git diff 80b8f79 -- app/` exits 0 with empty output (verified by
+   the builder, tester, reviewer, and this docs step; pinned
+   version-locally by criterion 8's test), and no new `app/` package
+   exists. HANDOFF Part IX item 10 "Operational reliability" ships as
+   the health-script run-structure rework (AMENDMENT A1, item 2), the
+   evidence-based valve down-tune (AMENDMENT A2, item 4), TEST-ONLY
+   error-handling coverage (items 5–6), and the compile-checks strand
+   completed over `app` + `tests` (item 3). **Zero statistics ship** —
+   no model, forecast, baseline, or metric surface changed — which is
+   why `docs/STATISTICAL-ASSUMPTIONS.md` gained **no §13**: that
+   document holds statistical pre-registrations and implemented
+   statistical reality, and a section here would imply statistical
+   machinery where none ships (Phase 10 brief design decision 9;
+   §§1–12 untouched). `app/state/` (stage 3), `app/evaluation/`, and
+   `app/improvement/` (stage 10) all remain PLANNED; Phase 10 is
+   HANDOFF Part IX item 10, **not** pipeline stage 10.
+
+2. **The health script now makes three inner pytest executions, not
+   five — every CHECK preserved, only redundant EXECUTIONS eliminated
+   (AMENDMENT A1; the check-preservation mapping verified row by row
+   by the reviewer).** Run 1 (plain `-q --tb=no`, captured once) feeds
+   both its display tail and determinism SUM1; run 2 (`-rsxX`,
+   captured once) feeds its display tail and the skips/xfails grep —
+   absorbing the old separate skips run, whose flags were identical to
+   run 2's (pure duplication); run 3 (silent plain execution) yields
+   SUM2, keeping the determinism pair two identical-flag plain
+   executions with the Phase 9 A4 mechanism byte-verbatim
+   (counts-only strip, `COUNTS_RE`, loud `UNPARSEABLE`). All nine
+   section headers, the recursion guard, pip, five-largest, and
+   exit-0-by-design (Phase 1 item 1) are untouched. Load-independent
+   facts: inner pytest executions **5 → 3**; non-health-suite
+   executions per direct-suite cycle **6 → 4**; determinism comparison
+   executions **2 → 2** (unchanged); skips "none" gate present. After
+   A1 the script returns to do-not-modify status.
+
+3. **Compile checks now cover `tests/` as well as `app/` (sanctioned
+   extension, brief decision 8).** `compileall -q app tests` — stdlib,
+   seconds, quiet-on-success semantics unchanged; source-pinned by
+   criterion 3. This completes the IX-10 "compile checks" strand over
+   the whole repo Python surface.
+
+4. **The health-test valve is 800 s (AMENDMENT A2, Phase 10) — the
+   standing re-scope clause's third exercise and its first DOWNWARD
+   one; exactly two in-place lines, 105 → 105, no assertion changed.**
+   Fresh post-restructure evidence, every health-script execution of
+   the phase recorded with wall time and invocation-start load:
+   builder 317 s at load 9.79, 322 s at load 8.96, 335 s at load
+   10.06; reviewer 332.43 s at load 10.09; tester standalone 238.34 s
+   at load 10.71. W = **335 s** (worst post-restructure wall at
+   load ≥ 8), V = 800 s → **2.39×**, inside the brief's pre-declared
+   [2.3, 2.5] band (rejected bounds — 700 under band at 2.09×, 750
+   margin-fragile, 850 over band at 2.54×, keep-1500 at 4.48× not
+   evidence-proportional — recorded in `docs/PROGRESS-LOG.md`). The
+   valve is a hang-detection bound with evidence margin, hardware- and
+   load-local — **never a performance guarantee**; any future trip
+   re-scopes the mechanism with fresh evidence, never weakens, skips,
+   or xfails.
+
+5. **The corrupted-store and interrupted-batch tests pin the REAL
+   sqlite behavior — `sqlite3.DatabaseError`, NOT
+   `ForecastIntegrityError`; the pin is platform/sqlite-version-local
+   (golden-discipline rule).** A 4 KiB garbage-bytes DB and a real
+   one-row forecast DB truncated to its first 512 bytes both raise
+   `sqlite3.DatabaseError` at the FIRST read through the normal read
+   path (messages observed, not asserted: "file is not a database" /
+   "database disk image is malformed"). `ForecastIntegrityError` is
+   the structurally-valid-row content-hash-mismatch path — sqlite
+   presents a well-formed row and we recompute and disagree — a
+   different mechanism from sqlite being unable to present a row at
+   all. Re-probe on interpreter/sqlite change; never widen the pin to
+   bare `Exception`. The invariant under any loud type: raises — never
+   an empty tuple, never garbage, never a warning.
+
+6. **Interrupted multi-insert batch: journal atomicity pinned as
+   observed, zero production change — and the recursion-guard math
+   (N1).** A mid-batch `ForecastConflictError` (a `nextafter`-
+   perturbed duplicate-identity row) leaves prior rows intact, every
+   committed row hash-clean on `verify_all` in canonical order, and
+   **zero partial row for the failed insert** (raw count +
+   full-identity probe) — the observed property of
+   `insert_forecast`'s per-call `BEGIN IMMEDIATE` transaction with
+   rollback, pinned by test rather than "fixed" in code. N1
+   (tester), recorded: **155 direct = 149 passed + 6 deselected
+   inside script runs by the byte-pinned recursion guard** — the 3
+   health tests plus the 3 `tests/test_operational.py` source pins
+   whose names contain `health_script`; no check lost, and the pins
+   execute in every direct suite run (test-side harness subsetting
+   remains banned, E2).
+
+7. **Declared amendments A1/A2 — exact figures (brief pre-sanctioned;
+   declared at checkpoint, review, and monitor sweep).** **A1**:
+   `scripts/health-check.sh` **80 → 98 lines** — the entire file
+   replaced with the brief's AMENDMENT A1 text, byte-exact (re-verified
+   by diff at this docs step); the run-structure rework plus the
+   compile-tests extension, nothing else. **A2**:
+   `tests/test_health_script.py` exactly two in-place lines (the
+   `HEALTH_TIMEOUT_S` constant with its "AMENDMENT A2 (Phase 10)"
+   citation and the matching docstring valve figure), **105 → 105
+   lines**, no assertion changed. Every legacy assertion retained in
+   the health tests (strictly stronger, never a weakening). No figure
+   in this section is an SLA: suite and script runtimes this phase are
+   recorded in the protocol logs as load-labeled ranges only (direct
+   suite 118–514 s at load ~0.97–12; script walls 238–335 s at load
+   ~6.5–10.7), with outcomes identical across every recorded
+   execution (155 passed everywhere).
+
+## Not yet applicable (as of Phase 10)
 
 Forecast, storage, API, feature, decision-report, temporal-integrity,
-and backtesting limitations are now listable and listed above (pipeline
+backtesting, and operational-reliability limitations are now listable
+and listed above (pipeline
 stage 6 FORECAST DISTRIBUTIONS, its durable write-once sqlite store,
 the read-only serving surface, pipeline stage 4 FEATURE EXTRACTION —
 `app/features/` — pipeline stage 8 DECISION ANALYSIS —
 `app/decisions/` — Phase 8's temporal-integrity defenses — test-side,
-no module — and pipeline stage 9's backtesting machinery —
-`app/backtesting/`, pure, consumed by nothing under `app/` — all
+no module — pipeline stage 9's backtesting machinery —
+`app/backtesting/`, pure, consumed by nothing under `app/` — and
+Phase 10's operational-reliability content — the health script's
+3-run structure, the valve discipline, the corrupted-store and
+interrupted-batch pins — tests, script, and docs, no module — all
 exist). Still not yet listable: pre-match-state and model-improvement
 limitations — pipeline stages 3 and 10 are unbuilt (`app/state/` and
 `app/improvement/` remain PLANNED) — plus **evaluation limitations:
 `app/evaluation/` remains PLANNED (Phase 11's)**, and there are no
-pre-match snapshots and no evaluation metrics to mis-trust yet (Phase 9
-ships zero scoring — evaluated n = 0). "Temporal integrity" itself is
+pre-match snapshots and no evaluation metrics to mis-trust yet
+(Phases 9 and 10 ship zero scoring — evaluated n = 0). "Temporal
+integrity" itself is
 deliberately NOT listed here: Phase 8's defenses are shipped tests and
 documentation, listed above. Model-calibration and predictive
 limitations (as distinct from the in-sample assumptions above) arrive

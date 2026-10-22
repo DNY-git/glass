@@ -25,8 +25,8 @@ Developer acceptance is recorded per BLOCK, not per phase.
 | 6     | Feature engine                  | committed   |
 | 7     | Decision analysis               | committed   |
 | 8     | Temporal integrity              | committed   |
-| 9     | Backtesting                     | in progress |
-| 10    | Operational reliability         | planned   |
+| 9     | Backtesting                     | committed   |
+| 10    | Operational reliability         | in progress |
 | 11    | Forecast evaluation             | planned   |
 | 12    | Integration and verification    | planned   |
 | 13    | Consolidation and research readiness | planned |
@@ -162,12 +162,11 @@ Status notes:
   3 developer acceptance belongs to the developer at the Phases 7–9
   boundary (recorded per BLOCK, not per phase; no Block 3 acceptance
   row).
-- Phase 9 is `in progress`: checkpoint **PENDING** — `phase 9:
-  walk-forward backtesting harness, chronological baselines, refusal
-  accounting` (the git agent makes the checkpoint commit; this docs
-  agent then replaces PENDING with the real hash and flips this row
-  `in progress` → `committed`, as in Phases 4–8). Built and passed
-  independent review (**PASS, 2026-10-22, first pass, criteria 1–15**,
+- Phase 9 is `committed`: checkpoint hash **80b8f79** (full hash
+  80b8f79383ab1c990ffc497a8d2c751ebc2b5b11; `phase 9: chronological
+  backtesting harness, per-fixture baselines, idempotent runs`;
+  2026-10-22 18:25 +0100, master). Built and passed independent review
+  (**PASS, 2026-10-22, first pass, criteria 1–15**,
   after tester PASS ×15 with the golden run digest independently
   re-derived, baselines hand-recomputed, and suite runs ×3 including
   an offline run); suite **147 passed** (clean-env runs ×2+ at load
@@ -195,6 +194,35 @@ Status notes:
   untouched; NO Block 3 acceptance row — developer acceptance belongs
   to the developer at the Phases 7–9 boundary after the Phase 9 commit
   and monitor sweep** (recorded per BLOCK, not per phase).
+- Phase 10 is `in progress` (2026-10-22): built and passed independent
+  review (**PASS, 2026-10-22, first pass, criteria 1–9**, after tester
+  PASS — findings F1/N1 closed within protocol); suite **155 passed**
+  (clean-env runs at load ~0.97–12, 118–514 s; offline lo-up 502.50 s
+  at load 9.80; docs run 149.60 s at load 9.67). HANDOFF Part IX item
+  10 ships as **tests + documentation only** — zero production code
+  (`git diff 80b8f79 -- app/` empty; no new `app/` package): the
+  architect-sanctioned **health-script run-structure rework**
+  (AMENDMENT A1, `scripts/health-check.sh` **80 → 98 lines**,
+  byte-exact vs the brief — five inner pytest executions → three with
+  capture-once derivation, every check preserved, compile checks
+  extended `app` → `app tests`), the **evidence-based downward valve
+  re-tune** (AMENDMENT A2, `tests/test_health_script.py` valve
+  **1500 → 800 s**, two in-place lines, **105 → 105** — 800/335 ≈
+  2.39× the worst post-restructure script wall at load 10.06, inside
+  the pre-declared [2.3, 2.5] band), and TEST-ONLY error-handling
+  coverage (`tests/test_operational.py`, NEW, 409 lines/8 tests:
+  corrupted store fails loudly as `sqlite3.DatabaseError`; interrupted
+  batch atomicity pinned as observed). Evaluated n remains exactly 0;
+  no wall-clock SLA anywhere; zero statistics (no
+  `docs/STATISTICAL-ASSUMPTIONS.md` §13 — brief decision 9);
+  glass-quant consulted (2026-10-22, rulings ADV-1–ADV-10 binding);
+  zero developer questions. Checkpoint hash **PENDING** — the git
+  agent makes the checkpoint commit; this agent then replaces PENDING
+  and flips the row to `committed`, as in Phases 4–9. **Block table
+  untouched; Block 1/2/3 rows untouched — the Block 3 acceptance row
+  (recorded 2026-10-22) rides the Phase 10 checkpoint commit unedited;
+  Block 4 acceptance belongs to the developer at the Phases 10–12
+  boundary** (recorded per BLOCK, not per phase).
 
 ## Block acceptance record
 
@@ -202,6 +230,7 @@ Status notes:
 |-------|-----------------------|------|-------|
 | 1     | yes (recorded)        | 2026-10-17 | Phases 1–3 committed at 45ed27e, 1c5067b, a5d7f56; all three reviewer verdicts PASS. Acceptance reported by the conductor at the Phase 4 boundary and recorded here per the constitution — the Phase 4 brief flagged the then-empty table as constitutionally required (docs/briefs/phase-4.md, "State verified before writing this brief"). |
 | 2     | yes (recorded)        | 2026-10-19 | Phases 4–6 committed at f208e43, 44b43ea, cfde3a6 — simulation and bounded scenarios, forecasts with write-once storage and read-only API, feature engine; all three reviewer verdicts PASS, suite 103 passed with zero skip/xfail. Acceptance reported by the developer at the Phase 7 boundary ("Accept, start Block 3") and recorded here per the constitution. |
+| 3     | yes (recorded)        | 2026-10-22 | Phases 7–9 committed at 1e1c1ac, ea92667, 80b8f79 — decision reports with anti-ensemble scenario comparison and the no-scoring boundary, temporal-integrity defenses (poison registry, vocabulary guards), chronological backtesting harness with per-fixture baselines; all three reviewer verdicts first-pass PASS, suite 147 passed with zero skip/xfail. Phase 9's declared amendments included the A4 evidence-based health-check valve re-scope (300 → 1500 s, after a verbatim-reproduced trip) and the sanctioned `scripts/health-check.sh` determinism fix; the harness is machinery only, evaluated n = 0 until Phase 11. Acceptance reported by the developer at the Phase 10 boundary ("Accept, start Block 4") and recorded here per the constitution. |
 
 ## Postponed
 

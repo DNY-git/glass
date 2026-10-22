@@ -1095,7 +1095,7 @@ No phases completed yet. (Update: Phase 1 committed at 45ed27e — 2026-10-16.)
   ea92667 and flips ROADMAP Phase 8 `in progress` → `committed`, as
   in Phases 4–7.
 
-## 2026-10-22 — Phase 9 (Backtesting) — built, reviewed PASS (first pass); checkpoint PENDING
+## 2026-10-22 — Phase 9 (Backtesting) — built, reviewed PASS (first pass); checkpoint 80b8f79
 
 - Brief of record: `docs/briefs/phase-9.md` (342 lines, glass-architect,
   2026-10-20, amended in place by AMENDMENTS A3' and A4 with full
@@ -1283,8 +1283,186 @@ No phases completed yet. (Update: Phase 1 committed at 45ed27e — 2026-10-16.)
   (refused: numpy/pandas/scipy/scikit-learn or any numeric/ML stack,
   any third-party package, any sqlite schema change — `SCHEMA_VERSION`
   still exactly 1; no committed DB).
-- Checkpoint hash: **PENDING** — `phase 9: walk-forward backtesting
-  harness, chronological baselines, refusal accounting` (the git agent
-  makes the checkpoint commit; the docs agent then replaces PENDING in
-  this entry and in docs/ROADMAP.md with the real hash and flips
-  ROADMAP Phase 9 `in progress` → `committed`, as in Phases 4–8).
+- Checkpoint hash: **80b8f79** (full hash
+  80b8f79383ab1c990ffc497a8d2c751ebc2b5b11; `phase 9: chronological
+  backtesting harness, per-fixture baselines, idempotent runs`;
+  2026-10-22 18:25 +0100, master; 25 files, +2482/−138; 147 passed in
+  714.36s in the pre-commit clean-env run).
+  The docs agent then replaces PENDING in docs/ROADMAP.md with
+  80b8f79 and flips ROADMAP Phase 9 `in progress` → `committed`, as
+  in Phases 4–8.
+
+## 2026-10-22 — Phase 10 (Operational reliability) — built, reviewed PASS (first pass); checkpoint PENDING
+
+- Brief of record: `docs/briefs/phase-10.md` (267 lines, glass-architect,
+  2026-10-22). HANDOFF Part IX item 10 — *"Operational reliability —
+  error handling, compile checks, health monitoring, runtime sanity on
+  this hardware"* — delivered as tests + docs only: the
+  architect-sanctioned **run-structure rework of
+  `scripts/health-check.sh`** (the rework the Phase 4 A2 record and
+  Phase 9 A4 both reserved to Phase 10), an **evidence-based downward
+  valve re-tune**, **TEST-ONLY error-handling coverage**, the
+  **compile-checks strand completed** to cover `tests/`, and
+  **load-labeled runtime-sanity records** on this hardware. Scope
+  anchor (ADV-0/Phase 8 precedent): Phase 10 is IX-10, **not** pipeline
+  stage 10 (`app/improvement/` stays PLANNED) and **not** IX-11/IX-12.
+  **glass-quant was consulted** (mandatory; run at conductor top
+  level, 2026-10-22): rulings **ADV-1–ADV-10 binding** (ADV-1 blocker
+  discharged — the Block 3 acceptance row verified and quoted, which
+  also discharges Phase 11's block gate; ADV-2 the 3-run rework with
+  capture-once derivation; ADV-3 the in-suite health-test structure
+  SOUND — the script is fixed, the test inherits with zero assertion
+  changes; ADV-4 valve re-tune DOWN with fresh load-labeled evidence
+  under a pre-declared procedure; ADV-5 load position — reduce
+  execution counts, no wall-clock SLA anywhere; ADV-6 the two
+  TEST-ONLY error-path tests against probed real behavior, zero
+  production change; ADV-7 the 10-item invariants; ADV-8 docs
+  placement; ADV-9 exit-0-by-design kept; ADV-10 zero developer
+  questions — **none were raised**). Block table and the Block 1/2/3
+  acceptance rows verified untouched.
+- Build: `scripts/health-check.sh` — **AMENDMENT A1** (the sole
+  sanctioned exercise of A4's reservation; the ONLY sanctioned
+  amendment to the script after A4's) — full-file replacement,
+  **80 → 98 lines**, byte-exact against the brief's A1 text
+  (re-verified by diff at the docs step): **exactly THREE inner pytest
+  executions replace the former FIVE** with capture-once derivation —
+  run 1 (plain, captured once) feeds the display tail AND determinism
+  SUM1; run 2 (`-rsxX`, captured once) feeds its display tail AND the
+  skips/xfails grep (absorbing the old skips run, flags-identical to
+  run 2 — pure duplication); run 3 (silent plain execution) yields
+  SUM2, keeping the determinism pair two identical-flag plain runs
+  with the A4 mechanism byte-verbatim (counts-only strip, `COUNTS_RE`,
+  loud `UNPARSEABLE`). `tests/test_operational.py` **NEW** (criteria
+  1–8, 409 lines, 8 tests, stdlib only): the error-handling strand —
+  corrupted/truncated store raises `sqlite3.DatabaseError` LOUDLY at
+  the first read, pinned as probed (NOT `ForecastIntegrityError` —
+  that is the structurally-valid-row hash-mismatch path; pin
+  platform/sqlite-version-local) — and the interrupted multi-insert
+  batch (mid-batch `ForecastConflictError`: prior rows intact,
+  `verify_all` hash-clean in canonical order, zero partial row for the
+  failed insert — journal atomicity pinned as observed in
+  `insert_forecast`'s per-call `BEGIN IMMEDIATE` + rollback) — plus
+  the source pins: compile covers `app tests`, exactly 3 `-m pytest`
+  and exactly 1 `-rsxX`, SUM lines consume plain captures only, the A4
+  mechanism verbatim, exactly nine section headers, the A2 two-line
+  valve pattern, and the version-local byte-pins. **Zero production
+  code: `git diff 80b8f79 -- app/` empty** (exit 0; pinned by
+  criterion 8's test); no new `app/` package; no hygiene amendments.
+- Check-preservation mapping (ADV-10; reviewer verified row by row):
+  **a CHECK is never dropped — only redundant EXECUTIONS were
+  eliminated**. The eliminated executions were exactly the redundant
+  ones (the old skips run's flags were identical to run 2's; the
+  determinism sums were two extra executions replaced by derivation
+  from captures + the silent run 3); determinism comparison executions
+  2 → 2 (unchanged); skips "none" gate present; all nine section
+  headers, the recursion guard, pip, five-largest, and
+  exit-0-by-design byte-identical. Load-independent facts: inner
+  pytest executions **5 → 3**; non-health-suite executions per
+  direct-suite cycle **6 → 4**. Compile checks extended `app` →
+  `app tests` (decision 8, criterion 3-pinned).
+- Valve evidence (AMENDMENT A2, Phase 10 — decision-6 procedure
+  executed; every health-script execution recorded with wall time AND
+  invocation-start load): builder **317 s @ load 9.79**, **322 s @
+  8.96**, **335 s @ 10.06**; reviewer **332.43 s @ 10.09**; tester
+  standalone **238.34 s @ 10.71**. **W = 335 s** (worst
+  post-restructure wall at load ≥ 8); **V = 800 s** —
+  **800/335 ≈ 2.39×, inside the pre-declared [2.3, 2.5] band**
+  (reconciled with the shipped A2 comment's at-A2-time W = 322 s →
+  2.48× — both in band). Exactly two in-place edits in
+  `tests/test_health_script.py` (the `HEALTH_TIMEOUT_S` constant and
+  the matching docstring figure), **105 → 105 lines, no assertion
+  changed**. Rejected bounds recorded A4-style: **700** (2.09× — under
+  band), **750** (margin-fragile — in band at the then-worst but
+  erodes to 2.24× at the final W = 335), **850** (2.54× — over band),
+  **keep 1500** (4.48× — not evidence-proportional after the rework).
+  The valve is a hang-detection bound with evidence margin, never a
+  performance guarantee (ADV-5); the full 120 → 300 → 1500 → 800
+  chain with provenance (A2/Phase 4; A4/Phase 9 after the
+  verbatim-reproduced trip; A2/Phase 10 down-tune) is appended to
+  KNOWN-LIMITATIONS Phase 1 item 2 (append-only; prior figures never
+  rewritten).
+- Suite: `env -u PYTEST_ADDOPTS .venv/bin/python -m pytest -q` →
+  **155 passed** clean-env across every recorded execution at load
+  ~0.97–12 (118–514 s; outcomes identical everywhere, zero
+  skips/xfails/errors) — 147 prior + 8 new. This docs run: **155
+  passed in 149.60 s** at load 9.67 (`uptime` at invocation). Offline
+  lo-up form: **155 passed in 502.50 s** at load 9.80. Health script
+  standalone: exit 0, walls **238–335 s at load ~6.5–10.7**; inner
+  runs **`149 passed, 6 deselected` ×2** (displayed runs 1–2; run 3
+  silent), determinism **`OK:`** counts-only, skips/xfails `none`,
+  pip clean, all nine headers. **N1 (tester), recorded: 155 direct =
+  149 passed + 6 deselected inside script runs by the byte-pinned
+  recursion guard — the 3 health tests + the 3 `test_operational`
+  source pins whose names contain `health_script`; no check lost, and
+  the pins run in every direct suite execution.** Execution-count and
+  latency facts: inner runs 5 → 3, per-direct-suite-cycle executions
+  6 → 4, script wall ~627 s (Phase 9, load ~8.9–10.4) → **~330 s at
+  comparable load** — expected hang-detection latency 25 → ~15 min.
+- Declared amendments (brief pre-sanctioned; declared at checkpoint,
+  review, and monitor sweep), exact figures verified: **A1**
+  (`scripts/health-check.sh`) full-file run-structure rework, **80 →
+  98 lines**, byte-exact vs the brief's A1 text; **A2**
+  (`tests/test_health_script.py`) exactly two in-place lines, valve
+  **1500 → 800 s**, **105 → 105 lines**, no assertion changed. Every
+  legacy assertion retained (strictly stronger, never a weakening).
+  `docs/STATISTICAL-ASSUMPTIONS.md` **gained no §13** (decision 9 —
+  zero statistics ship; a section would imply statistical machinery
+  where none exists; §§1–12 untouched).
+- Review history: tester verdict **PASS** (criterion 9 executed and
+  pasted, including the offline lo-up run and the standalone health
+  run; findings F1 = the docs-step gate and N1 = the recursion-guard
+  count note, both closed within protocol). Reviewer verdict **PASS
+  (2026-10-22, FIRST pass)** — the CHECK-PRESERVATION MAPPING verified
+  row by row against the shipped script, the determinism counts-gate
+  semantics confirmed unchanged (criteria 4–5), the valve arithmetic
+  re-checked against the load-labeled measurements (V/W = 2.39× ∈
+  [2.3, 2.5]), no harness subsetting (E2 — golden files byte-pinned),
+  and the amendment declarations matched to the shipped diffs exactly.
+  Zero fix cycles — first pass, as in Phases 4–9.
+- Docs (this step): `docs/KNOWN-LIMITATIONS.md` — intro flipped to
+  Phase 10; new **Phase 10** section (7 items: zero production code /
+  evaluated n = 0 / no SLA / no §13; the 3-run rework with the
+  check-preservation summary; the compile-tests extension; the 800 s
+  valve with its load-labeled evidence and rejected bounds; the
+  corruption pins — real `sqlite3.DatabaseError`, not
+  `ForecastIntegrityError`, platform-local; the batch-atomicity pin +
+  the N1 clause; the A1/A2 declared figures); Phase 1 items 2 and 5
+  **appended** follow-through only (the full 120 → 300 → 1500 → 800
+  valve chain with provenance; the 6× → 4× suite-cost clause with
+  load-labeled current figures — all prior measured figures kept as
+  measured); "Not yet applicable" refreshed to Phase 10 (stages 3 and
+  10, `app/evaluation/`, and improvement remain PLANNED).
+  `docs/PROGRESS-LOG.md` (this entry). `docs/ROADMAP.md` — Phase 10
+  `in progress`, PENDING-hash convention (the git agent makes the
+  checkpoint commit; this agent then replaces PENDING and flips the
+  row to `committed`, as in Phases 4–9; **block table byte-identical;
+  Block 1/2/3 rows untouched — the Block 3 acceptance row recorded
+  2026-10-22 rides this checkpoint commit unedited**). `README.md`
+  (Phase 10, 155 tests, honest load-labeled run-time note: suite
+  ~2–8 min at load ~1–12; health script ~4–6 min; clean-env and
+  offline lo-up forms). `docs/ARCHITECTURE.md` (health script
+  recorded as 3 inner runs with capture-once derivation and the
+  compile-tests extension; no new module — `tests/test_operational.py`
+  added to the test inventory; stages 3, 10, evaluation, improvement
+  remain PLANNED; test counts refreshed to 26 modules / 155 tests).
+  `docs/PLAN.md` checked — **no change needed** (its health-script
+  wording — the double-run determinism comparison, the continuous
+  baseline — remains exactly true under the 3-run structure). The
+  three protocol records (docs/HEALTH-LOG.md, docs/PROGRESS-LOG.md,
+  docs/ROADMAP.md — monitor finding 1, carrying the Phase 9 records)
+  plus the phase brief, `scripts/health-check.sh`, the two test-file
+  edits, and `tests/test_operational.py` must ride the Phase 10
+  checkpoint commit.
+- Zero developer questions (ADV-10) — every design question resolved
+  as a brief position. Block 4 acceptance remains the developer's at
+  the Phases 10–12 boundary.
+- pytest unchanged: 9.1.1; Python 3.12.3; stdlib-only dependencies
+  (refused: any third-party package; any monitoring/CI/Docker/service
+  tooling; any environment knob such as `HEALTH_FAST`; any sqlite
+  schema change — `SCHEMA_VERSION` still exactly 1; no committed DB).
+- Checkpoint hash: **PENDING** — the git agent makes the checkpoint
+  commit (on green tests; the docs-step suite of record: 155 passed in
+  149.60 s at load 9.67); this agent then replaces PENDING in
+  docs/ROADMAP.md and docs/PROGRESS-LOG.md with the recorded hash and
+  flips ROADMAP Phase 10 `in progress` → `committed`, as in Phases
+  4–9.
