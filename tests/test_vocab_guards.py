@@ -8,6 +8,10 @@ non-reach pins (13). Single source of truth: SCORING_TOKENS, the
 _SCORING_PATTERN machinery and _ACCURACY_PATTERN are IMPORTED from
 tests/test_phase7_separation (the Phase 4/5/6 cross-file pattern);
 AMENDMENT A1 changed exactly one line there (this file asserts it).
+
+Phase 9 criteria 13-14 (A7, extend-not-weaken) append the outcome-comparative
+token set (defined ONCE here; test_backtesting imports it), the field-name-
+scope extension of "accuracy", and the extended scans — verbatim else.
 """
 
 from __future__ import annotations
@@ -36,10 +40,25 @@ ACCURACY_TRIO = frozenset(
 
 # Criterion 12: segment shapes banned on dataclass field names. The
 # score/scoreline/scored vocabulary is deliberately ABSENT — legit
-# domain language, 75 real uses (A4; design decision 12).
-FIELD_BAN_SEGMENTS = ("performance", "rank", "ranking", "correct", "correctness", "best")
+# domain language, 75 real uses (A4; design decision 12). Phase 9 c13
+# (A7): "accuracy" JOINS, field-name scope ONLY — prose stays legal.
+FIELD_BAN_SEGMENTS = ("performance", "rank", "ranking", "correct", "correctness", "best", "accuracy")
 _FIELD_BAN_PATTERN = re.compile(
     r"(?<![A-Za-z0-9])(" + "|".join(map(re.escape, FIELD_BAN_SEGMENTS)) + r")(?![A-Za-z0-9])",
+    re.IGNORECASE,
+)
+
+# Phase 9 criterion 13 (A7 BLOCKER; design decision 14): the outcome-
+# comparative token set — a finite explicit enumeration (the repo's
+# banned-set pattern) — compiled STRICT-SEGMENT and defined ONCE here
+# (single source; test_backtesting imports it; retools nothing).
+OUTCOME_COMPARATIVE_TOKENS = (
+    "outperform", "outperforms", "outperformed", "outperforming",
+    "beat", "beats", "beaten", "beating", "hit", "hits",
+    "winner", "champion", "preferred",
+)
+_COMPARATIVE_PATTERN = re.compile(
+    r"(?<![A-Za-z0-9])(" + "|".join(map(re.escape, OUTCOME_COMPARATIVE_TOKENS)) + r")(?![A-Za-z0-9])",
     re.IGNORECASE,
 )
 
@@ -299,8 +318,11 @@ def test_source_ban_non_reach_pinned_baseline_metric_word() -> None:
     # The union of every source-banned set this phase ships — scoring
     # tokens (IMPORTED), accuracy trio (DERIVED from the pattern of
     # record), field-name shapes (local, single source here) — reaches
-    # NONE of the six pinned-free words, in both directions.
-    banned_union = set(phase7.SCORING_TOKENS) | set(ACCURACY_TRIO) | set(FIELD_BAN_SEGMENTS)
+    # NONE of the six pinned-free words; Phase 9 c13 EXTENDS the union.
+    banned_union = (
+        set(phase7.SCORING_TOKENS) | set(ACCURACY_TRIO)
+        | set(FIELD_BAN_SEGMENTS) | set(OUTCOME_COMPARATIVE_TOKENS)
+    )
     free_words = {"baseline", "metric", "word", "score", "scoreline", "scored"}
     assert banned_union.isdisjoint(free_words)
     for free_word in free_words:
@@ -319,3 +341,100 @@ def test_source_ban_non_reach_pinned_baseline_metric_word() -> None:
     assert not _FIELD_BAN_PATTERN.search(probe)
     assert not (identifiers(probe, "<probe>") & ACCURACY_TRIO)
     assert not (identifiers("baseline = 1\nscoreline = 2\nmetric = 3\n", "<probe>") & ACCURACY_TRIO)
+
+
+# --- Phase 9 criterion 13 (A7 BLOCKER; extend-not-weaken). ---
+def test_outcome_comparative_token_guard_positive_and_negative_probes() -> None:
+    # The exact 13-tuple of design decision 14, strict-segment, defined ONCE (test_backtesting imports it).
+    assert OUTCOME_COMPARATIVE_TOKENS == (
+        "outperform", "outperforms", "outperformed", "outperforming",
+        "beat", "beats", "beaten", "beating", "hit", "hits",
+        "winner", "champion", "preferred",
+    )
+    assert _COMPARATIVE_PATTERN.pattern == (
+        r"(?<![A-Za-z0-9])(" + "|".join(map(re.escape, OUTCOME_COMPARATIVE_TOKENS)) + r")(?![A-Za-z0-9])"
+    )
+    hits = lambda text: [match.group(0).lower() for match in _COMPARATIVE_PATTERN.finditer(text)]
+    # Positive controls: every token bare/suffixed/case-variant flagged;
+    # segment-adjacent identifiers flag too (the boundary discipline).
+    for token in OUTCOME_COMPARATIVE_TOKENS:
+        for form in (token, token.upper(), token.capitalize()):
+            for probe in (f"{form} = 1\n", f'x = "{form}"\n', f'"""{form} the field."""\n'):
+                assert hits(probe) == [token], (token, probe)
+    for probe in ("x_hits", "_hit_", "self.beats", "hit_rate_total", "champion_x"):
+        assert hits(probe), probe
+    # The existing scoring tokens are UNAFFECTED (extend, never retool).
+    assert phase7.SCORING_TOKENS == ("log_loss", "logloss", "brier", "rps", "hit_rate", "calibration")
+    assert phase7._scoring_hits("outperform the field\n") == []
+    assert phase7._scoring_hits("brier_score = 0.5\n")  # scoring positives intact
+    # `accuracy` as a FIELD NAME is flagged; in prose NOT source-banned.
+    probe_source = "@dataclass(frozen=True)\nclass Probe:\n    accuracy: float = 0.0\n"
+    assert ("Probe", "accuracy") in dataclass_fields(probe_source, "<probe>")
+    for name in ("accuracy", "model_accuracy", "Accuracy"):
+        assert _FIELD_BAN_PATTERN.search(name), name
+    prose = '"""The accuracy of this estimate is not evidence of skill."""\n'
+    assert _COMPARATIVE_PATTERN.search(prose) is None
+    assert phase7._scoring_hits(prose) == []
+    assert phase7._ACCURACY_PATTERN.search(prose) is None  # source scope stays the trio
+    # The recorded honesty-docstring uses (probe E7) stay legal app-wide:
+    # exactly the recorded (file, line) sites carry the word; no field does.
+    recorded_uses = {
+        ("app/api/serialize.py", 30), ("app/api/serialize.py", 34), ("app/decisions/constants.py", 31),
+        ("app/forecasts/__init__.py", 9), ("app/forecasts/builder.py", 16), ("app/forecasts/record.py", 9),
+        ("app/models/__init__.py", 8), ("app/models/poisson.py", 246),
+        ("app/models/scoreline.py", 8), ("app/models/scoreline.py", 91),
+    }
+    found = {
+        (rel_of(path), index) for path in app_corpus()
+        for index, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1)
+        if re.search(r"(?<![A-Za-z0-9])accuracy(?![A-Za-z0-9])", line, re.IGNORECASE)
+    }
+    assert found == recorded_uses
+    # Negative controls (Phase 8's regression EXTENDED, never replaced):
+    # score vocabulary legal everywhere; baseline/metric/word free.
+    for name in ("score", "scoreline", "scored", "Score", "invalid_score_shape"):
+        assert _COMPARATIVE_PATTERN.search(name) is None, name
+        assert not _FIELD_BAN_PATTERN.search(name), name
+        assert phase7._scoring_hits(name) == [], name
+        assert name.lower() not in ACCURACY_TRIO, name
+    banned_union = (
+        set(phase7.SCORING_TOKENS) | set(ACCURACY_TRIO)
+        | set(FIELD_BAN_SEGMENTS) | set(OUTCOME_COMPARATIVE_TOKENS)
+    )
+    assert banned_union.isdisjoint({"baseline", "metric", "word", "score", "scoreline", "scored"})
+
+
+# --- Phase 9 criterion 14 (A7): extended guards, app-wide + app/backtesting. ---
+def test_backtesting_package_clean_under_extended_vocab_guards() -> None:
+    # (a) App-wide strict-segment scan PLUS comparative tokens: hits at
+    # exactly the one pinned allowlist site — no new site added.
+    files_with_hits: set[str] = set()
+    for path in app_corpus():
+        rel = rel_of(path)
+        text = path.read_text(encoding="utf-8")
+        assert _COMPARATIVE_PATTERN.search(text) is None, rel  # zero comparative hits app-wide
+        if phase7._SCORING_PATTERN.search(text):
+            files_with_hits.add(rel)
+        assert scoring_violations(text, rel) == [], rel
+    assert files_with_hits == {SIMULATION_INIT}
+    # (b) The extended guards over app/backtesting/**: zero of everything.
+    backtesting = sorted((APP_DIR / "backtesting").rglob("*.py"))
+    assert len(backtesting) == 6  # the five modules + __init__.py
+    for path in backtesting:
+        rel = rel_of(path)
+        text = path.read_text(encoding="utf-8")
+        assert phase7._scoring_hits(text) == [], rel
+        assert _COMPARATIVE_PATTERN.search(text) is None, rel
+        for class_name, field_name in dataclass_fields(text, rel):
+            assert not _FIELD_BAN_PATTERN.search(field_name), (rel, class_name, field_name)
+        assert not (identifiers(text, rel) & ACCURACY_TRIO), rel
+    # (c) A private scoring or comparative helper in an app/backtesting
+    # probe source is flagged INSTANTLY (the no-scoring-helper clause).
+    assert phase7._scoring_hits("def brier(matches):\n    return 0.5\n")
+    assert _COMPARATIVE_PATTERN.search("def outperform(other):\n    return other\n")
+    # (d) match.score reads in baselines.py are NOT flagged (legal domain).
+    assert "match.score" in (APP_DIR / "backtesting" / "baselines.py").read_text(encoding="utf-8")
+    for probe in ("match.score.home", "outcome = self.score.home > self.score.away",
+                  'x = "invalid_score_shape"'):
+        assert phase7._scoring_hits(probe) == [], probe
+        assert _COMPARATIVE_PATTERN.search(probe) is None, probe

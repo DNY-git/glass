@@ -922,7 +922,7 @@ No phases completed yet. (Update: Phase 1 committed at 45ed27e — 2026-10-16.)
   and flips ROADMAP Phase 7 `in progress` → `committed`, as in Phases
   4–6.
 
-## 2026-10-19 — Phase 8 (Temporal integrity) — built, reviewed PASS (first pass); checkpoint PENDING
+## 2026-10-19 — Phase 8 (Temporal integrity) — built, reviewed PASS (first pass); checkpoint ea92667
 
 - Built (per docs/briefs/phase-8.md, criteria 1–14, design decisions
   1–14, glass-quant rulings A0–A9, AMENDMENT A1) — **tests and
@@ -1086,6 +1086,205 @@ No phases completed yet. (Update: Phase 1 committed at 45ed27e — 2026-10-16.)
   (refused: numpy/pandas/scipy/scikit-learn or any numeric/ML stack,
   any third-party package, any new `app/` module, any sqlite schema
   change — `SCHEMA_VERSION` still exactly 1).
-- Checkpoint hash: **PENDING**. The docs agent (or git agent) replaces
-  PENDING in docs/PROGRESS-LOG.md with the checkpoint hash and flips
-  ROADMAP Phase 8 `in progress` → `committed`, as in Phases 4–7.
+- Checkpoint hash: **ea92667** (full hash
+  ea92667af37e069c843c4ba9696771552dcc6e94; "phase 8: temporal
+  integrity defenses, poison registry, vocabulary guards";
+  2026-10-19 22:13 +0100, master; 11 files, +1514/−58; 133 passed in
+  157.65s in the pre-commit clean-env run).
+  The docs agent then replaces PENDING in docs/ROADMAP.md with
+  ea92667 and flips ROADMAP Phase 8 `in progress` → `committed`, as
+  in Phases 4–7.
+
+## 2026-10-22 — Phase 9 (Backtesting) — built, reviewed PASS (first pass); checkpoint PENDING
+
+- Brief of record: `docs/briefs/phase-9.md` (342 lines, glass-architect,
+  2026-10-20, amended in place by AMENDMENTS A3' and A4 with full
+  provenance). HANDOFF Part IX item 9 — *"Backtesting — strictly
+  chronological backtesting harness, baselines (long-run home/draw/away
+  frequencies), idempotent runs"* — delivered as a **pure
+  `app/backtesting/` package**, machinery only. **glass-quant was
+  consulted** (mandatory; run at conductor top level, 2026-10-20):
+  rulings **A0–A10 binding** (A0 pre-declared the A1/A2/A3 amendments;
+  A1 blocker-grade no-join scope boundary — the realized-result surface
+  is pre-cutoff history ONLY, the one-line natural-key join is
+  re-established at Phase 11; A2 the test-first poison gate; A3
+  walk-forward mechanics + the single structural model spec; A4
+  caller-side persistence through the existing write-once path, no
+  committed DB, `SCHEMA_VERSION` stays 1; A5 baselines per-fixture
+  chronological only; A6 §12 authored BEFORE any build code; A7
+  vocabulary extend-not-weaken; A8 out-of-scope list; A9 zero
+  developer questions — **none were raised**; A10 empirical probes
+  **E1–E4** — E1 the 3 structural first-date refusals, E2 the full
+  harness runtime (~2.5 s idle / ~4.2 s loaded — full harness
+  everywhere, never subset), E3 unfiltered-pool cannot leak, E4 the
+  baseline `n` sequence 0, 0, 0, 3, …, 57 — re-verified by the
+  architect at brief time, reconciled as design decisions 2, 3, 17).
+- Build: `app/backtesting/` **NEW** — `constants.py`
+  (`BACKTEST_VERSION = "backtest-walkforward-v1"`, no knob),
+  `canonicalization.py` (own spec of record, no timestamp anywhere),
+  `record.py` (frozen `BaselineRecord`/`RefusalRecord`/`RunManifest`/
+  `WalkForwardRun`, construction-time content hashes), `baselines.py`
+  (ALL functions underscore-private; the only realized-score consumer),
+  `harness.py` (`run_walk_forward(matches, *, fixture_file_sha256s=(),
+  interpreter_version=None)` — the SINGLE public `matches`-parameter
+  entry point, pure, **no `app.storage` import** — persistence is the
+  caller's) + `__init__.py` — **6 modules, 535 lines**.
+  `tests/test_backtesting.py` (**NEW**, criteria 1–12) and
+  `tests/test_vocab_guards.py` (criteria 13–14 appended; **321 → 440
+  lines**, within budget). Shipped facts pinned by test: golden run
+  digest `150b9796dde5ae4dbf2e3a7665c7cf55062323c33acad41d5d90c44481bbef2f`
+  (version-local, derived from the real first run, independently
+  re-derived in test); the auditable accounting **60 targets = 3
+  structural refusals (first-class `RefusalRecord`s — never skipped,
+  never uniformed) + 27 flagged + 30 clean = 57 predictions**;
+  hand-computed baselines (fixture 4 exactly (1/3, 1/3, 1/3), n = 3;
+  fixture 36 (15/33, 8/33, 10/33), n = 33); MISSING `n = 0` at the
+  first date's three fixtures, fake uniform and full-sample fallback
+  both pinned absent; baselines never stored; double-run idempotence in
+  process and at the store level (`True`×57 then `False`×57 through
+  `insert_forecast` into a `tmp_path` DB; `SCHEMA_VERSION == 1`; no
+  committed DB); the test-first poison gate (criteria 1) — poisoning
+  the entire remaining future leaves every earlier prediction
+  field-for-field identical including `content_hash`; and the no-join
+  enforcement (token scan + function-level co-occurrence AST scan with
+  positive controls both ways). **Zero metrics of any kind; no
+  model-vs-baseline comparison exists; no prediction-to-outcome join
+  ships — evaluated n remains exactly 0.**
+- Declared amendments (brief pre-sanctioned; declared at checkpoint,
+  review, and monitor sweep), exact figures verified `wc -l`:
+  **A1** (`tests/test_temporal_integrity.py`) poison registry 5 → 6 +
+  `matches` census 3 → 4 for `run_walk_forward` + its poison test;
+  **A2** (same file) Phase 8's `app/` byte-pin re-pointed `1e1c1ac` →
+  `ea92667` and rescoped to the pre-existing packages (excluding
+  `app/backtesting`) — **combined 440 → 452**; **A3+A3'**
+  (`tests/test_fixtures_and_hygiene.py`) one `ALLOWED_APP_IMPORTS`
+  entry with the A3'-corrected **self-inclusive** value
+  `{"app.domain", "app.forecasts", "app.backtesting"}` + the
+  line-neutral `PURE_PACKAGES` five-set, **625 → 626**, and the
+  pin-collision class across four separation files —
+  `tests/test_phase4_separation.py` **833 → 834**,
+  `tests/test_phase5_separation.py` **573 → 574**,
+  `tests/test_phase6_separation.py` **510 → 510** (net zero),
+  `tests/test_phase7_separation.py` **440 → 443** (the fifth file,
+  found at A3'-ruling time); **A4** (`tests/test_health_script.py`)
+  `HEALTH_TIMEOUT_S` **300 → 1500 s**, **105 → 105 lines**, no
+  assertion changed + the SOLE sanctioned edit ever to
+  `scripts/health-check.sh` (determinism-section strip-regex fix for
+  pytest's ≥ 60 s `(0:MM:SS)` parenthetical + the counts-only
+  `UNPARSEABLE` gate; five inner runs, recursion guard, and every other
+  section untouched) + the 653-line `tests/test_backtesting.py`
+  adjudicated **ACCEPTED as a deviation** (A4 item 3 — soft convention,
+  no split, no trim). Every legacy assertion retained in all six
+  amended files (strictly stronger, never a weakening).
+- Builder record: **two interrupted sessions** (server restarts) — the
+  second completed the first's work — and **two STOP-and-reports, zero
+  self-sanctioning**. (i) 2026-10-20: the builder stopped against
+  A3's blocker-grade sanctioned value — the mandated five-module
+  package could not wire its own intra-package imports against the
+  criterion-12 prefix scanner; the architect independently re-verified
+  the scanner, probed all eleven existing entries as self-inclusive,
+  **RATIFIED the corrected self-inclusive value (AMENDMENT A3')** and
+  folded in A3's own missed fifth pinned file
+  (`tests/test_phase7_separation.py`) — a brief-composition omission,
+  same mechanical pin-collision class; not a developer decision (A9
+  stands). (ii) 2026-10-21: the A4 health-valve TRIP — the direct
+  suite, on the conductor's independent reproduction **verbatim**:
+  `env -u PYTEST_ADDOPTS .venv/bin/python -m pytest -q` → **`144
+  passed, 3 errors in 428.03s (0:07:08)`** — all three errors
+  `subprocess.TimeoutExpired: bash scripts/health-check.sh timed out
+  after 300 seconds` at `tests/test_health_script.py:21`, zero test
+  failures; the builder STOP-and-reported both A4 defects (valve no
+  longer holds at load ~11; the determinism strip-regex defect) without
+  touching any unsanctioned file; the suite was RED until A4 items 1–2
+  landed — no checkpoint on red tests. Architect ruled A4 (2026-10-21)
+  under the standing Phase 4 re-scope clause: 1500 s ≈ 2.3–2.5× the
+  worst observed ~600–660 s script wall at load ~10–11 (rejected bounds
+  and reasons recorded in the brief); test-cost reduction rejected with
+  reasoning (2–3%, tautology risk); waiting for lower load NOT
+  required.
+- Suite: `env -u PYTEST_ADDOPTS .venv/bin/python -m pytest -q` →
+  **`147 passed in 723.04s (0:12:03)`** (this docs run, 2026-10-22,
+  machine load ~11 per `uptime` at start; 0 failed, 0 errors, 0
+  skipped, 0 xfailed) — 133 prior + 14 new. Recorded executions:
+  clean-env ×2+ at load ~9.5–12.7 on 4 cores (~647–750 s), all
+  outcomes identical; offline `unshare -rn` lo-up form **147 passed in
+  867.88 s**; health script exit 0 with inner runs **`144 passed, 3
+  deselected` ×2** (117–131 s each — both > 60 s, the A4 strip-fix
+  positive proof), determinism `OK:`, skips/xfails `none`, pip clean,
+  script wall **~627 s**. Criterion 15 (suite gate) verified by
+  recorded direct runs (tester, reviewer ×2, conductor, docs agent).
+- Review history: tester verdict **PASS ×15** — the golden run digest
+  independently re-derived, the hand-computed baselines independently
+  recomputed (fixture 4 and fixture 36 reproduced exactly), and the
+  suite executed **×3 including an offline run**. Reviewer verdict
+  **PASS (2026-10-22, FIRST pass, criteria 1–15)** — including an
+  amendment **byte-audit** of all six amended test files against the
+  declared figures, the reviewer's **own re-derivation of the golden
+  run digest**, and **A4's 1500 s ratio adjudication** (evidence
+  arithmetic re-checked). Zero fix cycles — first pass, as in Phases
+  4–8 (tester and reviewer both clean on the first round).
+- Docs (this step): `docs/STATISTICAL-ASSUMPTIONS.md` **§12 authored
+  BEFORE any build code** (+95/−0, single hunk appended after §11, per
+  ruling A6/brief decision 15) and flipped at this step from
+  SPECIFICATION to implemented-and-tested reality (**§§1–11 untouched;
+  the flip is a single hunk confined to §12** — the pre-build §12 rode
+  the working tree only, so vs checkpoint ea92667 the whole section
+  shows as a clean `+179/−0` append, `git diff | grep -c '^@@'` → 1):
+  the shipped surface (one public `matches`-parameter function, pure,
+  no storage import; baselines private; 535 lines; golden digest), the
+  now-real 60 = 3 + 27 + 30 = 57 accounting, the hand-recomputed
+  baseline pins, the MISSING-at-first-date pins, the mechanically
+  enforced no-join boundary, and the declared amendments A1–A4 with
+  exact figures, plus the phase-end verification paragraph pinning
+  every §12 claim to the shipped tests. `docs/KNOWN-LIMITATIONS.md`:
+  intro + "Not yet applicable" flipped to Phase 9 (**"Backtesting"
+  leaves the not-yet-applicable list**; stages 3, 10, evaluation remain
+  — `app/evaluation/` stays PLANNED, Phase 11's), new **Phase 9**
+  section (12 items: zero metrics/evaluated n = 0 with no
+  model-vs-baseline comparison — deliberately; the 3 structural
+  refusals first-class, 60 = 3 + 27 + 30 = 57 auditable; baselines
+  per-fixture chronological only with tiny-early-n, MISSING-never-
+  faked, never-stored, synthetic + §2f draw-bias caveats; no
+  prediction-to-outcome join — Phase 11 re-establishes; the
+  `get_forecast` brief position (three points) with latent fetchone
+  retained; `SCHEMA_VERSION` 1 + no committed DB; the version-local
+  golden run digest — re-derive, never widen; amendments A1/A2/A3+A3'/A4
+  with exact figures; both STOP-and-reports; the 653-line accepted
+  deviation; the load-driven runtime watch item; the 9-vs-10
+  accuracy-sites one-line disposition — the quant prose said 9, its
+  own list and the real scan say 10, the guard pins the real 10) and
+  the **Phase 1 item 2 disposition UPDATED by appended A4 follow-through
+  only** (the RED run verbatim, the 300 → 1500 s re-scope, the strip
+  fix, post-fix evidence — all prior measured figures kept as
+  measured, nothing rewritten). `docs/ARCHITECTURE.md` (Phase 9 status
+  line: stage-9 backtesting exists as a pure package consumed by
+  nothing under `app/`; `app/evaluation/` remains PLANNED; stage map
+  unchanged; module table + tree updated; test counts refreshed to 25
+  modules / 147 tests). `README.md` (Phase 9, 147 tests, clean-env
+  docs-run figure 147 passed in 723.04 s with the honest ~11-min-at-
+  load-~10 note, offline lo-up form 867.88 s, all **eight** commit
+  hashes 45ed27e/1c5067b/a5d7f56/f208e43/44b43ea/cfde3a6/1e1c1ac/
+  ea92667). `docs/ROADMAP.md` (Phase 9 `in progress`, PENDING-hash
+  convention — the git agent makes the checkpoint commit; this agent
+  replaces PENDING and flips the row to `committed` after, as in
+  Phases 4–8; **block table byte-identical; Block 1/2 rows untouched;
+  NO Block 3 acceptance row — the developer's at the Phases 7–9
+  boundary after the Phase 9 commit and monitor sweep**).
+  `docs/PLAN.md` §2: the `backtesting/` line flipped planned → EXISTS
+  (Phase 9), nothing else. The three protocol records
+  (docs/HEALTH-LOG.md, docs/PROGRESS-LOG.md, docs/ROADMAP.md — monitor
+  finding 1) plus the phase brief, the two new test files, the six
+  amended test files, `app/backtesting/`, and the A4 script/test edits
+  must ride the Phase 9 checkpoint commit.
+- Zero developer questions (A9) — every structural question resolved as
+  a brief position. Block 3 acceptance remains the developer's at the
+  Phases 7–9 boundary after the Phase 9 commit and monitor sweep.
+- pytest unchanged: 9.1.1; Python 3.12.3; stdlib-only dependencies
+  (refused: numpy/pandas/scipy/scikit-learn or any numeric/ML stack,
+  any third-party package, any sqlite schema change — `SCHEMA_VERSION`
+  still exactly 1; no committed DB).
+- Checkpoint hash: **PENDING** — `phase 9: walk-forward backtesting
+  harness, chronological baselines, refusal accounting` (the git agent
+  makes the checkpoint commit; the docs agent then replaces PENDING in
+  this entry and in docs/ROADMAP.md with the real hash and flips
+  ROADMAP Phase 9 `in progress` → `committed`, as in Phases 4–8).

@@ -4,8 +4,7 @@ The honest list. Updated every phase (constitution; HANDOFF Part IX item
 13 formalizes this at Phase 13, but the discipline starts now). Nothing
 here is hidden behavior — each item is also recorded where it was found.
 
-Entry below reflects the state as of Phase 8 (Temporal integrity),
-2026-10-19.
+Entry below reflects the state as of Phase 9 (Backtesting), 2026-10-22.
 
 ## Phase 1
 
@@ -57,6 +56,35 @@ Entry below reflects the state as of Phase 8 (Temporal integrity),
    responsible phase's brief, never a weakened, skipped, or xfailed
    test — and re-architecting the script's five inner runs is
    explicitly Phase 10's (HANDOFF IX-10).
+   **Update 2026-10-22 (Phase 9 — AMENDMENT A4, the second predicted
+   trip happened; prior figures above kept as measured, nothing
+   rewritten).** During the Phase 9 build, at machine load ~11 on 4
+   cores, the direct suite reported **`144 passed, 3 errors in 428.03s
+   (0:07:08)`** on the conductor's independent reproduction — all three
+   errors `subprocess.TimeoutExpired` (the then-300 s
+   `HEALTH_TIMEOUT_S`) at `tests/test_health_script.py:21`, zero test
+   failures. AMENDMENT A4 of the Phase 9 brief (full evidence, trip
+   record, and exact texts in `docs/briefs/phase-9.md`) re-scoped the
+   valve **300 s → 1500 s** in exactly two in-place edits to
+   `tests/test_health_script.py` (the `HEALTH_TIMEOUT_S` constant and
+   its docstring figure — **105 → 105 lines, no assertion changed**;
+   1500 s ≈ 2.3–2.5× the worst observed ~600–660 s script wall at load
+   ~10–11, the Phase 4 ratio discipline; rejected bounds recorded in
+   A4). A4 additionally fixed — the **sole sanctioned edit ever** to
+   `scripts/health-check.sh` — the determinism-section strip regex
+   (`sed -E 's/in [0-9.]+s//'` did not strip pytest ≥ 60 s runs'
+   `(0:MM:SS)` wall-clock parenthetical, so two runs with identical
+   substantive outcomes compared `MISMATCH`) and adopted the
+   counts-only pin: an unparseable summary prints `UNPARSEABLE` and
+   never a silent `OK:`. Hang-detection latency rises 5 → 25 min —
+   accepted and recorded; the script's five-serial-inner-run rework
+   remains Phase 10's. Post-fix evidence: the health script's inner
+   runs report `144 passed, 3 deselected` twice, **both > 60 s** (the
+   strip fix's positive proof — pre-A4 that exact condition printed
+   `MISMATCH`), determinism `OK:`, script wall ~627 s. The trigger
+   stands for any future trip: evidence-based re-scope in the
+   responsible phase's brief, never a weakened, skipped, or xfailed
+   test.
 
 3. **Criterion 7 header checks are substring-based** (tester finding G3).
    `test_health_script_runs_to_completion` asserts that the script's
@@ -897,29 +925,178 @@ Entry below reflects the state as of Phase 8 (Temporal integrity),
     mechanism with fresh evidence in the responsible phase's brief
     (the Phase 4 clause), never weakens, skips, or xfails.
 
-## Not yet applicable (as of Phase 8)
+## Phase 9
 
-Forecast, storage, API, feature, decision-report, and temporal-integrity
-limitations are now listable and listed above (pipeline stage 6 FORECAST
-DISTRIBUTIONS, its durable write-once sqlite store, the read-only
-serving surface, pipeline stage 4 FEATURE EXTRACTION — `app/features/`
-— pipeline stage 8 DECISION ANALYSIS — `app/decisions/` — and Phase 8's
-temporal-integrity defenses — test-side, no module — all exist).
-Still not yet listable: pre-match-state, backtesting, evaluation, and
-model-improvement limitations — pipeline stages 3, 9, 10 are unbuilt
-(`app/backtesting/` and `app/evaluation/` remain PLANNED, Phase 9's and
-Phase 11's respectively); there are no pre-match snapshots, and no
-evaluation metrics to mis-trust yet (Phase 8 ships zero scoring —
-evaluated n = 0). "Temporal integrity" itself is deliberately NOT
-listed here: Phase 8's defenses are shipped tests and documentation,
-listed above. Model-calibration and predictive limitations (as
-distinct from the in-sample assumptions above) arrive with Phases 9 and
-11 and will be documented in `docs/EVALUATION.md` (which does not exist
-yet — there is no evaluation to document) and in this file. Data
-provenance and format limitations remain in `docs/DATA-SOURCES.md`; the
-model's statistical assumptions and their weaknesses are in
-`docs/STATISTICAL-ASSUMPTIONS.md` (exists since Phase 3; §7 covers
-simulation and scenarios; §8 covers forecasts, storage, and serving;
-§9 covers feature extraction, added at Phase 6; §10 covers decision
-analysis, added at Phase 7; §11 covers the temporal-integrity
-pre-registrations binding Phases 9 and 11, added at Phase 8).
+1. **Phase 9 ships machinery only — zero metrics; evaluated n remains
+   exactly 0; no model-vs-baseline comparison exists — deliberately.**
+   `app/backtesting/` exists (the walk-forward harness, frozen
+   predictions, per-fixture chronological baselines) but no log loss,
+   no Brier, no RPS, no hit rate, no calibration, and no
+   model-vs-baseline comparison/reduction/ranking of any kind is
+   computed — a mechanical scan guard (token + function-level
+   co-occurrence AST) asserts the absence over the package. The §11
+   three-step line now reads: Phase 8 defenses (shipped) → Phase 9
+   machinery (**shipped, still no metrics**) → Phase 11 first scoring
+   (the evidence gate). "Validated"/"accurate"/"beating" remain banned
+   on the registered sample-size grounds (STATISTICAL-ASSUMPTIONS §12c)
+   — Phase 9 ran but computed no score, so nothing is evidence yet.
+
+2. **The 3 structural refusals are a first-class reported status —
+   never "fixed", never skipped, never uniformed.** Over the 60 targets
+   the frozen fixtures give exactly the accounting **60 = 3 refusals +
+   27 flagged + 30 clean = 57 predictions** (`57 = 27 + 30`), fully
+   auditable: `len(predictions) + len(refusals) == 60`, nothing
+   silently dropped. The 3 refusals are exactly the first date's three
+   fixtures — zero strictly-pre-cutoff history → a `NO_DATA` fit with
+   an empty team index → `build_forecast`'s team-index `ValueError`,
+   recorded as a `RefusalRecord` with status
+   `REFUSED_NO_PRE_CUTOFF_HISTORY` and the original message. A builder
+   "fix" that skipped, dropped, or uniformed them fails the accounting
+   pins in both directions (STATISTICAL-ASSUMPTIONS §12b).
+
+3. **Baselines are per-fixture chronological only — tiny-early-n,
+   MISSING at the first date, never stored, caveats ride.** The only
+   legal form is the pooled long-run H/D/A frequency over realized
+   matches with strictly `date < fixture.date` (uniform weighting, no
+   decay, no home/away split); a full-sample baseline is banned (it
+   leaks the future). Weaknesses, stated not hidden: early `n` is tiny
+   (0–3 on the first date — the first date's **three** fixtures get
+   `MISSING_NO_HISTORY` with `n = 0` and all frequencies `None`, **never
+   a fake uniform (⅓,⅓,⅓) and never a full-sample fallback**, both
+   pinned absent behaviorally); the fixtures are synthetic and
+   hand-authored; and §2f's independent-Poisson draw bias makes the
+   **draw frequency the baseline the model is structurally weakest
+   against**. Baselines are content-hashed in-process, re-derivable
+   from the matches alone, and **never stored** — no column, no table,
+   no schema surface.
+
+4. **No prediction-to-own-outcome join ships — Phase 11 re-establishes
+   it.** The realized-result surface at Phase 9 is pre-cutoff history
+   ONLY (fit inputs + baseline windows) plus prediction-side counts;
+   pairing any prediction field with a realized field is mechanically
+   scanned for and absent. The one-line natural-key join remains
+   Phase 11's, arriving with its own brief — shipping it here would be
+   an unguarded artifact with no consumer (STATISTICAL-ASSUMPTIONS §12d).
+
+5. **`get_forecast()` is single-row-per-natural-key — the brief
+   position, retained with its latent `fetchone` semantics (Phase 8
+   item 7's note discharged as a position, not a code change).** (i)
+   One row per 5-tuple holds under the frozen-fixture invariant; (ii)
+   Phase 11 must join by full identity or `content_hash`, never the
+   5-tuple alone; (iii) the latent `fetchone` semantics stay recorded,
+   not "fixed" — a schema/API change would need its own brief.
+
+6. **Storage is unchanged: `SCHEMA_VERSION` still 1 and no committed
+   DB.** Walk-forward predictions are `Forecast`s persisted by the
+   **caller-side** loop through the existing write-once
+   `insert_forecast` into a caller-passed DB (`tmp_path` in tests); the
+   package itself is pure with **no `app.storage` import** (AST-pinned).
+   The evaluation-record table remains Phase 11's schema bump.
+
+7. **The golden run digest is version-local — re-derive, never widen,
+   never delete.** `run_digest = 150b9796dde5ae4dbf2e3a7665c7cf55062
+   323c33acad41d5d90c44481bbef2f` (sha256 over the canonical
+   serialization of the ordered `(fixture key, content_hash)` list of
+   the 57 predictions) was derived from the real first run on CPython
+   3.12.3; any model/fixture/interpreter/canonicalization change
+   forces re-derivation and re-documentation — the Phase 3 golden
+   discipline (Phase 4 item 2's rule) applied verbatim.
+
+8. **Declared amendments A1/A2/A3+A3'/A4 — exact figures (brief
+   pre-sanctioned; declared at checkpoint, review, and monitor sweep).**
+   **A1+A2** (`tests/test_temporal_integrity.py`, combined **440 →
+   452**): poison registry 5 → 6, `matches` census 3 → 4 (the new
+   `run_walk_forward` entry point registered AND poisoned); Phase 8's
+   `app/` byte-pin re-pointed `1e1c1ac` → `ea92667` and rescoped to the
+   pre-existing packages, excluding this phase's `app/backtesting`
+   (Phase 8's zero-pre-existing-production-code intent preserved as an
+   explicit per-package assertion). **A3+A3'** (the pin-collision
+   class): `tests/test_fixtures_and_hygiene.py` **625 → 626** (one
+   `ALLOWED_APP_IMPORTS` entry with the A3'-corrected **self-inclusive**
+   value `{"app.domain", "app.forecasts", "app.backtesting"}` plus the
+   line-neutral `PURE_PACKAGES` five-set) and four separation files:
+   `test_phase4_separation.py` **833 → 834**, `test_phase5_separation.py`
+   **573 → 574**, `test_phase6_separation.py` **510 → 510** (net zero),
+   `test_phase7_separation.py` **440 → 443** (the fifth file, A3'
+   found). **A4**: `tests/test_health_script.py` valve **300 → 1500 s**,
+   **105 → 105** lines (Phase 1 item 2's 2026-10-22 update carries the
+   full record) + the sole sanctioned `scripts/health-check.sh` edit
+   (determinism-section strip-regex fix + counts-only `UNPARSEABLE`
+   gate; the script's five inner runs, recursion guard, and every other
+   section untouched). Every legacy assertion retained in all six
+   amended test files (strictly stronger, never a weakening).
+
+9. **Two STOP-and-reports during the build — zero self-sanctioning
+   (process record).** (i) The builder STOP-and-reported (2026-10-20)
+   that A3's sanctioned value was blocker-grade: the mandated
+   five-module package could not wire its own intra-package imports
+   against the criterion-12 prefix scanner under
+   `{"app.domain", "app.forecasts"}`; the architect independently
+   re-verified, probed all eleven existing entries as self-inclusive,
+   **ratified the corrected self-inclusive value (A3')** and folded in
+   A3's own missed fifth pinned file (`test_phase7_separation.py`) — a
+   brief-composition omission, same mechanical class. (ii) The A4 valve
+   trip was reproduced by the conductor verbatim — `144 passed, 3
+   errors in 428.03s (0:07:08)` (recorded in Phase 1 item 2's update) —
+   and the builder STOP-and-reported both A4 defects without touching
+   any unsanctioned file. The suite was RED until A4 items 1–2 landed;
+   no checkpoint on red tests.
+
+10. **`tests/test_backtesting.py` shipped at 653 lines — accepted
+    deviation (A4 item 3), not an amendment.** The brief's "< ~440
+    lines" is a soft reviewability watch-convention (the `~`), never a
+    gate; adjudicated ACCEPTED — no split, no trim — on content-driven
+    size grounds (the poison gate, accounting pins, no-join probe
+    battery, five-file amendment pins) with precedent (Phase 6's
+    641-line `test_features_policies.py`, Phase 7's 834-line file);
+    splitting would create cross-file pin churn for zero review gain,
+    and post-hoc trimming is the process that produced Phase 7's two
+    accidental probe deletions. The file-size watch item stands.
+
+11. **Load-driven runtime watch item (carried; figures updated).** The
+    full harness runs everywhere (E2: ~2.5 s idle / ~4.2 s loaded per
+    run, ~8 executions per suite run via module-scoped fixture reuse —
+    no subsetting, no test-side timeout around any harness run). The
+    direct suite now takes **~647–750 s at load ~9.5–12.7** on 4 cores
+    (offline run: 867.88 s); the health script's wall is **~627 s**
+    (inner runs `144 passed, 3 deselected` ×2, 117–131 s each). The A4
+    valve (1500 s) covers the worst observed script wall ~2.3×; suite-
+    cost engineering (the script's five serial inner runs) is Phase
+    10's (IX-10), not a hot fix.
+
+12. **Accuracy-sites count: brief prose said 9, reality is 10 (one-line
+    disposition).** The quant probe's prose count of "9 legitimate
+    `accuracy` docstring uses" undercounts its own list — the list and
+    the real app-wide scan find **10**; the shipped guard pins the real
+    10 (`accuracy` is field-name-scoped only, never source-banned).
+
+## Not yet applicable (as of Phase 9)
+
+Forecast, storage, API, feature, decision-report, temporal-integrity,
+and backtesting limitations are now listable and listed above (pipeline
+stage 6 FORECAST DISTRIBUTIONS, its durable write-once sqlite store,
+the read-only serving surface, pipeline stage 4 FEATURE EXTRACTION —
+`app/features/` — pipeline stage 8 DECISION ANALYSIS —
+`app/decisions/` — Phase 8's temporal-integrity defenses — test-side,
+no module — and pipeline stage 9's backtesting machinery —
+`app/backtesting/`, pure, consumed by nothing under `app/` — all
+exist). Still not yet listable: pre-match-state and model-improvement
+limitations — pipeline stages 3 and 10 are unbuilt (`app/state/` and
+`app/improvement/` remain PLANNED) — plus **evaluation limitations:
+`app/evaluation/` remains PLANNED (Phase 11's)**, and there are no
+pre-match snapshots and no evaluation metrics to mis-trust yet (Phase 9
+ships zero scoring — evaluated n = 0). "Temporal integrity" itself is
+deliberately NOT listed here: Phase 8's defenses are shipped tests and
+documentation, listed above. Model-calibration and predictive
+limitations (as distinct from the in-sample assumptions above) arrive
+with Phase 11 and will be documented in `docs/EVALUATION.md` (which
+does not exist yet — there is no evaluation to document) and in this
+file. Data provenance and format limitations remain in
+`docs/DATA-SOURCES.md`; the model's statistical assumptions and their
+weaknesses are in `docs/STATISTICAL-ASSUMPTIONS.md` (exists since
+Phase 3; §7 covers simulation and scenarios; §8 covers forecasts,
+storage, and serving; §9 covers feature extraction, added at Phase 6;
+§10 covers decision analysis, added at Phase 7; §11 covers the
+temporal-integrity pre-registrations binding Phases 9 and 11, added at
+Phase 8; §12 covers the backtesting baseline definition, scored-
+population accounting, and standing bans, added at Phase 9).

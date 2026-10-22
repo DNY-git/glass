@@ -47,9 +47,23 @@ echo "== skips/xfails =="
 
 echo
 echo "== determinism comparison (timings stripped) =="
-SUM1=$("$PY" -m pytest -q --tb=no 2>/dev/null | grep -E '^[0-9]+ (passed|failed)|passed|failed|error' | tail -n 1 | sed -E 's/in [0-9.]+s//')
-SUM2=$("$PY" -m pytest -q --tb=no 2>/dev/null | grep -E '^[0-9]+ (passed|failed)|passed|failed|error' | tail -n 1 | sed -E 's/in [0-9.]+s//')
-if [ "$SUM1" = "$SUM2" ]; then
+# Phase 9 AMENDMENT A4 (architect-sanctioned): strip BOTH timing forms.
+# pytest prints "in 122.11s" and, for runs >= 60 s, appends a
+# "(0:MM:SS)"/"(H:MM:SS)" wall-clock parenthetical the old regex did
+# not strip -- IDENTICAL outcomes compared MISMATCH. Counts-only
+# comparison, never timings; the counts-only shape is now pinned
+# (UNPARSEABLE is loud, never a silent OK).
+strip_summary() {
+    sed -E 's/in [0-9.]+s//; s/ +\([0-9]+:[0-9]+:[0-9]+\)//; s/ +$//'
+}
+COUNTS_RE='^[0-9]+ [a-z]+(, [0-9]+ [a-z]+)*$'
+SUM1=$("$PY" -m pytest -q --tb=no 2>/dev/null | grep -E '^[0-9]+ (passed|failed)|passed|failed|error' | tail -n 1 | strip_summary)
+SUM2=$("$PY" -m pytest -q --tb=no 2>/dev/null | grep -E '^[0-9]+ (passed|failed)|passed|failed|error' | tail -n 1 | strip_summary)
+if ! [[ "$SUM1" =~ $COUNTS_RE ]] || ! [[ "$SUM2" =~ $COUNTS_RE ]]; then
+    echo "UNPARSEABLE (counts-only comparison expected after stripping):"
+    echo "run 1: $SUM1"
+    echo "run 2: $SUM2"
+elif [ "$SUM1" = "$SUM2" ]; then
     echo "OK: $SUM1"
 else
     echo "MISMATCH"

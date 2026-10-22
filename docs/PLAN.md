@@ -54,7 +54,7 @@ Subpackages are created when their phase begins, never speculatively:
     │   ├── forecasts/           # stage 6: immutable distributions, cutoff inside
     │   ├── scenarios/           # stage 7: bounded hypothetical multipliers
     │   ├── decisions/           # stage 8: comparison, disagreement reported — EXISTS (Phase 7): pure build_decision_report over frozen forecasts, min/max spread only, never stored
-    │   ├── backtesting/         # stage 9: chronological harness, baselines
+    │   ├── backtesting/         # stage 9: chronological harness, baselines — EXISTS (Phase 9): pure walk-forward machinery, baselines, refusal accounting; still no metrics; unconsumed
     │   ├── evaluation/          # stage 9: log loss, Brier, RPS, calibration
     │   ├── improvement/         # stage 10: tuning loop (protected from itself)
     │   └── api/                 # read-only serving surface — EXISTS (Phase 5): stdlib http.server (no logic, no generation)

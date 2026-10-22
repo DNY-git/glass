@@ -59,8 +59,9 @@ ALLOWED_APP_IMPORTS: dict[str, set[str]] = {
     "app.api": {"app.domain", "app.forecasts", "app.storage", "app.api"},  # Phase 5: api imports stdlib http + app.domain/app.forecasts/app.storage only
     "app.features": {"app.domain", "app.features"},  # Phase 6: features imports stdlib + app.domain only (pure)
     "app.decisions": {"app.domain", "app.models", "app.forecasts", "app.scenarios", "app.decisions"},  # Phase 7: decisions imports stdlib + domain/models/forecasts/scenarios only (pure)
+    "app.backtesting": {"app.domain", "app.forecasts", "app.backtesting"},  # Phase 9: backtesting imports stdlib + app.domain/app.forecasts only (pure)
 }
-PURE_PACKAGES = {"app.domain", "app.validation", "app.features", "app.decisions"}
+PURE_PACKAGES = {"app.domain", "app.validation", "app.features", "app.decisions", "app.backtesting"}
 # Criterion 12: resolved module paths that read the wall clock. Names are
 # the *real* dotted paths after alias resolution (e.g. `dt.datetime.now()`
 # and `from datetime import datetime as DT; DT.now()` both resolve to

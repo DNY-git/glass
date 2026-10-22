@@ -33,8 +33,14 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 APP_DIR = REPO_ROOT / "app"
 FIXTURES = REPO_ROOT / "fixtures" / "openfootball" / "valid"
 
-# Criterion 7: the app/ byte-pin is version-local to this checkpoint.
-PHASE7_CHECKPOINT = "1e1c1ac"
+# Criterion 7: the app/ byte-pin is version-local to this checkpoint;
+# Phase 9 AMENDMENT A2 rescope: every pre-existing app/ package EXCEPT
+# the new app/backtesting/ (Phase 8's zero-production-code intent).
+PHASE8_CHECKPOINT = "ea92667"
+PRE_EXISTING_APP = (
+    "app/__init__.py", "app/api", "app/decisions", "app/domain", "app/features", "app/forecasts",
+    "app/ingestion", "app/models", "app/scenarios", "app/simulation", "app/storage", "app/validation",
+)
 HISTORY_PACKAGES = ("app/models", "app/forecasts", "app/features", "app/decisions")
 SANCTIONED_RANDOM_MODULE = "app/simulation/simulate.py"
 
@@ -75,19 +81,22 @@ def _fixture_keyed_to(match: Match) -> Fixture:
 
 
 # --- Criteria 1-2: the poison-matrix coverage registry machinery. ---
-# A1 BLOCKER: the pinned five history-consuming entry points, each to
-# its REAL, resolvable poison/tamper test (Phases 3-7 + this file's 6).
+# A1 BLOCKER: the pinned six history-consuming entry points, each to
+# its REAL, resolvable poison/tamper test (Phases 3-8 + this file's 6;
+# Phase 9 AMENDMENT A1 adds run_walk_forward -> the test-first poison
+# gate in tests/test_backtesting.py).
 POISON_REGISTRY: dict[str, tuple[str, str]] = {
     "fit": ("test_poisson_fit", "test_poisoned_future_match_cannot_alter_parameters"),
     "build_forecast": ("test_forecasts", "test_build_forecast_poisoned_future_cannot_change_forecast"),
     "compute_features": ("test_features", "test_poisoned_future_cannot_change_features"),
     "build_decision_report": ("test_decisions", "test_poisoned_future_cannot_change_report"),
     "storage.get_forecast/verify_all": ("test_temporal_integrity", "test_snapshot_immutability_audit_update_delete_tamper"),
+    "run_walk_forward": ("test_backtesting", "test_poisoned_remaining_future_freezes_earlier_predictions"),
 }
 
 # The registry's matches-parameter subset = today's AST census of
 # public `matches` entry points under app/ (criterion 1).
-MATCHES_ENTRY_POINTS = ("fit", "build_forecast", "compute_features")
+MATCHES_ENTRY_POINTS = ("fit", "build_forecast", "compute_features", "run_walk_forward")
 
 
 def validate_registry(registry: Mapping[str, tuple[str, str]]) -> dict[str, Callable[..., object]]:
@@ -176,12 +185,14 @@ def test_poison_coverage_registry_bijection_and_census() -> None:
     # test; every entry RESOLVES (imported, not merely named).
     assert set(POISON_REGISTRY) == {
         "fit", "build_forecast", "compute_features", "build_decision_report",
-        "storage.get_forecast/verify_all"}
+        "storage.get_forecast/verify_all",
+        "run_walk_forward"}
     assert POISON_REGISTRY["fit"] == ("test_poisson_fit", "test_poisoned_future_match_cannot_alter_parameters")
     assert POISON_REGISTRY["build_forecast"] == ("test_forecasts", "test_build_forecast_poisoned_future_cannot_change_forecast")
     assert POISON_REGISTRY["compute_features"] == ("test_features", "test_poisoned_future_cannot_change_features")
     assert POISON_REGISTRY["build_decision_report"] == ("test_decisions", "test_poisoned_future_cannot_change_report")
     assert POISON_REGISTRY["storage.get_forecast/verify_all"] == ("test_temporal_integrity", "test_snapshot_immutability_audit_update_delete_tamper")
+    assert POISON_REGISTRY["run_walk_forward"] == ("test_backtesting", "test_poisoned_remaining_future_freezes_earlier_predictions")
     resolved = validate_registry(POISON_REGISTRY)
     assert set(resolved) == set(POISON_REGISTRY)
     assert all(test.__name__.startswith("test_") for test in resolved.values())
@@ -398,10 +409,11 @@ def test_no_rng_in_history_consuming_modules_and_app_untouched() -> None:
     assert import_files == {SANCTIONED_RANDOM_MODULE}
     assert reference_files == {SANCTIONED_RANDOM_MODULE}
 
-    # Byte-pin (decision 1): zero production code changed — `git diff
-    # 1e1c1ac -- app/` exits 0 with empty output (version-local).
+    # Byte-pin (decision 1 + Phase 9 AMENDMENT A2): every pre-existing app/
+    # package is byte-identical to ea92667 — `git diff ea92667 -- <pre-existing
+    # packages>` exits 0 empty (version-local; app/backtesting/ excluded).
     result = subprocess.run(
-        ["git", "diff", PHASE7_CHECKPOINT, "--", "app/"],
+        ["git", "diff", PHASE8_CHECKPOINT, "--", *PRE_EXISTING_APP],
         cwd=REPO_ROOT, capture_output=True, text=True,
     )
     assert result.returncode == 0, result.stderr

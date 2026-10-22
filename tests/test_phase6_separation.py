@@ -402,12 +402,12 @@ def test_wall_clock_env_and_purity_scan_covers_app_features() -> None:
 
 
 def test_hygiene_amendments_pinned_and_full_tree_scan_clean() -> None:
-    # Criterion 19 (F5): AMENDMENT A1 pinned — exactly TWELVE keys; the
-    # ten legacy values are exactly the Phase 1-5 sets (append-only
+    # Criterion 19 (F5): AMENDMENT A1 pinned — exactly THIRTEEN keys (Phase 9
+    # A3'); the ten legacy values are exactly the Phase 1-5 sets (append-only
     # convention protected); the A1 value is exactly the sanctioned
     # {"app.domain", "app.features"}; PURE_PACKAGES is exactly the
-    # sanctioned four-package strengthening (Phase 7's A1 adds
-    # app.decisions); the exception map is untouched; and hygiene.scan_file
+    # sanctioned five-package strengthening (Phases 7/9 A1 + A3 add
+    # app.decisions, app.backtesting); the exception map is untouched; hygiene.scan_file
     # over every .py under app/ completes with zero violations and no KeyError.
     expected_legacy: dict[str, set[str]] = {
         "app": set(),
@@ -421,15 +421,15 @@ def test_hygiene_amendments_pinned_and_full_tree_scan_clean() -> None:
         "app.storage": {"app.domain", "app.forecasts", "app.storage"},
         "app.api": {"app.domain", "app.forecasts", "app.storage", "app.api"},
     }
-    assert len(hygiene.ALLOWED_APP_IMPORTS) == 12
-    assert set(hygiene.ALLOWED_APP_IMPORTS) == set(expected_legacy) | {"app.features", "app.decisions"}
+    assert len(hygiene.ALLOWED_APP_IMPORTS) == 13
+    assert set(hygiene.ALLOWED_APP_IMPORTS) == set(expected_legacy) | {"app.features", "app.decisions", "app.backtesting"}
     for package, allowed in expected_legacy.items():
         assert hygiene.ALLOWED_APP_IMPORTS[package] == allowed, package
     assert hygiene.ALLOWED_APP_IMPORTS["app.features"] == {
         "app.domain",
         "app.features",
     }
-    assert hygiene.PURE_PACKAGES == {"app.domain", "app.validation", "app.features", "app.decisions"}
+    assert hygiene.PURE_PACKAGES == {"app.domain", "app.validation", "app.features", "app.decisions", "app.backtesting"}
     assert hygiene.BANNED_IMPORT_EXCEPTIONS == {
         "app.storage": {"sqlite3"},
         "app.api": {"http"},
@@ -447,15 +447,15 @@ def test_hygiene_amendments_pinned_and_full_tree_scan_clean() -> None:
         assert probe(f"import {banned}\n", "app.features"), banned
 
     # The A2/A3 pin updates are verified IN PLACE in the amended files:
-    # both declare the 12-key universe with app.features and app.decisions
-    # in the union, and both still assert every legacy value — extending,
-    # never weakening (the files also execute in this same suite).
+    # both declare the 13-key universe with app.features, app.decisions
+    # and app.backtesting in the union, and both still assert every legacy
+    # value — extending, never weakening (the files execute in this suite).
     phase4_source = (REPO_ROOT / "tests" / "test_phase4_separation.py").read_text()
     phase5_source = (REPO_ROOT / "tests" / "test_phase5_separation.py").read_text()
     for amended, name in ((phase4_source, "phase4"), (phase5_source, "phase5")):
-        assert "len(hygiene.ALLOWED_APP_IMPORTS) == 12" in amended, name
+        assert "len(hygiene.ALLOWED_APP_IMPORTS) == 13" in amended, name
         assert '"app.features"' in amended and '"app.decisions"' in amended, name
-        assert all(f"len(hygiene.ALLOWED_APP_IMPORTS) == {n}" not in amended for n in (10, 11)), name
+        assert all(f"len(hygiene.ALLOWED_APP_IMPORTS) == {n}" not in amended for n in (10, 11, 12)), name
 
     # The full-tree scan: every .py under app/ (now including the new
     # package) completes with zero violations and no KeyError.

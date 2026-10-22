@@ -24,8 +24,8 @@ Developer acceptance is recorded per BLOCK, not per phase.
 | 5     | Forecasting API                 | committed   |
 | 6     | Feature engine                  | committed   |
 | 7     | Decision analysis               | committed   |
-| 8     | Temporal integrity              | in progress |
-| 9     | Backtesting                     | planned   |
+| 8     | Temporal integrity              | committed   |
+| 9     | Backtesting                     | in progress |
 | 10    | Operational reliability         | planned   |
 | 11    | Forecast evaluation             | planned   |
 | 12    | Integration and verification    | planned   |
@@ -140,8 +140,11 @@ Status notes:
   developer acceptance belongs to the developer at the Phases 7–9
   boundary (recorded per BLOCK, not per phase; no Block 3 acceptance
   row).
-- Phase 8 is `in progress` (checkpoint **PENDING**): built and passed
-  independent review (PASS, 2026-10-19, first pass, criteria 1–14,
+- Phase 8 is `committed`: checkpoint hash **ea92667** (full hash
+  ea92667af37e069c843c4ba9696771552dcc6e94; `phase 8: temporal
+  integrity defenses, poison registry, vocabulary guards`;
+  2026-10-19 22:13 +0100, master). Built and passed independent review
+  (PASS, 2026-10-19, first pass, criteria 1–14,
   after tester PASS ×14 with a 131-check probe suite, three honest
   probe-bug disclosures, and suite runs including an offline run);
   suite **133 passed**; builder green with **zero deviations** (one
@@ -154,12 +157,44 @@ Status notes:
   empirically verified superset); glass-quant consulted (2026-10-19,
   rulings A0–A9 binding, including the ADV-0 scope-anchor correction:
   Phase 8 = IX-8 temporal integrity, not backtesting — machinery is
-  Phase 9, first scoring Phase 11); zero developer questions. The docs
-  agent replaces PENDING in docs/PROGRESS-LOG.md with the checkpoint
-  hash and flips this row to `committed` after the checkpoint, as in
-  Phases 4–7. Block 3 developer acceptance belongs to the developer at
-  the Phases 7–9 boundary (recorded per BLOCK, not per phase; no Block
-  3 acceptance row).
+  Phase 9, first scoring Phase 11); zero developer questions. Hash
+  recorded in docs/PROGRESS-LOG.md per the Phase 1–7 convention. Block
+  3 developer acceptance belongs to the developer at the Phases 7–9
+  boundary (recorded per BLOCK, not per phase; no Block 3 acceptance
+  row).
+- Phase 9 is `in progress`: checkpoint **PENDING** — `phase 9:
+  walk-forward backtesting harness, chronological baselines, refusal
+  accounting` (the git agent makes the checkpoint commit; this docs
+  agent then replaces PENDING with the real hash and flips this row
+  `in progress` → `committed`, as in Phases 4–8). Built and passed
+  independent review (**PASS, 2026-10-22, first pass, criteria 1–15**,
+  after tester PASS ×15 with the golden run digest independently
+  re-derived, baselines hand-recomputed, and suite runs ×3 including
+  an offline run); suite **147 passed** (clean-env runs ×2+ at load
+  ~9.5–12.7, ~647–750 s; offline 867.88 s; docs run 723.04 s); the
+  stage-9 harness exists as a pure `app/backtesting/` package (six
+  modules, 535 lines) — **machinery only, still no metrics, evaluated
+  n = 0**, no prediction-to-outcome join (Phase 11's); the 60-target
+  accounting is 3 refusals + 27 flagged + 30 clean = 57 predictions;
+  brief-pre-sanctioned AMENDMENTS **A1+A2**
+  (tests/test_temporal_integrity.py **440 → 452**: registry 5 → 6,
+  census 3 → 4, byte-pin re-pointed `1e1c1ac` → `ea92667` and rescoped
+  to pre-existing packages), **A3+A3'** (hygiene **625 → 626** with the
+  self-inclusive value; separation-file pins **833 → 834**, **573 →
+  574**, **510 → 510**, **440 → 443**), **A4**
+  (tests/test_health_script.py valve **300 → 1500 s**, **105 → 105**,
+  after the build-time trip reproduced verbatim — `144 passed, 3
+  errors in 428.03s (0:07:08)` — plus the sole sanctioned
+  `scripts/health-check.sh` determinism strip-regex/counts-pin fix);
+  two builder STOP-and-reports (the A3' brief defect; the A4 valve
+  trip), zero self-sanctioning; the 653-line `tests/test_backtesting.py`
+  accepted as a deviation (A4 item 3); glass-quant consulted (2026-10-
+  20, rulings A0–A10 binding, empirical probes E1–E4 re-verified);
+  zero developer questions. Hash recorded in docs/PROGRESS-LOG.md per
+  the Phase 1–8 convention. **Block table untouched; Block 1/2 rows
+  untouched; NO Block 3 acceptance row — developer acceptance belongs
+  to the developer at the Phases 7–9 boundary after the Phase 9 commit
+  and monitor sweep** (recorded per BLOCK, not per phase).
 
 ## Block acceptance record
 

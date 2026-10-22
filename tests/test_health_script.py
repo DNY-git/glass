@@ -2,7 +2,7 @@
 
 ONE module-scoped subprocess run of the health script is shared by all
 three tests: clean environment (any inherited PYTEST_ADDOPTS removed),
-cwd = repo root, timeout 300 s (AMENDMENT A2). The script's own pytest runs deselect
+cwd = repo root, timeout 1500 s (AMENDMENT A4, Phase 9: evidence-based re-scope of the A2 valve; see docs/briefs/phase-9.md). The script's own pytest runs deselect
 these tests via the PYTEST_ADDOPTS recursion guard, so the nested suite
 cannot re-spawn the script.
 """
@@ -18,7 +18,7 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
-HEALTH_TIMEOUT_S = 300  # AMENDMENT A2 (Phase 4): 120 -> 300 s, evidence-based; see docs/briefs/phase-4.md
+HEALTH_TIMEOUT_S = 1500  # AMENDMENT A4 (Phase 9): 300 -> 1500 s, evidence-based (script ~600-660 s at load 10-11; ~2.3x worst observed, Phase 4 A2 ratio); re-scopes the standing A2 clause — see docs/briefs/phase-9.md
 
 SECTION_HEADERS = (
     "last commit",

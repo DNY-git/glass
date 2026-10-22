@@ -1,6 +1,6 @@
 # ARCHITECTURE — SPORTS LOOKING GLASS
 
-Status as of 2026-10-19 (Phase 8): **pipeline stages 1–2, 4–8 and the
+Status as of 2026-10-22 (Phase 9): **pipeline stages 1–2, 4–8 and the
 cross-cutting layers exist** — `app/domain/` (immutable models,
 match collection, canonical state), `app/ingestion/` (stage 1 DATA),
 `app/validation/` (stage 2 VALIDATION), `app/features/` (stage 4
@@ -24,6 +24,12 @@ SCENARIO EXPLORATION: bounded, labeled-hypothetical multipliers),
 "decision-report-v1"` — **in-process views over frozen forecasts,
 currently unconsumed by anything, never stored** — no file outside the
 package imports it, AST-enforced both directions),
+`app/backtesting/` (the stage-9 BACKTESTING harness — the pure,
+deterministic walk-forward machinery: `run_walk_forward` and the frozen
+`WalkForwardRun`/`BaselineRecord`/`RefusalRecord`/`RunManifest` records
+with `BACKTEST_VERSION = "backtest-walkforward-v1"` — **machinery only,
+still no metrics**; pure stdlib + `app.domain` + `app.forecasts`, no
+storage import, currently consumed by nothing under `app/`),
 `app/simulation/` (the cross-cutting Monte Carlo module — **not** one
 of the ten pipeline stages), plus the cross-cutting durable store
 `app/storage/` (sqlite write-once snapshots via stdlib) and the
@@ -33,9 +39,13 @@ Phase 8 (Temporal integrity, HANDOFF Part IX item 8) added **no
 module**: its temporal-integrity defenses exist as **tests +
 documentation only** (`tests/test_temporal_integrity.py`,
 `tests/test_vocab_guards.py`, plus one declared line in
-`tests/test_phase7_separation.py`) — zero production code under `app/`;
-`app/backtesting/` and `app/evaluation/` remain **PLANNED** (Phase 9's
-and Phase 11's respectively). `app/state/` (stage 3 PRE-MATCH STATE)
+`tests/test_phase7_separation.py`) — zero production code under `app/`
+at that phase. Phase 9 (Backtesting, HANDOFF Part IX item 9) added
+`app/backtesting/` (pure, five modules + `__init__.py` — six files,
+535 lines) and nothing
+else under `app/`; `app/evaluation/` remains **PLANNED** (Phase 11's)
+— the one-line prediction-to-outcome join deliberately does not exist
+yet. `app/state/` (stage 3 PRE-MATCH STATE)
 remains **planned**: stage 4
 legitimately precedes stage 3 per roadmap order, features compute
 directly from match history plus domain types, and no dependency on
@@ -61,7 +71,7 @@ code imports no storage, no HTTP, no I/O.
 | 6 | FORECAST DISTRIBUTIONS | Full scoreline/outcome distributions, frozen at creation (immutable). | `app/forecasts/` (exists since Phase 5) |
 | 7 | SCENARIO EXPLORATION | Bounded, labeled-hypothetical multipliers. | `app/scenarios/` (exists since Phase 4) |
 | 8 | DECISION ANALYSIS | Comparison of model outputs and their disagreement, honestly presented. | `app/decisions/` (exists since Phase 7) |
-| 9 | OUTCOME EVALUATION | Log loss, Brier, RPS against realized results, strictly chronological. | `app/evaluation/` (harness: `app/backtesting/`) |
+| 9 | OUTCOME EVALUATION | Log loss, Brier, RPS against realized results, strictly chronological. | `app/backtesting/` (harness: **EXISTS since Phase 9** — machinery, still no metrics) + `app/evaluation/` (scoring: PLANNED, Phase 11's) |
 | 10 | MODEL IMPROVEMENT | A tuning loop protected from evaluating itself on its own tuning data. | `app/improvement/` |
 
 Cross-cutting modules: `app/domain/` **exists since Phase 2**
@@ -122,11 +132,11 @@ verb, routers containing no logic.
     │   ├── scenarios/           # EXISTS (Phase 4) — stage 7: bounded, labeled-hypothetical multipliers
     │   ├── simulation/          # EXISTS (Phase 4) — CROSS-CUTTING seeded Monte Carlo (not a stage; the only random importer)
     │   ├── decisions/           # EXISTS (Phase 7) — stage 8: frozen decision reports (pure; in-process views over forecasts; unconsumed; never stored)
-    │   ├── backtesting/         # PLANNED — stage 9: chronological harness
-    │   ├── evaluation/          # PLANNED — stage 9: log loss, Brier, RPS
+    │   ├── backtesting/         # EXISTS (Phase 9) — stage 9 harness: walk-forward machinery, baselines (pure; no metrics; no storage import; unconsumed)
+    │   ├── evaluation/          # PLANNED — stage 9: log loss, Brier, RPS (Phase 11's)
     │   ├── improvement/         # PLANNED — stage 10: protected tuning loop
     │   └── api/                 # EXISTS (Phase 5) — read-only stdlib http.server on 127.0.0.1; no logic, no generation
-    ├── tests/                   # EXISTS (Phase 8): 133 tests, 1:1 with criteria
+    ├── tests/                   # EXISTS (Phase 9): 147 tests, 1:1 with criteria
     ├── fixtures/                # EXISTS (Phase 2): synthetic OpenFootball-shaped JSON
     ├── data/                    # NOT CREATED — git-ignored working data; the DB path is caller-passed, no data/ dir in-repo
     ├── scripts/health-check.sh  # EXISTS (bootstrap + Phase 1 recursion guard)
@@ -135,7 +145,7 @@ verb, routers containing no logic.
                                  # HEALTH-LOG, ARCHITECTURE, KNOWN-LIMITATIONS,
                                  # DATA-SOURCES, STATISTICAL-ASSUMPTIONS, briefs/
 
-## Instantiation status (2026-10-19, Phase 8)
+## Instantiation status (2026-10-22, Phase 9)
 
 | Item | Status |
 |------|--------|
@@ -150,18 +160,22 @@ verb, routers containing no logic.
 | `app/api/` (serialize.py, server.py) | Exists (Phase 5) — **read-only** serving surface over STORED snapshots: stdlib `ThreadingHTTPServer` bound to `127.0.0.1` (never `0.0.0.0`; zero third-party dependencies — D1 option a), two `GET` routes (`/health`, `/forecasts/{competition}/{season}/{date}/{home}/{away}`); non-GET → 405, unknown fixture → 404 `{"error":"unknown_fixture"}` (store-then-serve — `build_forecast` appears nowhere under `app/api`, AST-enforced), malformed input → 400 (strict manual percent-decoder, AMENDMENT A5 — no urllib); byte-deterministic JSON bodies (sorted keys, fixed separators, full-precision floats, no timestamp in any body); top-level honesty flags + provenance echo + fixed `disclaimer`; no-auth posture holds only as localhost + read-only + no secrets |
 | `app/scenarios/` (spec.py, apply.py) | Exists (Phase 4) — stage 7: frozen `TransformOp`/`Transform`/`Scenario`, `build_scenario` (bounds `MULTIPLIER_MIN = 0.5`/`MULTIPLIER_MAX = 2.0` inclusive, `ValueError` — **never clamping**, canonical transform ordering, duplicate/unknown-team refusal, required non-empty label), `scenario_matrix` (strict applicability; parameter-scale transforms `α′ = m·α` etc.; matrix echoes the baseline's flags); one scenario per call — **no averaging or ensembling anywhere**; no randomness, no cell math, no `FittedParams` construction (AST-enforced) |
 | `app/decisions/` (constants.py, canonicalization.py, record.py, builder.py) | Exists (Phase 7) — stage 8: `build_decision_report(forecast, *, scenarios=())` — **no `matches`, no time-like parameter exists to forget** (the forecast's cutoff was enforced once, inside `build_forecast`); frozen **28-field** `DecisionReport` plus nested frozen `ScenarioComparison` (8 fields) and `ScenarioSpread` (4 fields), `content_hash` computed at construction (`init=False`) under the package's own canonicalization spec of record; `REPORT_VERSION = "decision-report-v1"` + the fixed `DISCLAIMER` as the constants module's **exactly two** names (no threshold, no knob, no decision rule exists — A6 position, pinned by test); provenance chains through echoed `forecast_version` + `forecast_content_hash`; scenario refusals by frozen value equality (mismatched baseline, duplicate labels → `ValueError`), entries canonically ordered by label; **min/max/spread only — a mean is an invented ensemble and exists nowhere**; analytic `outcome_probs` only, never MC (`app.simulation` never imported); pure — stdlib + `app.domain`/`app.models`/`app.forecasts`/`app.scenarios` only, in `PURE_PACKAGES` (AST-enforced both directions); **in-process views over frozen forecasts, consumed by nothing, stored nowhere** — no sqlite table, no schema bump, no API route; evaluated n = 0 (zero scoring ships) |
+| `app/backtesting/` (constants.py, canonicalization.py, record.py, baselines.py, harness.py + `__init__.py`; 535 lines) | Exists (Phase 9) — IX-9 **machinery only, still no metrics**: single public `matches`-parameter function exactly — `run_walk_forward(matches, *, fixture_file_sha256s=(), interpreter_version=None)` (no spec/config/variant/seed knob — the single-model-spec surface is pinned closed) — canonical-chronological targets (`canonical_sort_key`), per-target `Fixture` re-derived as natural key + **kickoff echo** (never the score), pool = matches minus the target, `ValueError` → first-class `RefusalRecord` (`REFUSED_NO_PRE_CUTOFF_HISTORY` — **60 targets = 3 refusals + 27 flagged + 30 clean = 57 predictions**, auditable, never skipped/uniformed); underscore-private chronological baselines in `baselines.py` (the ONLY realized-score consumer: strictly `date < fixture.date`, uniform weighting, MISSING `n = 0` at the first date's three fixtures, **never stored**, in-process re-derivable); frozen `WalkForwardRun`/`BaselineRecord`/`RefusalRecord`/`RunManifest` with construction-time content hashes; version-local golden run digest (re-derive, never widen); double-run + store-level idempotence via the CALLER's `insert_forecast` into a caller-passed DB; own canonicalization spec of record; pure — stdlib + `app.domain`/`app.forecasts` only, **no `app.storage` import**, in `PURE_PACKAGES` (AST-enforced); **no prediction-to-outcome join, no metric of any kind — evaluated n = 0**; **consumed by nothing under `app/`** — the first consumer (scoring) is Phase 11's |
 | `app/simulation/` (constants.py, simulate.py) | Exists (Phase 4) — **cross-cutting Monte Carlo module, not one of the ten pipeline stages**: `simulate(fitted, home, away, *, seed, n_sims=10_000, scenario=None)` with required keyword-only int `seed` (fresh `random.Random(seed)` per call, `random()`-only draws, categorical sampling over the truncated renormalized matrix), frozen `SimulationResult` (raw counts, exact `analytic_outcome`, `mc_stderr` = simulation noise only, dropped mass, flags riding through); `SIM_VERSION = "sim-categorical-v1"`; **the only module permitted to import `random`** (AST-enforced with probes); refuses a scenario whose baseline ≠ the given fitted object (value equality) |
 | `fixtures/openfootball/` (3 synthetic JSON files) | Exists (Phase 2) — 60 valid matches + 12-record defect sample, fictional teams, `"synthetic": true` marker |
-| `pytest.ini`, root `conftest.py`, `tests/` (24 modules, 133 tests), `scripts/health-check.sh` | Exists (Phases 1–8) |
+| `pytest.ini`, root `conftest.py`, `tests/` (25 modules, 147 tests), `scripts/health-check.sh` | Exists (Phases 1–9) |
 | `.venv/` (Python 3.12.3, pip 26.2.1, pytest 9.1.1) | Exists, git-ignored |
 | `data/` | **Not created** — git-ignored working data; the sqlite DB path is caller-passed (storage tests use `tmp_path` exclusively), no `data/` directory is created in-repo (Phase 5 brief design decision 1) |
-| Remaining `app/` subpackages (state, backtesting, evaluation, improvement) | **Do not exist — planned, phase by phase** (stage 4 `features` removed from this list at Phase 6 — it exists; stage 8 `decisions` removed at Phase 7 — it exists) |
+| Remaining `app/` subpackages (state, evaluation, improvement) | **Do not exist — planned, phase by phase** (stage 4 `features` removed from this list at Phase 6 — it exists; stage 8 `decisions` removed at Phase 7 — it exists; the stage-9 backtesting harness removed at Phase 9 — `app/backtesting/` exists; `app/evaluation/` stays — Phase 11's) |
 
 There is data (synthetic fixtures), a fitted statistical model, a
 chronological feature layer (stage 4 — descriptive, currently
 unconsumed), a scenarios/simulation layer, a decision-report layer
 (stage 8 — deterministic in-process views over frozen forecasts,
-currently unconsumed and never stored), **durable immutable forecast
+currently unconsumed and never stored), a **backtesting layer
+(stage-9 harness — pure walk-forward machinery, baselines, refusal
+accounting — currently unconsumed by anything under `app/`; still no
+metrics),** **durable immutable forecast
 snapshots (the system's first durable artifacts), and a read-only
 localhost API
 over them** in the repository today.
@@ -177,6 +191,11 @@ extraction, authored before the Phase 6 build per quant ruling F6 and
 likewise updated to implemented reality; §10 covers decision analysis
 — report structure, comparison without collapse, the no-scoring
 boundary — authored before the Phase 7 build per quant ruling A1 and
-likewise updated to implemented reality); `docs/EVALUATION.md` does
+likewise updated to implemented reality; §11 covers the temporal-
+integrity pre-registrations binding Phases 9 and 11, authored before
+the Phase 8 build and likewise updated; §12 covers the backtesting
+baseline definition, scored-population accounting, and standing bans —
+authored before the Phase 9 build per quant ruling A6 and likewise
+updated to implemented reality); `docs/EVALUATION.md` does
 not exist yet because there is no evaluation to document; it arrives
 with the phase that introduces it.

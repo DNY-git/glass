@@ -1192,3 +1192,182 @@ Suite: `env -u PYTEST_ADDOPTS .venv/bin/python -m pytest -q` →
 Every pre-registration above (a)–(d) now binds Phases 9 and 11 as
 standing contract; none of it was consumed, computed, or relaxed this
 phase, and the evaluated observation count remains exactly 0.
+
+## 12. Backtesting (IX-9) — baseline definition, scored-population accounting, standing bans — IMPLEMENTED AND TESTED (authored pre-build, Phase 9; verified 2026-10-22)
+
+Status: **authored BEFORE any Phase 9 build code**, per Phase 9 brief
+decision 15 and glass-quant ruling A6 (the §3/§7/§8/§9/§10/§11
+pre-build pattern; a fresh section appended so §§1–11 stay
+byte-identical — this append changes no prior line): every registration
+below was committed prose before any `app/backtesting/` module, test, or
+baseline number existed — and is now **implemented-and-tested reality**,
+verified against the shipped code and its acceptance tests during the
+Phase 9 DOCS step (2026-10-22): `app/backtesting/` exists as a pure
+package (six modules, 535 lines: `__init__.py`, `constants.py`,
+`canonicalization.py`, `record.py`, `baselines.py`, `harness.py`), the
+suite is green (**147 passed**, clean-env run), and independent review
+passed the phase (**PASS, 2026-10-22, FIRST pass, criteria 1–15**, after
+tester PASS ×15). The pre-build authorship is recorded deliberately:
+the baseline definition, the scored-population accounting, and the
+no-join boundary were fixed in prose before any walk-forward number
+could be produced. Phase 9 ships **machinery only**, exactly as
+registered — the §11 three-step line now reads Phase 8 defenses
+(shipped) → Phase 9 machinery (**shipped, still no metrics**) → Phase 11
+first scoring: **no metric of any kind is computed in this phase**, no
+model-vs-baseline comparison exists, and the evaluated observation count
+stays exactly **0** (§6, §10e, §11e). Shipped surface behind these
+registrations: **one public `matches`-parameter function exactly** —
+`run_walk_forward` in `app/backtesting/harness.py`, pure (stdlib +
+`app.domain` + `app.forecasts` only; **no `app.storage` import** —
+persistence is the CALLER's, through the existing write-once
+`insert_forecast` into a caller-passed DB; **no committed DB;
+`SCHEMA_VERSION` stays 1**); every baseline function underscore-private
+in `baselines.py` (the only realized-score consumer, one reviewable
+file); the frozen `BaselineRecord`/`RefusalRecord`/`RunManifest`/
+`WalkForwardRun` records; `BACKTEST_VERSION =
+"backtest-walkforward-v1"` (no knob); and the version-local golden run
+digest `150b9796dde5ae4dbf2e3a7665c7cf55062323c33acad41d5d90c44481bbef2f`
+(derived from the real first run; **re-derive on change, never widen,
+never delete**). The registered accounting is now a test-pinned, hand-
+audited fact: **60 = 3 + 27 + 30** targets and **57 = 27 + 30**
+predictions (criterion 2), nothing silently skipped or dropped.
+Declared amendments riding this section's claims (brief pre-sanctioned,
+exact figures): **A1** (`tests/test_temporal_integrity.py` poison
+registry 5 → 6, `matches` census 3 → 4; **440 → 452** combined with A2),
+**A2** (the same file: Phase 8's `app/` byte-pin re-pointed
+`1e1c1ac` → `ea92667` and rescoped to the pre-existing packages,
+excluding this phase's `app/backtesting`), **A3 + A3'**
+(`tests/test_fixtures_and_hygiene.py` **625 → 626** — one
+`ALLOWED_APP_IMPORTS` entry with the A3'-corrected self-inclusive value
+`{"app.domain", "app.forecasts", "app.backtesting"}` plus the
+line-neutral `PURE_PACKAGES` five-set — and the pin-collision class
+across four separation files: **833 → 834**, **573 → 574**, **510 →
+510**, **440 → 443** for the fifth file A3' found), and **A4**
+(`tests/test_health_script.py` valve **300 → 1500 s**, **105 → 105**
+lines, after this phase's trip; the sole sanctioned edit ever to
+`scripts/health-check.sh` — the determinism-section strip-regex fix
+plus the counts-only `UNPARSEABLE` gate — and the 653-line
+`tests/test_backtesting.py` accepted as a deviation). All four
+amendments and both build-time STOP-and-reports are recorded in
+`docs/KNOWN-LIMITATIONS.md` Phase 9.
+
+**(a) Baseline definition — the only legal form (IX-9; quant ruling
+A5).** *Definition, verbatim:* a baseline is the **per-fixture,
+chronological, pooled long-run home/draw/away frequency** over realized
+matches with strictly `date < fixture.date` — **uniform weighting**
+(one vote per historical match), **no decay**, **no home/away split**;
+each counted match's outcome is decided by goal comparison (H/D/A).
+**A full-sample baseline is banned — it leaks the future.** The IX-9
+phrase "long-run" is realized as the **cumulative strictly-pre-cutoff
+window**: a truly full-sample "long-run" frequency would see the future
+and is banned (the IX-9 reconciliation, registered here per brief
+decision 7). The **first date's THREE fixtures** get a **MISSING**
+baseline: `n = 0`, all three frequencies `None`, status
+`MISSING_NO_HISTORY` — **never a fake uniform (⅓, ⅓, ⅓), never a
+full-sample fallback**; missing data is a first-class result (HANDOFF
+Part V), reported as itself, never filled. The baseline record is
+exactly the **triple + `n` + status**, **content-hashed in-process**,
+**re-derivable from the matches alone** (independent recomputation is
+the check of record), and **NEVER stored** — no column, no table, no
+schema surface (`SCHEMA_VERSION` stays 1). Weaknesses ride every
+baseline: tiny early `n` (0–3 on the first date), the synthetic
+hand-authored fixtures (§6), and §2f's independent-Poisson draw bias,
+which makes the draw frequency the baseline the model is structurally
+weakest against.
+
+**(b) Scored-population accounting — pre-registered and auditable
+(§11(a); quant rulings A1/A10, probes E1/E4).** *Registration,
+verbatim, pinned to the frozen checked-in fixtures:* **60 targets = 3
+structural refusals + 27 flagged predictions + 30 clean = 57
+predictions** — equivalently **57 = 27 + 30** and **60 = 3 + 27 + 30**
+— with the accounting **fully auditable**: every target is either a
+refusal record or an emitted prediction, nothing is silently skipped or
+dropped, and the ceiling **≤ 30 clean** stands (§11(a)). The **3
+structural refusals** are exactly the first date's three fixtures: zero
+strictly-pre-cutoff history → a `NO_DATA` fit whose team index is empty
+(`teams == ()`) → `build_forecast` raises the team-index `ValueError`,
+recorded as a **first-class status** (`REFUSED_NO_PRE_CUTOFF_HISTORY`
+carrying the original message) — **never a silent skip, never a dropped
+target, never replaced by a uniform**. **Flagged** = emitted with a §5
+insufficient-data/insufficient-teams flag or `convergence_status !=
+CONVERGED`; **clean** = emitted with none. **No metric is computed
+against any of it — evaluated n stays exactly 0** after this phase.
+Every figure is pinned to the frozen fixtures: a fixture change forces
+re-registration by named brief (§11(a)'s rule).
+
+**(c) §11(a)'s standing bans, restated as binding on every Phase 9
+walk-forward number.** The scored population is **PRE-REGISTERED** here
+— never chosen after the fact; evaluation **bin counts are fixed
+pre-score**, with no post-hoc regrouping when Phase 11 computes
+anything. **Variant ranking is infeasible** at this n (≤ 30 clean
+observations: per-model score SE ~0.15–0.25 against the §2d noise floor
+~±0.05), so **"beating" claims stay banned on sample-size grounds EVEN
+AFTER Phase 11 runs** — and no model-vs-baseline comparison, reduction,
+or ranking of any kind exists at Phase 9 at all. The synthetic-hand-
+authored caveat (fictional league, hand-authored fixtures) and §2e's
+stationarity caveat **ride every walk-forward number** this phase
+emits. Nothing in this section is betting functionality (constitution
+prohibition 3); every baseline and forecast remains an estimate
+carrying §§2–6's recorded weaknesses.
+
+**(d) The no-join boundary (quant ruling A1, blocker-grade).** At
+Phase 9 **no prediction-to-own-outcome join ships**: the one-line
+natural-key join is **re-established at Phase 11**, and until then a
+join with no consumer would be an unguarded artifact. The
+**realized-result surface at Phase 9 is pre-cutoff history ONLY** —
+realized matches consumed strictly `date < fixture.date` (fit inputs
+and baseline windows) — plus prediction-side counts (targets / refusals
+/ flagged / clean) and the per-fixture baseline triple + `n` + status.
+Illegal this phase: pairing any prediction field with a realized
+field; any model-vs-baseline comparison, reduction, or ranking; any
+mean/sum/min/max over outcome-aligned arrays. Evaluated observation n
+remains exactly **0** when this phase ends.
+
+**(e) Change control.** **Any later change to the baseline definition
+in (a) or the population accounting in (b) — including any fixture
+change that would move their figures — is a NAMED BRIEF** (§11(a)'s
+re-registration rule extended here to (a) and (b)); no implementation
+detail may drift from these registrations silently. Flipping this
+section's status changed no registration: §§1–11 remain untouched by
+this append.
+
+*Phase-end verification (2026-10-22, docs step):* every constraint above
+is pinned by the shipped Phase 9 acceptance tests (criteria 1–12 in
+`tests/test_backtesting.py`, criteria 13–14 appended to
+`tests/test_vocab_guards.py`, suite 147 passed, clean-env run). (a)
+shipped verbatim: per-fixture chronological baselines only, computed by
+underscore-private functions in `app/backtesting/baselines.py` —
+fixture 4 hand-recomputed at exactly (1/3, 1/3, 1/3) with `n = 3` and
+fixture 36 at (15/33, 8/33, 10/33) with `n = 33` by independent test
+arithmetic; the `n` sequence over all 60 targets is exactly 0, 0, 0, 3,
+3, 3, 6, …, 57; the first date's **three** fixtures carry
+`MISSING_NO_HISTORY`, `n = 0`, all frequencies `None` — a fake uniform
+(⅓, ⅓, ⅓) and a full-sample fallback are both pinned **absent**
+behaviorally; baselines are content-hashed in-process, re-derivable
+from the matches alone, and **never stored** (schema introspection
+shows no baseline column/table). (b) shipped as registered and now
+audited: `n_targets == 60`, `n_refusals == 3` (exactly the first date's
+three natural keys, each a `RefusalRecord` with status
+`REFUSED_NO_PRE_CUTOFF_HISTORY` and the original `ValueError` message —
+first-class, never a skip, never a uniform), `n_flagged == 27`,
+`n_clean == 30`, `n_predictions == 57`, `len(predictions) +
+len(refusals) == 60`; **no metric is computed against any of it —
+evaluated n is exactly 0**. (c)'s bans are **mechanically enforced**:
+an AST/token scan over `app/backtesting/**` plus a function-level
+co-occurrence scan (a function touching both a `Forecast` field and a
+`.score` attribute is flagged; positive controls probe both ways)
+asserts zero scoring/comparative vocabulary and **zero
+prediction-to-outcome pairing** — (d) is shipped as the absence of the
+join itself: `run_walk_forward` never pairs a prediction field with a
+realized field, the one-line natural-key join remains re-established at
+Phase 11, and the realized-result surface here is pre-cutoff history
+only. The test-first poison gate (§11(b)(i), criterion 1) exists and
+passes: poisoning the entire remaining future leaves every earlier
+prediction field-for-field identical including `content_hash`. The
+run-manifest contract (§11(c)) shipped with `run_digest` over the
+ordered `(fixture key, content_hash)` list, double-run idempotence at
+both the in-process and store levels, and no timestamp anywhere. The
+declarations of this section stand: fixture changes force
+re-registration by named brief; "validated"/"accurate"/"beating"
+remain banned — Phase 9 ran but computed no score, so the evidence gate
+is Phase 11's alone, on the pre-registered population.

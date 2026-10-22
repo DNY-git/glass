@@ -370,12 +370,12 @@ def test_no_storage_no_api_no_schema_no_timestamps() -> None:
 
 
 def test_amendments_pinned_and_full_tree_scan_clean() -> None:
-    # Criterion 17 (A1-A4): exactly 12 keys; the eleven legacy values
-    # exactly the Phase 1-6 sets (append-only convention protected); A1
-    # exactly the sanctioned five; PURE_PACKAGES the four-package
-    # strengthening; the exception map untouched; the A2/A3/A4 pin
-    # updates in place; the full-tree scan completes with zero
-    # violations and no KeyError.
+    # Criterion 17 (A1-A4): exactly 13 keys (Phase 9 A3'); the eleven
+    # legacy values exactly the Phase 1-6 sets (append-only convention
+    # protected); A1 exactly the sanctioned five; PURE_PACKAGES the
+    # five-package strengthening; the exception map untouched; the
+    # A2/A3/A4 pin updates in place; the full-tree scan completes with
+    # zero violations and no KeyError.
     expected_legacy: dict[str, set[str]] = {
         "app": set(),
         "app.domain": {"app.domain"},
@@ -388,9 +388,10 @@ def test_amendments_pinned_and_full_tree_scan_clean() -> None:
         "app.storage": {"app.domain", "app.forecasts", "app.storage"},
         "app.api": {"app.domain", "app.forecasts", "app.storage", "app.api"},
     }
-    assert len(hygiene.ALLOWED_APP_IMPORTS) == 12
+    assert len(hygiene.ALLOWED_APP_IMPORTS) == 13
     assert set(hygiene.ALLOWED_APP_IMPORTS) == set(expected_legacy) | {
         "app.features", "app.decisions",
+        "app.backtesting",
     }
     for package, allowed in expected_legacy.items():
         assert hygiene.ALLOWED_APP_IMPORTS[package] == allowed, package
@@ -404,6 +405,7 @@ def test_amendments_pinned_and_full_tree_scan_clean() -> None:
     }
     assert hygiene.PURE_PACKAGES == {
         "app.domain", "app.validation", "app.features", "app.decisions",
+        "app.backtesting",
     }
     assert hygiene.BANNED_IMPORT_EXCEPTIONS == {
         "app.storage": {"sqlite3"}, "app.api": {"http"},
@@ -417,19 +419,20 @@ def test_amendments_pinned_and_full_tree_scan_clean() -> None:
         assert violations, banned
 
     # The A2/A3/A4 pin updates are verified IN PLACE: all three amended
-    # separation files assert the exact 12-key universe with
-    # app.decisions in the union, and neither the `== 10` nor the
-    # `== 11` pin form survives anywhere.
+    # separation files assert the exact 13-key universe (Phase 9 A3')
+    # with app.decisions and app.backtesting in the union, and none of
+    # the `== 10`/`== 11`/`== 12` pin forms survives anywhere.
     for name in (
         "test_phase4_separation.py",
         "test_phase5_separation.py",
         "test_phase6_separation.py",
     ):
         source = (REPO_ROOT / "tests" / name).read_text(encoding="utf-8")
-        assert "len(hygiene.ALLOWED_APP_IMPORTS) == 12" in source, name
+        assert "len(hygiene.ALLOWED_APP_IMPORTS) == 13" in source, name
         assert '"app.decisions"' in source and '"app.features"' in source, name
         assert "len(hygiene.ALLOWED_APP_IMPORTS) == 10" not in source, name
         assert "len(hygiene.ALLOWED_APP_IMPORTS) == 11" not in source, name
+        assert "len(hygiene.ALLOWED_APP_IMPORTS) == 12" not in source, name
 
     # The full-tree scan: every .py under app/ completes with zero
     # violations and no KeyError — no amendment relaxed any check.
