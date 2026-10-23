@@ -53,21 +53,21 @@ HEALTH_SCRIPT = REPO_ROOT / "scripts" / "health-check.sh"
 HEALTH_TEST = REPO_ROOT / "tests" / "test_health_script.py"
 FIXTURES = REPO_ROOT / "fixtures" / "openfootball" / "valid"
 
-# Criterion 8: the version-local byte-pin base (Phase 9's commit). A
+# Criterion 8: the version-local byte-pin base (Phase 10's commit). A
 # future phase re-points this by named amendment, never widens it.
-PHASE9_COMMIT = "80b8f79"
+# Re-pointed by Phase 11 AMENDMENT A10 (8abe1ca), never widened.
+PHASE11_COMMIT = "8abe1ca"
 
-# Criterion 8: the Phase 9 golden-pin and guard files, byte-pinned.
+# Criterion 8 (Phase 11 AMENDMENT A10, C3 architect-ratified): the
+# golden-pin files at this checkpoint, byte-pinned (six files; the
+# three amended guards + test_evaluation re-enter at the next re-point).
 GOLDEN_PIN_FILES = (
-    "tests/test_backtesting.py",
     "tests/test_forecasts.py",
     "tests/test_features.py",
     "tests/test_decisions.py",
     "tests/test_simulation.py",
     "tests/test_poisson_fit.py",
     "tests/test_scoreline_matrix.py",
-    "tests/test_temporal_integrity.py",
-    "tests/test_vocab_guards.py",
 )
 
 # Criterion 6: the nine pinned header strings in the pinned order --
@@ -126,9 +126,9 @@ def _key(fixt: Fixture) -> tuple[str, str, str, str, str]:
 
 
 def _git_diff(*paths: str) -> str:
-    """`git diff <phase9 commit> -- <paths>` stdout; must exit 0."""
+    """`git diff <checkpoint commit> -- <paths>` stdout; must exit 0."""
     result = subprocess.run(
-        ["git", "diff", PHASE9_COMMIT, "--", *paths],
+        ["git", "diff", PHASE11_COMMIT, "--", *paths],
         cwd=REPO_ROOT,
         capture_output=True,
         text=True,
@@ -398,12 +398,13 @@ def test_health_valve_amendment_two_line_pattern_105_lines() -> None:
     assert len(re.findall(r"(?m)^def test_", text)) == 3
 
 
-def test_app_and_golden_files_byte_pinned_vs_phase9() -> None:
-    # Criterion 8 (decision 10, invariant 7/E2 + invariant 9): zero
-    # production code this phase -- `git diff 80b8f79 -- app/` exits 0
-    # with EMPTY output -- and the Phase 9 golden-pin and guard test
-    # files (incl. the full backtesting harness, no subsetting) are
-    # byte-identical to the Phase 9 commit. Version-local pin: a future
-    # phase re-points PHASE9_COMMIT by named amendment, never widens.
-    assert _git_diff("app/") == ""
+def test_app_and_golden_files_byte_pinned_vs_phase11() -> None:
+    # Criterion 8 (decision 10, invariant 7/E2 + invariant 9): the app/
+    # tree is byte-identical to 8abe1ca EXCEPT the two Phase 11
+    # sanctioned surfaces (app/storage schema work; the new
+    # app/evaluation/ absent at the pinned commit), and the golden-pin
+    # and guard test files are byte-identical to that commit. Pin is
+    # version-local: a future phase re-points PHASE11_COMMIT by named
+    # amendment, never widens.
+    assert _git_diff("app/", ":(exclude)app/storage", ":(exclude)app/evaluation") == ""
     assert _git_diff(*GOLDEN_PIN_FILES) == ""

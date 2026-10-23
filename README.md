@@ -15,9 +15,37 @@ history, never the current state of this repository.
 
 ## Current state
 
-**Phase 10 (Operational reliability), built and reviewed (PASS,
-2026-10-22, first pass, criteria 1–9, after tester PASS); checkpoint
-pending.** HANDOFF Part IX item 10 ships as **tests + documentation
+**Phase 11 (Forecast evaluation), built and reviewed (PASS, 2026-10-23,
+first pass, criteria 1–23, after tester PASS ×23); checkpoint pending.**
+HANDOFF Part IX item 11 ships as a **pure `app/evaluation/` package**
+(four modules, 639 lines) — the evidence gate: the first-ever scoring
+of the frozen walk-forward predictions against realized results,
+digest-gated (the golden run digest is re-derived and asserted **before
+any metric computes**), read-only over frozen forecasts and match
+scores, joined by the re-established one-line natural-key join
+(explicit refusals on 0 and >1 matches). **The evaluated observation
+count goes from exactly 0 to exactly 30 (primary, the 30 clean
+predictions) / 57 (secondary, flags riding) for the first time**; the
+3 structural refusals stay excluded from every metric and counted in
+the 60 = 3 + 27 + 30 accounting. Log loss (natural log, **no ε-clamp of
+any spelling** — a zero probability on the realized outcome is a hard
+refusal), the full 3-outcome Brier sum, and the ½-scaled 3-category
+ordinal RPS ship against hand-computed single-prediction values and
+per-fixture chronological baselines; 5-bin pooled calibration tables,
+the draw aggregate, and the overdispersion diagnostic ship
+descriptive-only. Model and baseline **absolute** values appear side by
+side with `n` — deltas, ratios, and verdicts are banned forever
+(`docs/STATISTICAL-ASSUMPTIONS.md` §13; `docs/EVALUATION.md` records
+every pinned number, every number a pinned test literal). Idempotent,
+content-hashed, no-clock evaluation records persist through the
+sanctioned §11(d) schema bump (**`SCHEMA_VERSION` 1 → 2**: the
+write-once `evaluations` table + `insert_evaluation_record`; forecasts'
+read paths untouched; no committed DB) and never alter original
+forecasts. **178 tests.** See `docs/KNOWN-LIMITATIONS.md` Phase 11 for
+the honest list, including the ten declared amendments A1–A10 and the
+builder-proposed, architect-adjudicated C1–C10 record.
+
+**Phase 10 (Operational reliability), committed at 8abe1ca** — HANDOFF Part IX item 10 ships as **tests + documentation
 only** — zero production code (`git diff 80b8f79 -- app/` empty; no
 new `app/` package) — as: the architect-sanctioned **health-script
 run-structure rework** (AMENDMENT A1: five inner pytest executions →
@@ -171,14 +199,14 @@ maximum likelihood inside `fit` (cutoff enforced inside the
 calculation), with analytic scoreline matrices (truncation mass always
 reported) and outcome probabilities exact under any truncation.
 Deterministic and stdlib-only by construction (no third-party
-dependency ships). Phases 1–9 are committed at **45ed27e**
+dependency ships). Phases 1–10 are committed at **45ed27e**
 (Foundation), **1c5067b** (Domain and data), **a5d7f56** (Core
 statistics), **f208e43** (Simulation and scenarios), **44b43ea**
 (Forecasts and API), **cfde3a6** (Feature engine), **1e1c1ac**
-(Decision analysis), **ea92667** (Temporal integrity), and **80b8f79**
-(Backtesting). The local,
+(Decision analysis), **ea92667** (Temporal integrity), **80b8f79**
+(Backtesting), and **8abe1ca** (Operational reliability). The local,
 offline, deterministic test loop is
-operational: 155 tests, all green. See `docs/ROADMAP.md` for phase
+operational: 178 tests, all green. See `docs/ROADMAP.md` for phase
 status and `docs/PROGRESS-LOG.md` for the record.
 
 ## Requirements
@@ -220,21 +248,22 @@ From the repository root:
 .venv/bin/python -m pytest -q
 ```
 
-Verified output (2026-10-22, Phase 10 docs run, clean environment —
-`env -u PYTEST_ADDOPTS .venv/bin/python -m pytest -q`):
-`155 passed in 149.60s (0:02:29)` (machine load 9.67 at invocation).
-Zero skips, zero
+Verified output (2026-10-23, Phase 11 recorded clean-environment runs,
+×2 — `env -u PYTEST_ADDOPTS .venv/bin/python -m pytest -q`):
+`178 passed in 149.59s` and `178 passed in 146.96s` at the phase's
+recorded machine loads. Zero skips, zero
 xfails — no test in this suite
 may use skip or xfail (constitution). **Runs take roughly 2–8 minutes
-depending on machine load** (recorded this phase 118–514 s at load
-~0.97–12 on 4 cores — a load-driven watch item; outcomes identical
-across every recorded execution) — the health test spawns the health
+depending on machine load** (Phases 10–11 recorded clean-env runs of
+118–514 s at load ~0.97–12 and 149.59/146.96 s — a load-driven watch
+item; outcomes identical across every recorded execution) — the health test spawns the health
 script, which runs
 the non-health suite three times internally (Phase 10's
 run-structure rework: five inner runs → three, every check
-preserved), and the backtesting
+preserved), the backtesting
 tests execute the full 60-target walk-forward harness ~8 times per
-suite run (full harness everywhere — no subsetting, no test-side
+suite run, and the evaluation tests re-derive that same run once via a
+module-scoped fixture (full harness everywhere — no subsetting, no test-side
 timeout). If your
 shell
 inherits a stray `PYTEST_ADDOPTS` (e.g. from
@@ -248,8 +277,9 @@ Fully offline verification (e.g. under a fresh network namespace):
 unshare -rn bash -c 'ip link set lo up && env -u PYTEST_ADDOPTS .venv/bin/python -m pytest -q'
 ```
 
-Verified (Phase 10, recorded offline run): `155 passed in 502.50s`
-(machine load 9.80). The
+Verified (Phase 11, recorded offline lo-up runs, ×2): `178 passed in
+190.38s` and `178 passed in 182.99s` (Phase 10's recorded offline run:
+`155 passed in 502.50s` at load 9.80). The
 loopback step is
 required — a plain `unshare -rn` (interface down) fails the six
 localhost-binding API tests with `OSError`; that is a namespace-harness
@@ -264,12 +294,13 @@ From the repository root:
 bash scripts/health-check.sh
 ```
 
-Verified (Phase 10, recorded runs of this phase): ran to completion
-(script wall 238–335 s
+Verified (Phase 11, recorded runs of this phase): ran to completion
+inside the untouched 800 s valve
+(Phase 10 recorded walls 238–335 s
 at machine load ~6.5–10.7; the pre-rework five-run script wall was
-~627 s at load ~8.9–10.4); compile clean (now covering `app` and
+~627 s at load ~8.9–10.4); compile clean (covering `app` and
 `tests`); its own pytest invocations report
-`149 passed, 6 deselected` — the 6 deselected are the 3 health tests
+`172 passed, 6 deselected` — the 6 deselected are the 3 health tests
 plus the 3 `tests/test_operational.py` source pins whose names contain
 `health_script`, deselected on purpose by the recursion guard and
 executed in every direct suite run: the script
@@ -277,15 +308,16 @@ exports a
 `PYTEST_ADDOPTS` recursion guard so its internal suite runs never
 re-execute the tests that spawn the script; skips/xfails `none`;
 determinism comparison
-`OK: 149 passed, 6 deselected`; `pip check` clean ("No broken
-requirements found."). Expect roughly **four to six minutes** — the
+`OK: 172 passed, 6 deselected`; `pip check` clean ("No broken
+requirements found."). Expect roughly **four to six minutes** at
+moderate load — the
 script runs the non-health suite three times internally (the Phase 10
 AMENDMENT A1 rework: five inner runs → three with capture-once
 derivation; every check preserved, only redundant executions
 eliminated). The health
-test's timeout valve was re-scoped **1500 s → 800 s** by the Phase 10
-AMENDMENT A2 (evidence-based DOWN-tune: 800 ≈ 2.39× the worst
-post-restructure script wall, 335 s at load 10.06 — see
+test's timeout valve remains **800 s** (the Phase 10 AMENDMENT A2
+evidence-based DOWN-tune: 800 ≈ 2.39× the worst post-restructure
+script wall, 335 s at load 10.06 — see
 `docs/KNOWN-LIMITATIONS.md` Phase 1 item 2 and Phase
 10).
 
@@ -301,9 +333,9 @@ run of `.venv/bin/python -m pytest -q` (Phase 1 criterion 10). See
     ├── app/                     # the engine: domain/, ingestion/,
     │                            # validation/, models/, forecasts/, storage/,
     │                            # api/, scenarios/, simulation/, features/,
-    │                            # decisions/, backtesting/
+    │                            # decisions/, backtesting/, evaluation/
     ├── fixtures/                # synthetic OpenFootball-shaped JSON (Phase 2)
-    ├── tests/                   # 155 tests, 1:1 with acceptance criteria
+    ├── tests/                   # 178 tests, 1:1 with acceptance criteria
     ├── scripts/health-check.sh  # mechanical health sweep
     ├── pytest.ini               # testpaths=tests, --strict-markers
     ├── conftest.py              # repo root importability for bare pytest
@@ -311,7 +343,7 @@ run of `.venv/bin/python -m pytest -q` (Phase 1 criterion 10). See
     ├── .opencode/               # agent suite and constitution
     └── docs/                    # handoff, roadmap, plan, logs, briefs,
                                  # DATA-SOURCES, STATISTICAL-ASSUMPTIONS,
-                                 # KNOWN-LIMITATIONS
+                                 # KNOWN-LIMITATIONS, EVALUATION
 
 The much larger target structure (ten separated pipeline modules) is
 declared in `docs/ARCHITECTURE.md` and `docs/PLAN.md`, and is instantiated
@@ -331,9 +363,16 @@ phase by phase — never speculatively.
   and measured availability (Phase 6, §9), decision reports,
   comparison without collapse, and the no-scoring boundary
   (Phase 7, §10), and the temporal-integrity pre-registrations
-  binding Phases 9 and 11 (Phase 8, §11), and the backtesting baseline
+  binding Phases 9 and 11 (Phase 8, §11), the backtesting baseline
   definition, scored-population accounting, and standing bans —
-  machinery only, still no metrics (Phase 9, §12).
+  machinery only, still no metrics (Phase 9, §12), and the
+  evaluation pre-registrations — metric formulas, populations,
+  calibration bins, side-by-side legality — authored pre-build and
+  flipped to implemented reality (Phase 11, §13).
+- `docs/EVALUATION.md` — the Phase 11 evaluation record: the pinned
+  metric values side by side (model and baseline, absolute, with n),
+  the calibration tables, and full provenance — every number a pinned
+  test literal.
 - `docs/PROGRESS-LOG.md` — what was built, real test counts, checkpoint
   hashes.
 - `docs/KNOWN-LIMITATIONS.md` — the honest list, updated every phase.

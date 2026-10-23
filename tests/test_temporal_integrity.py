@@ -34,12 +34,13 @@ APP_DIR = REPO_ROOT / "app"
 FIXTURES = REPO_ROOT / "fixtures" / "openfootball" / "valid"
 
 # Criterion 7: the app/ byte-pin is version-local to this checkpoint;
-# Phase 9 AMENDMENT A2 rescope: every pre-existing app/ package EXCEPT
-# the new app/backtesting/ (Phase 8's zero-production-code intent).
-PHASE8_CHECKPOINT = "ea92667"
+# Phase 11 AMENDMENT A1 re-points it at Phase 10's commit (8abe1ca)
+# and excludes app/storage (sanctioned schema work) and the new
+# app/evaluation/ (does not exist at the pinned commit).
+PHASE10_CHECKPOINT = "8abe1ca"
 PRE_EXISTING_APP = (
-    "app/__init__.py", "app/api", "app/decisions", "app/domain", "app/features", "app/forecasts",
-    "app/ingestion", "app/models", "app/scenarios", "app/simulation", "app/storage", "app/validation",
+    "app/__init__.py", "app/api", "app/backtesting", "app/decisions", "app/domain", "app/features",
+    "app/forecasts", "app/ingestion", "app/models", "app/scenarios", "app/simulation", "app/validation",
 )
 HISTORY_PACKAGES = ("app/models", "app/forecasts", "app/features", "app/decisions")
 SANCTIONED_RANDOM_MODULE = "app/simulation/simulate.py"
@@ -81,10 +82,10 @@ def _fixture_keyed_to(match: Match) -> Fixture:
 
 
 # --- Criteria 1-2: the poison-matrix coverage registry machinery. ---
-# A1 BLOCKER: the pinned six history-consuming entry points, each to
-# its REAL, resolvable poison/tamper test (Phases 3-8 + this file's 6;
-# Phase 9 AMENDMENT A1 adds run_walk_forward -> the test-first poison
-# gate in tests/test_backtesting.py).
+# A1 BLOCKER: the pinned seven history-consuming entry points, each to
+# its REAL, resolvable poison/tamper test (Phases 3-8 contributed the
+# first five; Phase 9 A1 added run_walk_forward; Phase 11 A1 adds
+# evaluate_predictions -> the test-first poison gate in tests/test_evaluation.py).
 POISON_REGISTRY: dict[str, tuple[str, str]] = {
     "fit": ("test_poisson_fit", "test_poisoned_future_match_cannot_alter_parameters"),
     "build_forecast": ("test_forecasts", "test_build_forecast_poisoned_future_cannot_change_forecast"),
@@ -92,11 +93,12 @@ POISON_REGISTRY: dict[str, tuple[str, str]] = {
     "build_decision_report": ("test_decisions", "test_poisoned_future_cannot_change_report"),
     "storage.get_forecast/verify_all": ("test_temporal_integrity", "test_snapshot_immutability_audit_update_delete_tamper"),
     "run_walk_forward": ("test_backtesting", "test_poisoned_remaining_future_freezes_earlier_predictions"),
+    "evaluate_predictions": ("test_evaluation", "test_poisoned_extra_matches_leave_evaluation_unchanged"),
 }
 
 # The registry's matches-parameter subset = today's AST census of
 # public `matches` entry points under app/ (criterion 1).
-MATCHES_ENTRY_POINTS = ("fit", "build_forecast", "compute_features", "run_walk_forward")
+MATCHES_ENTRY_POINTS = ("fit", "build_forecast", "compute_features", "run_walk_forward", "evaluate_predictions")
 
 
 def validate_registry(registry: Mapping[str, tuple[str, str]]) -> dict[str, Callable[..., object]]:
@@ -181,18 +183,19 @@ def _docstrings(path: Path) -> str:
 
 
 def test_poison_coverage_registry_bijection_and_census() -> None:
-    # A1 BLOCKER: exactly five keys, each pinned to its named REAL
+    # A1 BLOCKER: exactly seven keys, each pinned to its named REAL
     # test; every entry RESOLVES (imported, not merely named).
     assert set(POISON_REGISTRY) == {
         "fit", "build_forecast", "compute_features", "build_decision_report",
         "storage.get_forecast/verify_all",
-        "run_walk_forward"}
+        "run_walk_forward", "evaluate_predictions"}
     assert POISON_REGISTRY["fit"] == ("test_poisson_fit", "test_poisoned_future_match_cannot_alter_parameters")
     assert POISON_REGISTRY["build_forecast"] == ("test_forecasts", "test_build_forecast_poisoned_future_cannot_change_forecast")
     assert POISON_REGISTRY["compute_features"] == ("test_features", "test_poisoned_future_cannot_change_features")
     assert POISON_REGISTRY["build_decision_report"] == ("test_decisions", "test_poisoned_future_cannot_change_report")
     assert POISON_REGISTRY["storage.get_forecast/verify_all"] == ("test_temporal_integrity", "test_snapshot_immutability_audit_update_delete_tamper")
     assert POISON_REGISTRY["run_walk_forward"] == ("test_backtesting", "test_poisoned_remaining_future_freezes_earlier_predictions")
+    assert POISON_REGISTRY["evaluate_predictions"] == ("test_evaluation", "test_poisoned_extra_matches_leave_evaluation_unchanged")
     resolved = validate_registry(POISON_REGISTRY)
     assert set(resolved) == set(POISON_REGISTRY)
     assert all(test.__name__.startswith("test_") for test in resolved.values())
@@ -205,6 +208,14 @@ def test_poison_coverage_registry_bijection_and_census() -> None:
     assert census == set(MATCHES_ENTRY_POINTS)
     assert set(MATCHES_ENTRY_POINTS) <= set(POISON_REGISTRY)
     assert not uncatalogued(census, set(POISON_REGISTRY))
+
+    # Criterion 1 (Phase 11 AMENDMENT A1): the evaluate_predictions
+    # signature — three positionals, then the digest pair keyword-only.
+    from app.evaluation import evaluate_predictions  # A1 local import
+
+    assert tuple(inspect.signature(evaluate_predictions).parameters) == (
+        "predictions", "baselines", "matches", "run_digest", "expected_run_digest",
+    )
 
 
 def test_poison_coverage_registry_negative_probes() -> None:
@@ -409,11 +420,12 @@ def test_no_rng_in_history_consuming_modules_and_app_untouched() -> None:
     assert import_files == {SANCTIONED_RANDOM_MODULE}
     assert reference_files == {SANCTIONED_RANDOM_MODULE}
 
-    # Byte-pin (decision 1 + Phase 9 AMENDMENT A2): every pre-existing app/
-    # package is byte-identical to ea92667 — `git diff ea92667 -- <pre-existing
-    # packages>` exits 0 empty (version-local; app/backtesting/ excluded).
+    # Byte-pin (decision 1 + Phase 11 AMENDMENT A1): every pinned app/
+    # package is byte-identical to 8abe1ca — `git diff 8abe1ca -- <pinned
+    # packages>` exits 0 empty (version-local; app/storage sanctioned
+    # schema work and app/evaluation/ new — both excluded, never widened).
     result = subprocess.run(
-        ["git", "diff", PHASE8_CHECKPOINT, "--", *PRE_EXISTING_APP],
+        ["git", "diff", PHASE10_CHECKPOINT, "--", *PRE_EXISTING_APP],
         cwd=REPO_ROOT, capture_output=True, text=True,
     )
     assert result.returncode == 0, result.stderr

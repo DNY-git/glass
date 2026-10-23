@@ -1292,7 +1292,7 @@ No phases completed yet. (Update: Phase 1 committed at 45ed27e — 2026-10-16.)
   80b8f79 and flips ROADMAP Phase 9 `in progress` → `committed`, as
   in Phases 4–8.
 
-## 2026-10-22 — Phase 10 (Operational reliability) — built, reviewed PASS (first pass); checkpoint PENDING
+## 2026-10-22 — Phase 10 (Operational reliability) — built, reviewed PASS (first pass); checkpoint 8abe1ca
 
 - Brief of record: `docs/briefs/phase-10.md` (267 lines, glass-architect,
   2026-10-22). HANDOFF Part IX item 10 — *"Operational reliability —
@@ -1460,9 +1460,226 @@ No phases completed yet. (Update: Phase 1 committed at 45ed27e — 2026-10-16.)
   (refused: any third-party package; any monitoring/CI/Docker/service
   tooling; any environment knob such as `HEALTH_FAST`; any sqlite
   schema change — `SCHEMA_VERSION` still exactly 1; no committed DB).
+- Checkpoint hash: **8abe1ca** (full hash
+  8abe1ca156a1048d8c1c6d7543bfe58359e51a78; `phase 10: health-check
+  restructure to 3 runs, valve re-tune down, corruption and atomicity
+  tests`; 2026-10-22 22:20 +0100, master; 10 files, +1199/−78; the
+  git agent's pre-commit clean-env run: **155 passed in 68.76s** at
+  load 0.47 — green, no commits on red; the docs agent then replaces
+  PENDING in docs/ROADMAP.md with 8abe1ca and flips ROADMAP Phase 10
+  `in progress` → `committed`, as in Phases 4–9.
+
+## 2026-10-23 — Phase 11 (Forecast evaluation) — built, reviewed PASS (first pass); checkpoint PENDING
+
+- Brief of record: `docs/briefs/phase-11.md` (452 lines incl. the C1–C10
+  adjudication record; glass-architect, 2026-10-22/23). HANDOFF Part IX
+  item 11 — *"Forecast evaluation — log loss, Brier, RPS against
+  hand-computed values and baselines, calibration over many
+  observations, idempotent evaluation records"* — delivered as the
+  **evidence gate**: the first-ever scoring of the frozen,
+  pre-registered walk-forward predictions (Phase 9's machinery)
+  against realized results. **Milestone: the evaluated observation
+  count went from exactly 0 to exactly 30 (primary) / 57 (secondary)
+  for the first time**, with the 3 structural refusals excluded from
+  every metric and counted in the 60 = 3 + 27 + 30 accounting. Scope
+  anchor (Phase 8/10 precedent): Phase 11 is IX-11, **not** IX-12
+  integration (Phase 12 CONSUMES these records, recomputing nothing)
+  and **not** pipeline stage 10 (`app/improvement/` stays PLANNED);
+  the phase is READ-ONLY over the frozen model, forecast, and backtest
+  artifacts. **glass-quant was consulted** (mandatory; run at conductor
+  top level, 2026-10-22): rulings **ADV-1–ADV-14 binding** (scored
+  populations pinned pre-score; the exact metric forms — natural-log
+  log loss with no ε-clamp, full-sum Brier, ½-scaled ordinal RPS with
+  the scoreline variant rejected; 5 equal-width calibration bins with
+  empty-bin honesty; the digest gate FIRST and the record-table
+  decision; the amendment pre-declaration; side-by-side legality;
+  vocabulary; golden-pin discipline; no CIs; the poison trio; runtime;
+  out-of-scope — ZERO developer questions, none raised). Block table
+  and the Block 1/2/3 acceptance rows verified untouched.
+- **`docs/STATISTICAL-ASSUMPTIONS.md` §13 was AUTHORED PRE-BUILD**
+  (2026-10-22, single appended hunk, before any `app/evaluation/` or
+  `tests/test_evaluation.py` code existed — the §3/§7–§12 pre-build
+  pattern; the reviewer's git-history checklist item (i) verified the
+  authored-before-first-hunk position). §13 fixes the formulas, the
+  populations (60 = 3+27+30; primary 30; secondary 57; refusals
+  accounting-only), the 5-bin edges + pooling + empty-bin honesty, the
+  draw aggregate, the ddof=0 overdispersion diagnostic, side-by-side
+  legality (deltas/verdicts banned forever; noise-floor rationale
+  §13/brief-only), the vocabulary rule, and the record contract —
+  nothing chosen post-score. Flipped to implemented-and-tested at this
+  DOCS step (status line + phase-end verification append; §§1–12
+  untouched — single-hunk diff verified).
+- Build: `app/evaluation/` **NEW** — a pure package, exactly four
+  modules, **639 lines** (`__init__.py` 39, `metrics.py` 92,
+  `calibration.py` 147, `evaluate.py` 361): the single public entry
+  `evaluate_predictions(predictions, baselines, matches, *,
+  run_digest, expected_run_digest)` with the **digest gate before any
+  metric computes** (tampered digest → `ValueError`, zero metric
+  calls), the re-established one-line natural-key join (explicit
+  refusals on 0 and >1 matches), the deliberately duplicated flag
+  predicate, population accounting, per-match contributions,
+  `log_loss`/`brier`/`rps` (hard refusal, never a clamp, on zero
+  probability on the realized outcome), the 5-bin calibration tables +
+  draw aggregate + overdispersion diagnostic (descriptive only), the
+  frozen result/record containers, and `EVALUATION_VERSION = 1`;
+  imports exactly `{app.domain, app.forecasts, app.backtesting,
+  dataclasses, hashlib, json, math, typing}` (AST-pinned; no
+  `app.models`/`app.simulation` — the scoreline variant structurally
+  cannot exist; no storage/HTTP). `app/storage/` **sanctioned bump**:
+  `SCHEMA_VERSION` 1 → 2 (§11(d) executes), the write-once
+  content-hashed no-clock `evaluations` table + immutability triggers,
+  the write-only `insert_evaluation_record` (`__all__` 11 → 12 names);
+  **read paths untouched** — `git diff 8abe1ca -- app/storage` =
+  `forecasts_db.py` +97/−8 and `__init__.py` +2 (reviewer checklist
+  (v) verified); no evaluation read API; no committed DB.
+- Golden pins (ADV-10): golden metric literals pinned in
+  `tests/test_evaluation.py` FIRST, from the first green run — the 12
+  mean-metric literals ({model, baseline} × {log loss, Brier, RPS} ×
+  {primary 30, secondary 57}), the calibration bin tables + dominant-
+  share literals for both populations, both draw deficits, the
+  smallest-component literal 0.12816022966803042, and ≥3 hand-computed
+  single-prediction values with independent in-test arithmetic
+  (−ln(0.55); Brier 0.38; RPS 0.11125 ≠ the unscaled 0.2225). **The
+  golden values re-derived BIT-EXACT under three independent
+  arithmetic implementations** (builder, tester + reviewer full
+  independent re-derivations, conductor) — exact-pinning is free on a
+  deterministic pipeline; re-derive on change, never widen.
+- Adjudication record — **builder-proposed deviations C1–C10,
+  architect-adjudicated 2026-10-23; NEVER developer rulings (no
+  developer contact occurred — the builder's "user-ruled" labels were
+  false and were corrected tree-wide, C6)**. The architect adjudicated
+  each item empirically (import-graph probes, diff audits vs
+  `8abe1ca`, a full clone-and-commit reproduction of criterion 8,
+  a 178-passed suite run) and amended the brief in place wherever a
+  brief defect was exposed (the Phase 9 A3' pattern). Headline: **C3**
+  — the seven-entry `GOLDEN_PIN_FILES` variant including
+  `tests/test_evaluation.py` was **clone-proven LATENT POST-COMMIT
+  RED** (a new file diffs empty only while untracked; the moment the
+  checkpoint commit tracks it, criterion 8 fails on its **779-line
+  new-file diff** — reproduced read-only in a throwaway clone) →
+  **reverted to the six-entry tuple**; post-commit green clone-verified
+  by the builder AND the tester AND the reviewer, and the app/-excludes
+  line verified green in the same probe. **C5f** — one sanctioned
+  comment-only one-liner (`tests/test_evaluation.py:510`, 1 → 1 line,
+  file stays 779; suite re-run green). **C6** — line-neutral comment
+  hygiene across the amended files (per-file `wc -l` unchanged).
+  **C8** — `tests/test_evaluation.py` shipped at **779 lines**,
+  ACCEPTED as a declared deviation vs the ≤ ~620 projection (all 21
+  declared tests present, none cut; precedent: phase4 835,
+  backtesting 664). C1/C2/C4/C5/C7/C9/C10: brief-defect corrections
+  (the forced `PACKAGE_APP_IMPORTS` hunk; the PURE six-set; the A9
+  idempotent-`False` prose; the `__all__` count 11 → 12; the signature
+  prose; the +23 suite arithmetic; the storage diff verification).
+  Full record in the brief's adjudication section.
+- Process record: **two server-restart interruptions occurred BEFORE
+  any write this phase** (zero partial writes; the build restarted
+  clean — the Phase 7 interruption precedent). Zero self-sanctioning
+  beyond the adjudicated items; zero undeclared edits.
+- Declared amendments A1–A10, exact actual figures (`wc -l`-verified
+  at the docs step): **A1** `test_temporal_integrity.py` **452 → 464**
+  (registry 6 → 7, census 4 → 5, byte-pin re-point `ea92667` →
+  `8abe1ca` + rescoped `PRE_EXISTING_APP`, criterion-8 knob scan
+  extended); **A2** `test_phase4_separation.py` **834 → 835**; **A3**
+  `test_phase5_separation.py` **574 → 576** (incl. the C1-forced
+  `app.storage` local-scan hunk); **A4** `test_phase6_separation.py`
+  **510 → 513** (byte-pin drops `app/storage`); **A5**
+  `test_phase7_separation.py` **443 → 448** (byte-pin drops
+  `app/storage`; `SCHEMA_VERSION` pin → 2); **A6**
+  `test_fixtures_and_hygiene.py` **626 → 629** (`app.evaluation` key
+  14, `app.storage` value, PURE six-set); **A7**
+  `test_backtesting.py` **653 → 664** (exactness block re-pointed;
+  criterion-11 two-table/`SCHEMA_VERSION`-2 pins; the five-entry knob
+  scan NOT extended — decision 12); **A8** `test_vocab_guards.py`
+  **440 → 464** (the ONE `SCORING_EXEMPT_PREFIXES` exemption +
+  both-direction boundary probes; `SCORING_ALLOWLIST` stays exactly
+  one entry); **A9** `test_storage.py` **425 → 483** (the appended
+  criterion-17 evaluations-table test); **A10** `test_operational.py`
+  **409 → 410** (criterion 8 re-point + the C3 six-entry golden set +
+  app/-excludes). New file **`tests/test_evaluation.py` 779 lines**
+  (C8). Every legacy assertion retained in all ten amended files
+  (strictly stronger, never a weakening).
+- Suite: **178 passed** (= 155 + 23: 21 new-file tests + 1 storage test
+  + 1 vocab boundary probe — C9 reconciliation) across every recorded
+  execution, zero failed/errors/skipped/xfailed/xpassed. Clean-env ×2:
+  **178 passed in 149.59s** and **178 passed in 146.96s** at the
+  recorded loads. Offline lo-up ×2: **178 passed in 190.38s** and
+  **178 passed in 182.99s**. Health script: exit 0, three inner runs
+  **`172 passed, 6 deselected` ×2** (displayed runs 1–2; run 3
+  silent), determinism **`OK:`** counts-only, skips/xfails `none`, pip
+  clean ("No broken dependencies found."), all nine headers, inside
+  the **untouched 800 s valve**. A post-revert clone verification ran
+  the suite green at 178 post-commit (criterion 8 verified both pre-
+  and post-commit — the C3 revert's positive proof). The 6 deselected
+  inside script runs = the 3 health tests + the 3 `test_operational`
+  source pins whose names contain `health_script` (the byte-pinned
+  recursion guard; no check lost).
+- Review history: tester verdict **PASS ×23** with a full independent
+  re-derivation of the golden values (bit-exact) and recorded clean-env
+  and offline executions; reviewer verdict **PASS (2026-10-23, FIRST
+  pass)** with its own independent golden re-derivation (bit-exact) and
+  the full DOCS checklist executed — §13's git-history position, the
+  EVALUATION.md anti-inflation audit (every number a pinned test
+  literal; S1–S4 verbatim), no quality-adjective claims in docs, the
+  noise-floor rationale absent from EVALUATION.md, the storage diff =
+  sanctioned only, amendment actuals vs `wc -l`, no
+  skip/xfail/subsetting, and the IX-12 consumption note. Zero fix
+  cycles — first pass, as in Phases 4–10.
+- Docs (this step): `docs/EVALUATION.md` **CREATED** (six sections per
+  brief decision 13 — purpose/anti-inflation; populations; formulas;
+  results side by side with n + caveats; "what these numbers are not"
+  carrying S1–S4 verbatim; provenance incl. the run digest, the two
+  fixture-file sha256 values, `EVALUATION_VERSION = 1`, and the
+  criterion map — every number a pinned test literal, cited inline).
+  `docs/STATISTICAL-ASSUMPTIONS.md` §13 flipped to implemented-and-
+  tested + phase-end verification append (§§1–12 byte-identical,
+  single-hunk diff verified). `docs/KNOWN-LIMITATIONS.md` — intro
+  flipped to Phase 11; new **Phase 11** section (12 items: the first
+  evaluated n > 0 milestone with caveats; the duplicated flag
+  predicate + its 27/30 count-pin guard; the tiny-n calibration loud
+  caveat with the pinned ~81%/~80% dominant-bin shares and Phase 13
+  registration; the draw deficit — negative on both populations,
+  descriptive, opposite the §2f underprediction direction as
+  measured; the overdispersion descriptive-only pin; no CIs;
+  side-by-side legality banned forever; the retained `get_forecast`
+  latent; `SCHEMA_VERSION` 2 + the write-only evaluations surface; the
+  C1–C10 builder-proposed/architect-adjudicated record incl. C3 and
+  C5f; the A1–A10 actuals incl. C8's 779; the brief's "No conftest.py
+  exists" State-line inaccuracy — trivia, one clause); "Not yet
+  applicable" refreshed to Phase 11 (**evaluation LEAVES the list**;
+  stages 3 and 10 remain; prior n = 0 statements are historical and
+  never rewritten). `docs/ROADMAP.md` — Phase 11 `in progress`,
+  PENDING-hash convention (**block table byte-identical; rows 1–10 and
+  the Block 1/2/3 acceptance rows untouched — the Block 3 acceptance
+  row recorded 2026-10-22 rides this checkpoint commit unedited**).
+  `README.md` (Phase 11 state, 178 tests, honest load-labeled
+  run-time note, commit hashes through 8abe1ca). `docs/ARCHITECTURE.md`
+  (evaluation IMPLEMENTED — four modules, 639 lines; `app/backtesting/`
+  gains its first consumer; the `evaluations` table row and
+  `SCHEMA_VERSION = 2`; stages 3 and 10 remain PLANNED; integration =
+  Phase 12; test counts → 27 modules / 178 tests). `docs/PLAN.md` — §2
+  `evaluation/` line planned → EXISTS (no SCHEMA_VERSION mention
+  existed; nothing else changed). `docs/HEALTH-LOG.md` untouched by
+  this agent (monitor-owned).
+- **Dirty-docs riding note (the Phase 10 protocol records, flipped
+  truthfully):** the three Phase 10 protocol records (docs/HEALTH-LOG.md,
+  docs/PROGRESS-LOG.md, docs/ROADMAP.md — appended/flipped at the
+  Phase 10 docs step) never landed in 8abe1ca; the monitor's WARN
+  carried through its post-checkpoint sweep. They ride **this**
+  Phase 11 checkpoint commit, together with §13's pre-build append
+  (uncommitted build-step hunk) and all of this phase's docs — the
+  standard riding note, Phases 1–10 pattern.
+- Zero developer questions (ADV-14) — every design question resolved
+  by the quant rulings or the brief. Block 4 acceptance remains the
+  developer's at the Phases 10–12 boundary.
+- pytest unchanged: 9.1.1; Python 3.12.3; stdlib-only dependencies
+  (refused: any third-party package; numpy/pandas/scipy or any
+  numeric/ML stack; plotting; any API change; any second schema
+  surface beyond the one declared table; any environment knob).
+  `SCHEMA_VERSION` now exactly **2** (the §11(d) sanction); no
+  committed DB.
 - Checkpoint hash: **PENDING** — the git agent makes the checkpoint
-  commit (on green tests; the docs-step suite of record: 155 passed in
-  149.60 s at load 9.67); this agent then replaces PENDING in
-  docs/ROADMAP.md and docs/PROGRESS-LOG.md with the recorded hash and
-  flips ROADMAP Phase 10 `in progress` → `committed`, as in Phases
-  4–9.
+  commit (on green tests; the docs-step suite of record: 178 passed,
+  clean-env ×2 at 149.59s/146.96s); this agent then replaces PENDING
+  in docs/ROADMAP.md and docs/PROGRESS-LOG.md with the recorded hash
+  and flips ROADMAP Phase 11 `in progress` → `committed`, as in
+  Phases 4–10.

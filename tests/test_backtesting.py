@@ -575,15 +575,16 @@ def test_predictions_persisted_caller_side_idempotent_and_collision(
     ) == canonical_run.predictions
     writer.close()
     # Schema introspection: exactly the 21 pinned columns, SCHEMA_VERSION
-    # 1, exactly one table, and NO baseline row/column/table anywhere.
+    # 2 (Phase 11 AMENDMENT A7), exactly the two pinned tables, and NO
+    # baseline row/column/table anywhere.
     raw = sqlite3.connect(str(db))
     columns = tuple(row[1] for row in raw.execute("PRAGMA table_info(forecasts)"))
     assert columns == forecasts_db.COLUMN_NAMES and len(columns) == 21
     tables = tuple(row[0] for row in raw.execute("SELECT name FROM sqlite_master WHERE type = 'table'"))
-    assert tables == ("forecasts",)
+    assert tables == ("forecasts", "evaluations")
     assert not any("baseline" in column.lower() for column in columns)
     raw.close()
-    assert forecasts_db.SCHEMA_VERSION == 1
+    assert forecasts_db.SCHEMA_VERSION == 2
     assert db.parent == tmp_path  # no DB file is ever committed; all writes under tmp_path
 
 
@@ -623,31 +624,41 @@ def test_manifest_contract_no_timestamp_and_amendments_exact(
     # No time/datetime/os/sys reference exists in the package (AST).
     for display, text in _backtesting_sources():
         assert _module_reference_violations(text, display, ("time", "datetime", "os", "sys")) == [], display
-    # AMENDMENT A1 exactness: the registry of six and the census of four.
-    assert temporal.PHASE8_CHECKPOINT == "ea92667"
+    # AMENDMENT A1 exactness: the registry of seven and the census of five.
+    assert temporal.PHASE10_CHECKPOINT == "8abe1ca"
     assert set(temporal.POISON_REGISTRY) == {
         "fit", "build_forecast", "compute_features", "build_decision_report",
-        "storage.get_forecast/verify_all", "run_walk_forward",
+        "storage.get_forecast/verify_all", "run_walk_forward", "evaluate_predictions",
     }
     assert temporal.POISON_REGISTRY["run_walk_forward"] == (
         "test_backtesting", "test_poisoned_remaining_future_freezes_earlier_predictions",
     )
+    assert temporal.POISON_REGISTRY["evaluate_predictions"] == (
+        "test_evaluation", "test_poisoned_extra_matches_leave_evaluation_unchanged",
+    )
     assert temporal.MATCHES_ENTRY_POINTS == (
-        "fit", "build_forecast", "compute_features", "run_walk_forward",
+        "fit", "build_forecast", "compute_features", "run_walk_forward", "evaluate_predictions",
     )
     # AMENDMENT A2 exactness: the rescoped byte-pin's constants.
     assert set(temporal.PRE_EXISTING_APP) == {
-        "app/__init__.py", "app/api", "app/decisions", "app/domain",
+        "app/__init__.py", "app/api", "app/backtesting", "app/decisions", "app/domain",
         "app/features", "app/forecasts", "app/ingestion", "app/models",
-        "app/scenarios", "app/simulation", "app/storage", "app/validation",
+        "app/scenarios", "app/simulation", "app/validation",
     }
-    assert "app/backtesting" not in temporal.PRE_EXISTING_APP
-    # AMENDMENT A3/A3' exactness: thirteen keys, the self-inclusive
-    # value, the five-package pure set.
-    assert len(hygiene.ALLOWED_APP_IMPORTS) == 13
+    assert "app/storage" not in temporal.PRE_EXISTING_APP
+    assert "app/evaluation" not in temporal.PRE_EXISTING_APP
+    # AMENDMENT A3/A3' exactness: fourteen keys, the self-inclusive
+    # value, the six-package pure set (C2, architect-ratified).
+    assert len(hygiene.ALLOWED_APP_IMPORTS) == 14
     assert hygiene.ALLOWED_APP_IMPORTS["app.backtesting"] == {
         "app.domain", "app.forecasts", "app.backtesting",
     }
+    assert hygiene.ALLOWED_APP_IMPORTS["app.evaluation"] == {
+        "app.domain", "app.forecasts", "app.backtesting", "app.evaluation",
+    }
+    assert hygiene.ALLOWED_APP_IMPORTS["app.storage"] == {
+        "app.domain", "app.forecasts", "app.storage", "app.evaluation",
+    }
     assert hygiene.PURE_PACKAGES == {
-        "app.domain", "app.validation", "app.features", "app.decisions", "app.backtesting",
+        "app.domain", "app.validation", "app.features", "app.decisions", "app.backtesting", "app.evaluation",
     }

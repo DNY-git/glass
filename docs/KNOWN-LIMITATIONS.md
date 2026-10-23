@@ -4,8 +4,8 @@ The honest list. Updated every phase (constitution; HANDOFF Part IX item
 13 formalizes this at Phase 13, but the discipline starts now). Nothing
 here is hidden behavior — each item is also recorded where it was found.
 
-Entry below reflects the state as of Phase 10 (Operational
-reliability), 2026-10-22.
+Entry below reflects the state as of Phase 11 (Forecast evaluation),
+2026-10-23.
 
 ## Phase 1
 
@@ -1229,33 +1229,189 @@ reliability), 2026-10-22.
    ~6.5–10.7), with outcomes identical across every recorded
    execution (155 passed everywhere).
 
-## Not yet applicable (as of Phase 10)
+## Phase 11
+
+1. **First evaluated n > 0 — the milestone, with every caveat riding.
+   The evaluated observation count went from exactly 0 to exactly 30
+   (primary) / 57 (secondary) for the first time** (criterion 1), and
+   every number this phase produces is a descriptive evaluation of a
+   small synthetic sample (S1, pinned verbatim in `docs/EVALUATION.md`):
+   30 clean predictions from the fictional "Obsidian Coast League"
+   fixtures are not evidence of predictive skill, and the 3 structural
+   refusals stay excluded from every metric while counted in the
+   60 = 3 + 27 + 30 accounting (criteria 3–4). The golden run digest is
+   re-derived and asserted golden before any metric computes (criterion
+   1); a tampered digest refuses with zero metric calls (criterion 2).
+   Evaluation reads frozen `Forecast`s and `Match.score` only — no
+   re-tuning, no variant, no fixture edit (ADV-14).
+
+2. **The flag predicate is duplicated, deliberately — guarded, not
+   shared.** `app/evaluation/evaluate.py` carries the identical
+   three-clause predicate (`insufficient_data` / `insufficient_teams` /
+   `convergence_status.value != "CONVERGED"`) that lives in
+   `app/backtesting/harness.py:_is_flagged`; that predicate is
+   underscore-private and `app/backtesting/**` is byte-pinned this
+   phase (amendment A1), so importing or promoting it was not available
+   without violating a frozen surface (brief decision 4). Drift is
+   guarded by the pre-registered 27/30 count pins (criteria 3 and 22) —
+   any predicate drift fails the suite on the population counts.
+
+3. **Calibration at n ≤ 30 is descriptive-with-loud-caveat; the
+   dominant-bin concentration is pinned; larger-n calibration is
+   Phase 13.** The pooled 5-bin tables put 73 of 90 primary pairs in
+   one bin (share 0.8111111111111111) and 137 of 171 secondary pairs in
+   one bin (share 0.8011695906432749) (criterion 10); two primary bins
+   and one secondary bin are empty and report `n = 0` with `None`
+   fields — never fabricated numbers, never merged (§13(c)). No
+   reliability or goodness-of-fit claim follows from these tables (S3);
+   **larger-n calibration is registered as Phase 13** (ADV-11).
+
+4. **The draw aggregate is a descriptive deficit against realized
+   results, both populations.** `realized draw rate − mean predicted
+   draw probability` = **−0.03437540133650058** (primary; 7 draws
+   counted among the 30) and **−0.025271786352718206** (secondary; 14
+   among the 57, hand-counted in-test) (criterion 11). The negative
+   sign means the realized draw rate sits BELOW the mean predicted draw
+   probability on this population — opposite the §2f independent-Poisson
+   underprediction direction the Phase 3 limitation anticipated, stated
+   as measured, never as a verdict, and never as a model-vs-baseline
+   comparison (§13(c)).
+
+5. **The overdispersion diagnostic is descriptive-only — a number, not
+   a test.** Over the secondary population's 114 realized team-goals
+   (sum 149), the mean is 149/114 (`round(..., 3) == 1.307`) and the
+   population variance (ddof = 0) rounds to 0.967 — variance below mean
+   reported as a number, with no test, no p-value, and no claim
+   (criterion 12); the ddof = 1 value 0.9757 is asserted ≠ the shipped
+   value, pinning the denominator. The Phase 3 limitation's remedy
+   question (negative-binomial) remains open — no re-tuning ships here
+   (ADV-14).
+
+6. **No confidence intervals exist anywhere in the evaluation surface
+   (standing §6 rule).** No bootstrap, no interval field, no
+   significance or chi-square machinery (criteria 12–13; §13(d)). Every
+   reported number is a point value with its `n`.
+
+7. **Side-by-side legality: absolute values only — deltas, ratios,
+   percentages, and verdicts are banned FOREVER, still banned after
+   this phase scored.** Model and baseline appear side by side with the
+   same formulas, the same population, and the same `n` (criterion 9);
+   the banned-identifier set over `app/evaluation/**` sources and every
+   evaluation dataclass field has zero hits (criterion 13). "Beating"
+   claims stay banned on the §11(a)/§12(c) sample-size grounds; the
+   noise-floor rationale lives in the Phase 11 brief and §13(d) only,
+   never in `docs/EVALUATION.md` (ADV-8).
+
+8. **`get_forecast`'s latent single-row `fetchone` ambiguity is
+   RETAINED deliberately — never load-bearing for evaluation.**
+   Evaluation joins by the one-line natural-key join with explicit
+   refusals on 0 and >1 matches (criterion 14); the round trip uses
+   `verify_all`, `get_forecast` appears nowhere in `app/evaluation/**`
+   (criterion 14), its signature and `fetchone` line are pinned
+   unchanged, no read path in `app/storage` was modified (git diff vs
+   `8abe1ca` = the sanctioned schema/insert additions only), and no
+   fetch-by-content-hash API exists — `__all__` gained exactly
+   `insert_evaluation_record` (11 → 12 names; criterion 14). A future
+   serving brief owns the ambiguity itself (§11(d) flag, ADV-5).
+
+9. **`SCHEMA_VERSION` is 2 — the sanctioned §11(d) bump — and the
+   `evaluations` table is write-only surface.** One new table
+   `(evaluation_version, run_digest, fixture_file_sha256s, payload,
+   content_hash)` with no timestamp column and immutability triggers
+   mirroring the forecasts table (criterion 17); one new production
+   function `insert_evaluation_record` (idempotent `False` with zero
+   INSERTs on identical content; `EvaluationConflictError` on same
+   identity + different content; criterion 16); **no read API** for
+   evaluations (tests read rows with raw sqlite3); no committed DB;
+   `git diff 8abe1ca -- app/storage` = `forecasts_db.py` +97/−8 and
+   `__init__.py` +2, read paths untouched. Evaluation records never
+   alter original forecasts — the forecasts dump and `verify_all` are
+   byte-identical across evaluate + insert (criteria 15, 18).
+
+10. **Builder-proposed deviations C1–C10, architect-adjudicated 2026-
+    10-23 — NEVER developer rulings (no developer contact occurred).**
+    The builder, green on the BUILD step, reported ten deviations from
+    the brief's amendment texts (several mislabeled "user-ruled"); the
+    architect adjudicated each empirically and amended the brief in
+    place where a brief defect was exposed (the Phase 9 A3' pattern);
+    the false provenance labels were corrected tree-wide (C6). Headline
+    items: **C3** — the seven-entry golden-pin variant including
+    `tests/test_evaluation.py` was clone-proven LATENT POST-COMMIT RED
+    (the file diffs empty only while untracked; the moment the
+    checkpoint commit tracks it, criterion 8 fails on its 779-line
+    new-file diff — reproduced in a throwaway clone) and was caught and
+    reverted to the six-entry tuple, then clone-verified green
+    post-commit by the builder AND the tester AND the reviewer;
+    **C5f** — one sanctioned comment-only one-liner on
+    `tests/test_evaluation.py:510` (1 → 1 line, file stays 779);
+    **C6** — a line-neutral comment-hygiene pass across the amended
+    files (per-file `wc -l` unchanged). None of C1–C10 is
+    developer-territory (full record: `docs/briefs/phase-11.md`
+    adjudication section).
+
+11. **Declared amendments A1–A10 — exact figures (`wc -l`-verified at
+    this docs step; declared at checkpoint, review, and monitor
+    sweep).** **A1** `tests/test_temporal_integrity.py` **452 → 464**
+    (registry 6 → 7, census 4 → 5, byte-pin re-point `ea92667` →
+    `8abe1ca` + rescoped `PRE_EXISTING_APP`, criterion-8 knob scan
+    extended); **A2** `tests/test_phase4_separation.py` **834 → 835**;
+    **A3** `tests/test_phase5_separation.py` **574 → 576** (incl. the
+    C1-forced `PACKAGE_APP_IMPORTS["app.storage"]` hunk); **A4**
+    `tests/test_phase6_separation.py` **510 → 513** (byte-pin drops
+    `app/storage`); **A5** `tests/test_phase7_separation.py` **443 →
+    448** (byte-pin drops `app/storage`; `SCHEMA_VERSION` pin → 2);
+    **A6** `tests/test_fixtures_and_hygiene.py` **626 → 629** (key 14,
+    `app.storage` value + `app.evaluation`, PURE six-set); **A7**
+    `tests/test_backtesting.py` **653 → 664** (exactness block
+    re-pointed; criterion-11 pins → two tables / `SCHEMA_VERSION` 2;
+    its five-entry knob scan NOT extended — decision 12); **A8**
+    `tests/test_vocab_guards.py` **440 → 464** (the ONE prefix exemption
+    + both-direction boundary probes; `SCORING_ALLOWLIST` stays exactly
+    one entry); **A9** `tests/test_storage.py` **425 → 483** (the
+    appended criterion-17 evaluations-table test); **A10**
+    `tests/test_operational.py` **409 → 410** (criterion 8 re-point +
+    the C3 six-entry `GOLDEN_PIN_FILES` + app/-excludes). New file
+    `tests/test_evaluation.py` shipped at **779 lines — C8-accepted
+    declared deviation** vs the ≤ ~620 projection (all 21 declared
+    tests present, none cut; precedent: phase4 835, backtesting 664).
+    Every legacy assertion retained in all ten amended files (strictly
+    stronger, never a weakening).
+
+12. **The brief's State line "No conftest.py exists" was inaccurate
+    (trivia, recorded).** A root `conftest.py` has existed since Phase
+    1 — import-path wiring only, no fixtures (test fixtures are
+    re-derived per test module, the Phase 9 module-scope pattern). No
+    consequence for the phase: the brief's own file list already banned
+    creating or modifying any `conftest.py`, and none was touched.
+
+## Not yet applicable (as of Phase 11)
 
 Forecast, storage, API, feature, decision-report, temporal-integrity,
-backtesting, and operational-reliability limitations are now listable
-and listed above (pipeline
+backtesting, evaluation, and operational-reliability limitations are
+now listable and listed above (pipeline
 stage 6 FORECAST DISTRIBUTIONS, its durable write-once sqlite store,
 the read-only serving surface, pipeline stage 4 FEATURE EXTRACTION —
 `app/features/` — pipeline stage 8 DECISION ANALYSIS —
 `app/decisions/` — Phase 8's temporal-integrity defenses — test-side,
 no module — pipeline stage 9's backtesting machinery —
-`app/backtesting/`, pure, consumed by nothing under `app/` — and
-Phase 10's operational-reliability content — the health script's
-3-run structure, the valve discipline, the corrupted-store and
-interrupted-batch pins — tests, script, and docs, no module — all
+`app/backtesting/`, consumed by `app/evaluation/` since Phase 11 —
+Phase 11's evaluation layer — `app/evaluation/`, the first scored
+population (n = 30/57) with its limitations in the Phase 11 section
+above and in `docs/EVALUATION.md` — and Phase 10's
+operational-reliability content — the health script's 3-run structure,
+the valve discipline, the corrupted-store and interrupted-batch pins —
+tests, script, and docs, no module — all
 exist). Still not yet listable: pre-match-state and model-improvement
 limitations — pipeline stages 3 and 10 are unbuilt (`app/state/` and
-`app/improvement/` remain PLANNED) — plus **evaluation limitations:
-`app/evaluation/` remains PLANNED (Phase 11's)**, and there are no
-pre-match snapshots and no evaluation metrics to mis-trust yet
-(Phases 9 and 10 ship zero scoring — evaluated n = 0). "Temporal
+`app/improvement/` remain PLANNED) — and there are no pre-match
+snapshots and no improvement loop to mis-trust yet. "Temporal
 integrity" itself is
 deliberately NOT listed here: Phase 8's defenses are shipped tests and
 documentation, listed above. Model-calibration and predictive
-limitations (as distinct from the in-sample assumptions above) arrive
-with Phase 11 and will be documented in `docs/EVALUATION.md` (which
-does not exist yet — there is no evaluation to document) and in this
-file. Data provenance and format limitations remain in
+limitations are no longer hypothetical: they were introduced by Phase
+11 and are documented in `docs/EVALUATION.md` (pinned numbers, side-by-
+side absolute results, provenance) and in the Phase 11 section above.
+Data provenance and format limitations remain in
 `docs/DATA-SOURCES.md`; the model's statistical assumptions and their
 weaknesses are in `docs/STATISTICAL-ASSUMPTIONS.md` (exists since
 Phase 3; §7 covers simulation and scenarios; §8 covers forecasts,
@@ -1263,4 +1419,8 @@ storage, and serving; §9 covers feature extraction, added at Phase 6;
 §10 covers decision analysis, added at Phase 7; §11 covers the
 temporal-integrity pre-registrations binding Phases 9 and 11, added at
 Phase 8; §12 covers the backtesting baseline definition, scored-
-population accounting, and standing bans, added at Phase 9).
+population accounting, and standing bans, added at Phase 9; §13 covers
+the evaluation pre-registrations — formulas, populations, bins,
+side-by-side legality — added at Phase 11). Earlier-phase statements
+that evaluated n = 0 (Phases 7, 8, 9, and 10 sections above) are
+historical records of those phases and are never rewritten.

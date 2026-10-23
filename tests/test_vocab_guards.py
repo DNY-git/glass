@@ -32,6 +32,11 @@ SCORING_ALLOWLIST: tuple[tuple[str, str], ...] = (
     (SIMULATION_INIT, "MC noise never contaminates log loss, Brier, or RPS."),
 )
 
+# Criterion (Phase 11): the ONE structural exemption — the evaluation
+# package's own metric identifiers (log_loss, brier, rps + variants) are
+# legal HERE and only here. Prefix-scoped, never a per-sentence allowlist.
+SCORING_EXEMPT_PREFIXES: tuple[str, ...] = ("app/evaluation/",)
+
 # Criterion 11: the accuracy trio DERIVED from Phase 7's guard of
 # record (imported machinery, never a copied list) and pinned.
 ACCURACY_TRIO = frozenset(
@@ -86,6 +91,8 @@ def _allowlist_spans(text: str, rel_path: str) -> list[tuple[int, int]]:
 
 def scoring_violations(text: str, rel_path: str) -> list[str]:
     """Scoring-token hits outside the pinned allowlist spans of this file."""
+    if rel_path.startswith(SCORING_EXEMPT_PREFIXES):
+        return []
     spans = _allowlist_spans(text, rel_path)
     return [
         f"{rel_path}: unallowlisted scoring token {match.group(0)!r}"
@@ -207,6 +214,8 @@ def test_app_wide_scoring_scan_with_pinned_negation_allowlist() -> None:
     for path in app_corpus():
         rel = rel_of(path)
         text = path.read_text(encoding="utf-8")
+        if rel.startswith(SCORING_EXEMPT_PREFIXES):
+            continue
         if phase7._SCORING_PATTERN.search(text):
             files_with_hits.add(rel)
         assert scoring_violations(text, rel) == [], rel
@@ -413,6 +422,8 @@ def test_backtesting_package_clean_under_extended_vocab_guards() -> None:
         rel = rel_of(path)
         text = path.read_text(encoding="utf-8")
         assert _COMPARATIVE_PATTERN.search(text) is None, rel  # zero comparative hits app-wide
+        if rel.startswith(SCORING_EXEMPT_PREFIXES):
+            continue
         if phase7._SCORING_PATTERN.search(text):
             files_with_hits.add(rel)
         assert scoring_violations(text, rel) == [], rel
@@ -438,3 +449,16 @@ def test_backtesting_package_clean_under_extended_vocab_guards() -> None:
                   'x = "invalid_score_shape"'):
         assert phase7._scoring_hits(probe) == [], probe
         assert _COMPARATIVE_PATTERN.search(probe) is None, probe
+
+
+# --- Phase 11 criterion (A8): the ONE structural exemption, both ways. ---
+def test_scoring_exemption_prefix_boundary_both_directions() -> None:
+    """Scoring identifiers pass ONLY under the app/evaluation/ prefix."""
+    probe = "def model_score(predictions):\n    return log_loss(outcome, predictions) * brier(outcome)\n"
+    assert scoring_violations(probe, "app/evaluation/metrics.py") == []
+    assert scoring_violations(probe, "app/evaluation/evaluate.py") == []
+    # Every other path — including siblings of the exempt package —
+    # still flags identical text: prefix-scoped, never a wider allowlist.
+    for rel in ("app/models/probe.py", "app/backtesting/probe.py",
+                "app/evaluationx/probe.py", "app/eval/probe.py"):
+        assert scoring_violations(probe, rel), rel

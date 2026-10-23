@@ -55,13 +55,16 @@ ALLOWED_APP_IMPORTS: dict[str, set[str]] = {
     "app.scenarios": {"app.domain", "app.models", "app.scenarios"},  # Phase 4: scenarios imports stdlib + app.domain/app.models only
     "app.simulation": {"app.models", "app.scenarios", "app.simulation"},  # Phase 4: simulation imports stdlib + app.models/app.scenarios only
     "app.forecasts": {"app.domain", "app.models", "app.forecasts"},  # Phase 5: forecasts imports stdlib + app.domain/app.models only (pure)
-    "app.storage": {"app.domain", "app.forecasts", "app.storage"},  # Phase 5: storage imports stdlib sqlite3 + app.domain/app.forecasts only
+    "app.storage": {"app.domain", "app.forecasts", "app.storage", "app.evaluation"},  # Phase 5: storage imports stdlib sqlite3 + app.domain/app.forecasts only (Phase 11: + app.evaluation records)
     "app.api": {"app.domain", "app.forecasts", "app.storage", "app.api"},  # Phase 5: api imports stdlib http + app.domain/app.forecasts/app.storage only
     "app.features": {"app.domain", "app.features"},  # Phase 6: features imports stdlib + app.domain only (pure)
     "app.decisions": {"app.domain", "app.models", "app.forecasts", "app.scenarios", "app.decisions"},  # Phase 7: decisions imports stdlib + domain/models/forecasts/scenarios only (pure)
     "app.backtesting": {"app.domain", "app.forecasts", "app.backtesting"},  # Phase 9: backtesting imports stdlib + app.domain/app.forecasts only (pure)
+    "app.evaluation": {"app.domain", "app.forecasts", "app.backtesting", "app.evaluation"},  # Phase 11: evaluation imports stdlib + app.domain/app.forecasts/app.backtesting only (pure statistical code, no storage/HTTP)
 }
-PURE_PACKAGES = {"app.domain", "app.validation", "app.features", "app.decisions", "app.backtesting"}
+# Phase 11 AMENDMENT A6 (C2, architect-ratified): app.evaluation JOINS the pure
+# set — stdlib + domain/forecasts/backtesting imports only, no storage/HTTP.
+PURE_PACKAGES = {"app.domain", "app.validation", "app.features", "app.decisions", "app.backtesting", "app.evaluation"}
 # Criterion 12: resolved module paths that read the wall clock. Names are
 # the *real* dotted paths after alias resolution (e.g. `dt.datetime.now()`
 # and `from datetime import datetime as DT; DT.now()` both resolve to

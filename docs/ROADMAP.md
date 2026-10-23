@@ -26,8 +26,8 @@ Developer acceptance is recorded per BLOCK, not per phase.
 | 7     | Decision analysis               | committed   |
 | 8     | Temporal integrity              | committed   |
 | 9     | Backtesting                     | committed   |
-| 10    | Operational reliability         | in progress |
-| 11    | Forecast evaluation             | planned   |
+| 10    | Operational reliability         | committed   |
+| 11    | Forecast evaluation             | in progress |
 | 12    | Integration and verification    | planned   |
 | 13    | Consolidation and research readiness | planned |
 
@@ -194,9 +194,13 @@ Status notes:
   untouched; NO Block 3 acceptance row — developer acceptance belongs
   to the developer at the Phases 7–9 boundary after the Phase 9 commit
   and monitor sweep** (recorded per BLOCK, not per phase).
-- Phase 10 is `in progress` (2026-10-22): built and passed independent
-  review (**PASS, 2026-10-22, first pass, criteria 1–9**, after tester
-  PASS — findings F1/N1 closed within protocol); suite **155 passed**
+- Phase 10 is `committed`: checkpoint hash **8abe1ca** (full hash
+  8abe1ca156a1048d8c1c6d7543bfe58359e51a78; `phase 10: health-check
+  restructure to 3 runs, valve re-tune down, corruption and atomicity
+  tests`; 2026-10-22 22:20 +0100, master). Built and passed
+  independent review (**PASS, 2026-10-22, first pass, criteria 1–9**,
+  after tester PASS — findings F1/N1 closed within protocol); suite
+  **155 passed**
   (clean-env runs at load ~0.97–12, 118–514 s; offline lo-up 502.50 s
   at load 9.80; docs run 149.60 s at load 9.67). HANDOFF Part IX item
   10 ships as **tests + documentation only** — zero production code
@@ -216,13 +220,48 @@ Status notes:
   no wall-clock SLA anywhere; zero statistics (no
   `docs/STATISTICAL-ASSUMPTIONS.md` §13 — brief decision 9);
   glass-quant consulted (2026-10-22, rulings ADV-1–ADV-10 binding);
-  zero developer questions. Checkpoint hash **PENDING** — the git
-  agent makes the checkpoint commit; this agent then replaces PENDING
-  and flips the row to `committed`, as in Phases 4–9. **Block table
+  zero developer questions. Hash recorded in docs/PROGRESS-LOG.md per
+  the Phase 1–9 convention. **Block table
   untouched; Block 1/2/3 rows untouched — the Block 3 acceptance row
   (recorded 2026-10-22) rides the Phase 10 checkpoint commit unedited;
   Block 4 acceptance belongs to the developer at the Phases 10–12
   boundary** (recorded per BLOCK, not per phase).
+- Phase 11 is `in progress` (2026-10-23): built and passed independent
+  review (**PASS, 2026-10-23, first pass, criteria 1–23**, after
+  tester PASS ×23 with the golden metric values independently
+  re-derived bit-exact, and recorded clean-env and offline suite
+  runs); suite **178 passed** (clean-env ×2: 149.59 s / 146.96 s at
+  the recorded loads; offline lo-up ×2: 190.38 s / 182.99 s; health
+  script 3 inner runs `172 passed, 6 deselected` ×2, determinism
+  `OK:` counts-only, skips none, pip clean, inside the untouched
+  800 s valve). HANDOFF Part IX item 11 ships as the pure
+  `app/evaluation/` package (four modules, 639 lines) — the evidence
+  gate: digest-gated scoring of the frozen walk-forward predictions
+  against realized results (**first evaluated n > 0: 30 primary /
+  57 secondary**; 3 refusals excluded and counted; 60 = 3 + 27 + 30),
+  hand-computed single-prediction goldens, pooled 5-bin calibration,
+  the draw aggregate, the ddof=0 overdispersion diagnostic
+  (descriptive), and idempotent no-clock evaluation records — plus the
+  §11(d) sanctioned schema bump (**`SCHEMA_VERSION` 1 → 2**: the
+  write-once `evaluations` table + `insert_evaluation_record`; read
+  paths untouched; no committed DB). Golden literals pinned in
+  `tests/test_evaluation.py` (**779 lines — C8-accepted declared
+  deviation**); ten declared amendments A1–A10 with `wc -l`-verified
+  actuals; builder-proposed deviations **C1–C10 architect-adjudicated
+  2026-10-23 — never developer rulings** (C3: a clone-proven latent
+  post-commit criterion-8 RED caught and reverted to the six-entry
+  golden set, post-commit green clone-verified by builder, tester, and
+  reviewer); `docs/STATISTICAL-ASSUMPTIONS.md` §13 authored pre-build
+  and flipped to implemented-and-tested; `docs/EVALUATION.md` created
+  (every number a pinned test literal); glass-quant consulted
+  2026-10-22 (rulings ADV-1–ADV-14 binding); zero developer
+  questions. Checkpoint hash **PENDING** — the git agent makes the
+  checkpoint commit; this agent then replaces PENDING and flips the
+  row to `committed`, as in Phases 4–10. **Block table untouched;
+  Block 1/2/3 rows untouched — the Block 3 acceptance row (recorded
+  2026-10-22) rides this checkpoint commit unedited; Block 4
+  acceptance belongs to the developer at the Phases 10–12 boundary**
+  (recorded per BLOCK, not per phase).
 
 ## Block acceptance record
 

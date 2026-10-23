@@ -34,10 +34,12 @@ DECISIONS_DIR = APP_DIR / "decisions"
 
 # Criterion 16: the Phase 6 checkpoint (`cfde3a6`) the byte-diff pin is
 # version-local to; a future change needs its own named amendment.
+# Phase 11 AMENDMENT A5: app/storage excluded from the protected set
+# (SCHEMA_VERSION 2 + evaluations table — sanctioned schema work).
 PHASE6_CHECKPOINT = "cfde3a67bc513890115106b2b774515e1735d4e6"
 PROTECTED_PACKAGES = (
     "app/domain", "app/models", "app/forecasts", "app/scenarios",
-    "app/simulation", "app/features", "app/storage", "app/api",
+    "app/simulation", "app/features", "app/api",
     "app/ingestion", "app/validation",
 )
 
@@ -332,7 +334,7 @@ def test_no_storage_no_api_no_schema_no_timestamps() -> None:
     assert result.returncode == 0, result.stderr
     assert result.stdout == "", result.stdout
     assert result.stderr == "", result.stderr
-    assert forecasts_db.SCHEMA_VERSION == 1  # unchanged
+    assert forecasts_db.SCHEMA_VERSION == 2  # Phase 11 AMENDMENT A5: evaluations table
 
     # No SQL literal and no sqlite3/http/urllib import under app/
     # decisions (an in-process renderer touches no storage/network).
@@ -370,10 +372,10 @@ def test_no_storage_no_api_no_schema_no_timestamps() -> None:
 
 
 def test_amendments_pinned_and_full_tree_scan_clean() -> None:
-    # Criterion 17 (A1-A4): exactly 13 keys (Phase 9 A3'); the eleven
+    # Criterion 17 (A1-A4): exactly 14 keys (Phase 9 A3', Phase 11 A6); the eleven
     # legacy values exactly the Phase 1-6 sets (append-only convention
     # protected); A1 exactly the sanctioned five; PURE_PACKAGES the
-    # five-package strengthening; the exception map untouched; the
+    # six-package strengthening (A6); the exception map untouched; the
     # A2/A3/A4 pin updates in place; the full-tree scan completes with
     # zero violations and no KeyError.
     expected_legacy: dict[str, set[str]] = {
@@ -385,13 +387,13 @@ def test_amendments_pinned_and_full_tree_scan_clean() -> None:
         "app.scenarios": {"app.domain", "app.models", "app.scenarios"},
         "app.simulation": {"app.models", "app.scenarios", "app.simulation"},
         "app.forecasts": {"app.domain", "app.models", "app.forecasts"},
-        "app.storage": {"app.domain", "app.forecasts", "app.storage"},
+        "app.storage": {"app.domain", "app.forecasts", "app.storage", "app.evaluation"},
         "app.api": {"app.domain", "app.forecasts", "app.storage", "app.api"},
     }
-    assert len(hygiene.ALLOWED_APP_IMPORTS) == 13
+    assert len(hygiene.ALLOWED_APP_IMPORTS) == 14
     assert set(hygiene.ALLOWED_APP_IMPORTS) == set(expected_legacy) | {
         "app.features", "app.decisions",
-        "app.backtesting",
+        "app.backtesting", "app.evaluation",
     }
     for package, allowed in expected_legacy.items():
         assert hygiene.ALLOWED_APP_IMPORTS[package] == allowed, package
@@ -403,9 +405,11 @@ def test_amendments_pinned_and_full_tree_scan_clean() -> None:
     assert hygiene.ALLOWED_APP_IMPORTS["app.decisions"] == {
         "app.domain", "app.models", "app.forecasts", "app.scenarios", "app.decisions",
     }
+    # Phase 11 AMENDMENT A5 (C2, architect-ratified): app.evaluation JOINS the
+    # pure set (stdlib + domain/forecasts/backtesting imports only).
     assert hygiene.PURE_PACKAGES == {
         "app.domain", "app.validation", "app.features", "app.decisions",
-        "app.backtesting",
+        "app.backtesting", "app.evaluation",
     }
     assert hygiene.BANNED_IMPORT_EXCEPTIONS == {
         "app.storage": {"sqlite3"}, "app.api": {"http"},
@@ -419,20 +423,21 @@ def test_amendments_pinned_and_full_tree_scan_clean() -> None:
         assert violations, banned
 
     # The A2/A3/A4 pin updates are verified IN PLACE: all three amended
-    # separation files assert the exact 13-key universe (Phase 9 A3')
-    # with app.decisions and app.backtesting in the union, and none of
-    # the `== 10`/`== 11`/`== 12` pin forms survives anywhere.
+    # separation files assert the exact 14-key universe (Phase 11 A6)
+    # with app.decisions, app.backtesting and app.evaluation in the union, and none of
+    # the `== 10`/`== 11`/`== 12`/`== 13` pin forms survives anywhere.
     for name in (
         "test_phase4_separation.py",
         "test_phase5_separation.py",
         "test_phase6_separation.py",
     ):
         source = (REPO_ROOT / "tests" / name).read_text(encoding="utf-8")
-        assert "len(hygiene.ALLOWED_APP_IMPORTS) == 13" in source, name
-        assert '"app.decisions"' in source and '"app.features"' in source, name
+        assert "len(hygiene.ALLOWED_APP_IMPORTS) == 14" in source, name
+        assert '"app.decisions"' in source and '"app.features"' in source and '"app.evaluation"' in source, name
         assert "len(hygiene.ALLOWED_APP_IMPORTS) == 10" not in source, name
         assert "len(hygiene.ALLOWED_APP_IMPORTS) == 11" not in source, name
         assert "len(hygiene.ALLOWED_APP_IMPORTS) == 12" not in source, name
+        assert "len(hygiene.ALLOWED_APP_IMPORTS) == 13" not in source, name
 
     # The full-tree scan: every .py under app/ completes with zero
     # violations and no KeyError — no amendment relaxed any check.

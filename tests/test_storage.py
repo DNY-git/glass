@@ -423,3 +423,61 @@ def test_schema_has_no_timestamp_column(tmp_path: Path) -> None:
                 for target in targets:
                     root = target.split(".")[0]
                     assert root not in {"datetime", "time"}, f"{path}: {target}"
+
+
+def test_evaluations_table_write_once_no_timestamp_schema_v2(tmp_path: Path) -> None:
+    # NOTE: Semantics per criterion 16 as
+    # amended 2026-10-23 — the second
+    # identical insert is the idempotent
+    # False no-op (zero INSERTs); only a
+    # DIFFERING payload under the same natural
+    # identity raises EvaluationConflictError.
+    import test_fixtures_and_hygiene as hygiene
+
+    from app.evaluation import EVALUATION_VERSION, EvaluationConflictError, EvaluationRecord
+    from app.storage import forecasts_db
+
+    assert forecasts_db.SCHEMA_VERSION == 2
+    assert hygiene.BANNED_IMPORT_EXCEPTIONS == {"app.storage": {"sqlite3"}, "app.api": {"http"}}
+    db = tmp_path / "evaluations-schema.db"
+    connection = open_forecasts_db(str(db))
+    record = EvaluationRecord(
+        evaluation_version=EVALUATION_VERSION,
+        run_digest="probe-digest",
+        fixture_file_sha256s=(("season-1.json", "a" * 64),),
+        payload='{"probe":1}',
+    )
+    assert forecasts_db.insert_evaluation_record(connection, record) is True
+    assert forecasts_db.insert_evaluation_record(connection, record) is False  # criterion 16
+    differing = dataclasses.replace(record, payload='{"probe":2}')
+    assert differing.content_hash != record.content_hash
+    with pytest.raises(EvaluationConflictError):  # write-once: differing content, same identity
+        forecasts_db.insert_evaluation_record(connection, differing)
+    connection.close()
+
+    raw = sqlite3.connect(str(db))
+    tables = tuple(row[0] for row in raw.execute("SELECT name FROM sqlite_master WHERE type = 'table'"))
+    assert tables == ("forecasts", "evaluations")  # creation order pinned, never set()
+    evaluations_columns = tuple(row[1] for row in raw.execute("PRAGMA table_info(evaluations)"))
+    assert evaluations_columns == (
+        "evaluation_version", "run_digest", "fixture_file_sha256s", "payload", "content_hash",
+    )
+    banned_fragments = ("created", "modified", "updated", "stamp", "time", "clock")
+    for name in evaluations_columns:  # no timestamp-like column anywhere
+        assert not any(fragment in name.lower() for fragment in banned_fragments), name
+    # Raw CLI-equivalent UPDATE/DELETE abort: the trigger pair lives in
+    # the file itself, message convention mirrored from the forecasts
+    # triggers (sqlite3 RAISE(ABORT) surfaces as IntegrityError).
+    rows_before = raw.execute("SELECT * FROM evaluations").fetchall()
+    assert len(rows_before) == 1
+    with pytest.raises(sqlite3.IntegrityError) as update_error:
+        raw.execute("UPDATE evaluations SET payload = '{}'")
+    assert "immutable" in str(update_error.value)
+    with pytest.raises(sqlite3.IntegrityError) as delete_error:
+        raw.execute("DELETE FROM evaluations")
+    assert "immutable" in str(delete_error.value)
+    assert raw.execute("SELECT * FROM evaluations").fetchall() == rows_before  # untouched
+    # The forecasts surface is untouched: exactly the 21 pinned columns.
+    forecasts_columns = tuple(row[1] for row in raw.execute("PRAGMA table_info(forecasts)"))
+    assert forecasts_columns == tuple(COLUMN_NAMES) and len(forecasts_columns) == 21
+    raw.close()

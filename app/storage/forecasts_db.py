@@ -1,8 +1,9 @@
-"""Durable write-once sqlite store for frozen forecast snapshots.
+"""Durable write-once sqlite store for frozen snapshots and evaluations.
 
-One table, one schema version, no migrations framework, no ORM, no
-pooling: direct SQL over stdlib sqlite3 (AMENDMENT A2 permits sqlite3
-in this package only). Write-once is enforced **at the schema level**
+Two pinned tables (forecasts, evaluations), one schema version, no
+migrations framework, no ORM, no pooling: direct SQL over stdlib sqlite3
+(AMENDMENT A2 permits sqlite3 in this package only). Write-once is
+enforced **at the schema level**
 by BEFORE UPDATE / BEFORE DELETE triggers raising ABORT inside the
 database file, so it survives any client including the sqlite3 CLI;
 the application layer itself contains no UPDATE/DELETE SQL at all
@@ -21,6 +22,7 @@ import sqlite3
 from typing import Any
 
 from app.domain import Availability, OptionalValue
+from app.evaluation import EvaluationConflictError, EvaluationRecord
 from app.forecasts import (
     Forecast,
     ForecastConflictError,
@@ -30,8 +32,9 @@ from app.forecasts import (
     fitted_payload,
 )
 
-# Schema of the single forecasts table; version bump = new brief.
-SCHEMA_VERSION = 1
+# Schema of the two pinned tables (forecasts, evaluations); version bump
+# = new brief.
+SCHEMA_VERSION = 2
 
 _FORECASTS_TABLE_DDL = (
     "CREATE TABLE IF NOT EXISTS forecasts ("
@@ -61,8 +64,9 @@ _FORECASTS_TABLE_DDL = (
     ")"
 )
 
-# The two schema-level immutability triggers (S1): the ONLY literals in
-# the application layer permitted to contain the words UPDATE/DELETE,
+# The schema-level immutability triggers (S1): the sanctioned
+# application-layer literals containing the words UPDATE/DELETE (none
+# matches a data-statement form, AST-scanned); the forecasts pair is
 # pinned verbatim by tests/test_phase5_separation.py criterion 23.
 IMMUTABLE_UPDATE_TRIGGER_DDL = (
     "CREATE TRIGGER IF NOT EXISTS forecasts_immutable_update "
@@ -75,10 +79,40 @@ IMMUTABLE_DELETE_TRIGGER_DDL = (
     "BEGIN SELECT RAISE(ABORT, 'forecasts are immutable: DELETE refused'); END"
 )
 
+# The evaluation table (Phase 11, decision 1): five pinned columns, no
+# timestamp, the natural identity as the UNIQUE backstop.
+_EVALUATIONS_TABLE_DDL = (
+    "CREATE TABLE IF NOT EXISTS evaluations ("
+    "evaluation_version INTEGER NOT NULL, "
+    "run_digest TEXT NOT NULL, "
+    "fixture_file_sha256s TEXT NOT NULL, "
+    "payload TEXT NOT NULL, "
+    "content_hash TEXT NOT NULL, "
+    "UNIQUE (evaluation_version, run_digest, fixture_file_sha256s)"
+    ")"
+)
+
+# The evaluations table's own schema-level immutability triggers,
+# mirroring the forecasts pair (S1/decision 1); private, not exported.
+_EVALUATIONS_UPDATE_TRIGGER_DDL = (
+    "CREATE TRIGGER IF NOT EXISTS evaluations_immutable_update "
+    "BEFORE UPDATE ON evaluations "
+    "BEGIN SELECT RAISE(ABORT, 'evaluations are immutable: UPDATE refused'); END"
+)
+_EVALUATIONS_DELETE_TRIGGER_DDL = (
+    "CREATE TRIGGER IF NOT EXISTS evaluations_immutable_delete "
+    "BEFORE DELETE ON evaluations "
+    "BEGIN SELECT RAISE(ABORT, 'evaluations are immutable: DELETE refused'); END"
+)
+
+# Creation order pins the sqlite_master table order (criterion 17).
 _DDL = (
     _FORECASTS_TABLE_DDL,
     IMMUTABLE_UPDATE_TRIGGER_DDL,
     IMMUTABLE_DELETE_TRIGGER_DDL,
+    _EVALUATIONS_TABLE_DDL,
+    _EVALUATIONS_UPDATE_TRIGGER_DDL,
+    _EVALUATIONS_DELETE_TRIGGER_DDL,
 )
 
 # Identity columns (brief decision 6) and the full column order of the
@@ -210,6 +244,60 @@ def insert_forecast(connection: sqlite3.Connection, forecast: Forecast) -> bool:
         raise
 
 
+def insert_evaluation_record(
+    connection: sqlite3.Connection, record: EvaluationRecord
+) -> bool:
+    """Insert one evaluation write-once; True = inserted, False = no-op.
+
+    The same transaction shape as insert_forecast: BEGIN IMMEDIATE,
+    identity check, then one INSERT, so check-then-insert is atomic
+    against concurrent writers (S4). Identical natural identity +
+    identical content hash is an idempotent no-op (zero INSERTs, no
+    error — the dedup token is the content hash); identical identity +
+    different content hash raises EvaluationConflictError and never
+    overwrites (the original row is untouched; the UNIQUE identity
+    constraint is the schema-level backstop). The forecast rows are
+    never touched from this function — one INSERT on a separate table
+    only (criterion 18).
+    """
+    fixture_hash_text = json.dumps(
+        record.fixture_file_sha256s, **_FITTED_JSON_OPTIONS
+    )
+    identity = (
+        record.evaluation_version,
+        record.run_digest,
+        fixture_hash_text,
+    )
+    connection.execute("BEGIN IMMEDIATE")
+    try:
+        existing = connection.execute(
+            "SELECT content_hash FROM evaluations "
+            "WHERE evaluation_version = ? "
+            "AND run_digest = ? AND fixture_file_sha256s = ?",
+            identity,
+        ).fetchone()
+        if existing is not None:
+            if existing[0] == record.content_hash:
+                connection.commit()
+                return False
+            raise EvaluationConflictError(
+                f"identity collision with different content for evaluation "
+                f"{(record.evaluation_version, record.run_digest)!r}: "
+                f"stored {existing[0]}, incoming {record.content_hash}"
+            )
+        connection.execute(
+            "INSERT INTO evaluations (evaluation_version, run_digest, "
+            "fixture_file_sha256s, payload, content_hash) "
+            "VALUES (?, ?, ?, ?, ?)",
+            identity + (record.payload, record.content_hash),
+        )
+        connection.commit()
+        return True
+    except BaseException:
+        connection.rollback()
+        raise
+
+
 def _integrity_error(mapping: dict[str, Any]) -> ForecastIntegrityError:
     key = (
         mapping["competition"],
@@ -332,6 +420,7 @@ __all__ = [
     "SCHEMA_VERSION",
     "backup_forecasts",
     "get_forecast",
+    "insert_evaluation_record",
     "insert_forecast",
     "open_forecasts_db",
     "open_read_connection",

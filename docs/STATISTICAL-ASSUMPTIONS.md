@@ -1371,3 +1371,199 @@ declarations of this section stand: fixture changes force
 re-registration by named brief; "validated"/"accurate"/"beating"
 remain banned — Phase 9 ran but computed no score, so the evidence gate
 is Phase 11's alone, on the pre-registered population.
+
+## 13. Forecast evaluation (IX-11) — pre-registrations: metrics, populations, binning, side-by-side legality — IMPLEMENTED AND TESTED (authored pre-build, Phase 11; flipped at the Phase 11 DOCS step)
+
+Status: **IMPLEMENTED AND TESTED — the registrations below were
+authored BEFORE any Phase 11 build code** (2026-10-22, pre-build;
+flipped at the Phase 11 DOCS step, 2026-10-23, per this paragraph's own
+flip rule — status line + phase-end verification append, never a
+rewrite of the pre-build text), per Phase 11 brief decision 5 and
+glass-quant ruling ADV-10 (the
+§3/§7/§8/§9/§10/§11/§12 pre-build pattern; a fresh section appended so
+§§1–12 stay byte-identical — this append changes no prior line). Every
+registration below is committed prose before any `app/evaluation/`
+module, test, or metric number exists; the section flips to
+implemented-and-tested reality only at the Phase 11 DOCS step (status
+line + phase-end verification append, never a rewrite of this pre-build
+text). Golden metric literals are pinned in `tests/test_evaluation.py`
+FIRST (ADV-10); `docs/EVALUATION.md` may cite ONLY pinned test
+literals — no doc number without a pinned test source. Phase 11 is the
+phase the §12(d) no-join boundary **ENDS**: the one-line natural-key
+prediction-to-outcome join is re-established here — **digest-gated**
+(the run digest is re-derived and asserted golden BEFORE any metric
+computes, ADV-6) and **read-only** over frozen `Forecast`s and
+`Match.score` (ADV-12). Any later change to the formulas in (a), the
+populations in (b), or the bins and aggregates in (c) — including any
+fixture change that would move their figures — is a NAMED BRIEF
+(§11(a)'s re-registration rule extended); no implementation may drift
+from these registrations silently.
+
+**(a) Metric formulas — verbatim, the only legal forms (ADV-2,
+BLOCKER).** *Definitions, pinned:*
+- **Log loss** = `−ln(p_realized)`, **natural log, NO ε-clamp of any
+  spelling** (no `epsilon`, `clamp`, `clip`, `sys.float_info`, or
+  `1e-` literal in `app/evaluation/**`). The smallest probability
+  component on the registered population is ≈0.128 (criterion 6
+  golden), so no clamp is ever needed here; a **zero probability on
+  the realized outcome is a NAMED HARD REFUSAL** — `ValueError`, never
+  a finite clamped score, never smoothed, renormalized, or repaired
+  (constitution prohibition 4).
+- **Brier** = the **full 3-outcome sum** `(p_H − o_H)² + (p_D − o_D)² +
+  (p_A − o_A)²` — **no halving, no /2, no /3** — range `[0, 2]`;
+  uniform `(⅓, ⅓, ⅓)` against any outcome is `⅔`.
+- **RPS** = **½-scaled, 3-category ordinal** over the fixed ordering
+  **H < D < A**: `½·[(F_p(H) − F_o(H))² + (F_p(D) − F_o(D))²]`, with
+  cumulative forecast `F_p` and cumulative one-hot outcome `F_o`;
+  range `[0, 1]`; the uniform reference vs H is `5/18`.
+*Scoreline variant — REJECTED, with reasoning:* the fine-grained
+(scoreline-matrix) RPS would score the joint goal distribution — the
+model's §2(a)/§2(b)-weak surface — against a many-category ordinal
+grid, on a population of 57 predictions that cannot support that
+resolution. The outcome-level 3-way form matches the evaluated target
+(the H/D/A outcome), applies identically to model and baseline
+(outcome triples only), and avoids implying scoreline resolution the
+sample cannot support. Rejected permanently for this evaluation;
+`app/evaluation/**` structurally cannot build it (no `app.models`/
+`app.simulation` import — criterion 8 AST pin).
+
+**(b) Scored populations — pre-registered, pre-score (ADV-1, BLOCKER;
+§12(b) accounting carried).** *Registration, verbatim, pinned to the
+frozen fixtures:* **PRIMARY = the 30 clean predictions** (emitted with
+no §5 insufficient-data/insufficient-teams flag and `CONVERGED`);
+**SECONDARY = all 57 predictions** (27 flagged + 30 clean, flags
+riding). The **3 structural refusals are EXCLUDED from every metric of
+every kind** and appear only in accounting: **60 targets = 3 refusals +
+27 flagged + 30 clean**, equivalently **57 = 27 + 30** and
+**60 = 3 + 27 + 30** — fully auditable, nothing silently skipped or
+dropped, and **no metric container exists for n = 60**. The three
+`MISSING_NO_HISTORY` baselines are exactly the three refusal targets
+(three-way set equality with the prediction-less matches — §12(a)
+symmetry); inside each population model and baseline carry the **same
+population and the same `n`**. **`n` is stated on every number** — every
+metric triple and calibration table carries its `n`; a bare number is
+illegal. The populations are fixed HERE before any metric exists:
+nothing is chosen post-score, no post-hoc subsetting, no variant
+selection (E2; exactly one model spec, §11(b)(ii)).
+
+**(c) Calibration bins and descriptive diagnostics (ADV-3/ADV-4/ADV-11,
+BLOCKER).**
+- *Bins:* **exactly 5 equal-width bins** — `[0,.2) [.2,.4) [.4,.6)
+  [.6,.8) [.8,1.0]` — last bin inclusive at 1.0, all others
+  left-inclusive/right-exclusive. **Pooled (p, realized-indicator)
+  pairs across the three outcomes** (3 pairs per scored match:
+  `(p_H, 1[H])`, `(p_D, 1[D])`, `(p_A, 1[A])`); each bin reports exactly
+  `(n, mean forecast p, realized frequency)`. **Empty bins (n = 0) are
+  NEVER merged and NEVER re-binned**; they report `mean_p = None` and
+  `realized_frequency = None` — never `0.0`, a fabricated number. Bin
+  edges are fixed pre-score: no post-hoc regrouping (§11(a), §12(c)),
+  no chi-square, no smoothing, no reliability-quality claim (§6).
+  Tables are computed for BOTH populations; the dominant-bin
+  concentration (~80% of pairs in one bin at n ≤ 30) is a pinned
+  literal quoted only with its loud caveat — calibration at this n is
+  **descriptive-with-loud-caveat**, never evidence of calibration
+  quality. Larger-n calibration is registered as Phase 13 (ADV-11).
+- *Draw aggregate (§2f):* per population, one number:
+  `realized_draw_rate − mean predicted draw probability` (positive =
+  the §2f underprediction direction). It is calibration-against-
+  realized, NOT model-vs-baseline — ADV-8's ban does not touch it. The
+  secondary realized rate is hand-counted: exactly **14 draws among the
+  57** (14/57); the primary count is independently counted in-test.
+- *Overdispersion (§2b):* the SECONDARY population's realized
+  team-goals — **n = 114 = 2 × 57**, mean = 149/114 ≈ 1.307, **population
+  variance (ddof = 0)** ≈ 0.967. The sample variance (ddof = 1,
+  0.9757) is NOT the registered denominator — it does not reproduce
+  ADV-4's probe, which pins ddof = 0. **Descriptive only: no test, no
+  p-value, no claim** — `variance < mean` (or `>`) is reported as a
+  number, never a verdict.
+
+**(d) Side-by-side legality — absolute values only (ADV-8, BLOCKER;
+§12(c) ban carried).** LEGAL: model and baseline **absolute** metric
+values computed with the **same formulas** on the **same population**
+with the same `n`, presented side by side with `n` and caveats — the
+"and baselines" of IX-11. ILLEGAL — **banned forever, still banned
+after Phase 11 scores**: any delta, difference, ratio, percentage,
+improvement, better/worse, ranking, or **any verdict** between model
+and baseline. "Beating" claims stay banned on the registered
+sample-size grounds of §11(a)/§12(c) (per-model score SE ~0.15–0.25
+against the §2d noise floor ~±0.05); the noise-floor rationale lives
+in the Phase 11 brief and THIS section only — **never** in
+`docs/EVALUATION.md`. The ban is mechanical: a pinned banned-identifier
+set over `app/evaluation/**` sources and every evaluation dataclass
+field (criterion 13), on top of the app-wide comparative-token guard.
+**No confidence intervals** (§6 standing): no bootstrap, no interval
+field, no significance or chi-square machinery anywhere in the
+evaluation surface.
+
+**(e) Vocabulary (ADV-9).** Metric identifiers (`log_loss`, `brier`,
+`rps`, `calibration`) are legal **inside `app/evaluation/**` ONLY** —
+the single prefix-scoped exemption; every other vocabulary guard runs
+unweakened, including comparative-token, accuracy-trio, and
+`FIELD_BAN` scans INSIDE the package. **Quality adjectives may never
+describe model output as a claim** — `accurate`, `well-calibrated`,
+`good fit`, `reliable`, `trustworthy` — and `validated`/`accurate`/
+`beating`/`accuracy` occur zero times in `app/evaluation/**`. The four
+pinned honest-negation sentences (S1–S4, Phase 11 brief) are the only
+sanctioned phrasings around quality vocabulary in `docs/EVALUATION.md`.
+No decision threshold, label, grade, or recommendation exists anywhere
+in the evaluation surface (§10(c); thresholds remain out of scope).
+
+**(f) Record contract, the duplicated predicate, and change control
+(ADV-6/ADV-12/decision 4).** The **evaluation record** is write-once,
+content-hashed, and **no-clock** (no time field, no time import, no
+ISO-datetime form in any hashed payload — §8(d)/§11(c) extended
+verbatim): exactly `(evaluation_version, run_digest,
+fixture_file_sha256s, payload, content_hash)` in the §11(d)-executing
+`evaluations` table (`SCHEMA_VERSION` 1 → 2, this phase's sanctioned
+schema bump). Identical content hash → idempotent no-op with zero
+INSERTs; same identity + different hash → `EvaluationConflictError`,
+never an overwrite. Records **never alter original forecasts**: one
+INSERT on a separate table, `verify_all` unchanged (HANDOFF:126–127).
+The flag predicate (`insufficient_data` / `insufficient_teams` /
+`convergence_status != CONVERGED`) is **duplicated, deliberately**, in
+`app/evaluation/` — `app/backtesting`'s predicate is underscore-private
+and byte-pinned this phase — with drift guarded by the 27/30 count
+pins in (b) (also recorded in KNOWN-LIMITATIONS). IX-12 CONSUMES these
+records and recomputes nothing; evaluation stays re-runnable and
+read-only. Flipping this section's status changes no registration:
+§§1–12 remain untouched by this append.
+
+**Phase-end verification (Phase 11 DOCS step, 2026-10-23 — appended,
+never a rewrite of the pre-build text above).** Every registration in
+(a)–(f) was verified against the shipped implementation and its tests:
+(a) the three formulas ship exactly as registered in
+`app/evaluation/metrics.py` — no `epsilon`/`clamp`/`clip`/
+`sys.float_info`/`1e-` anywhere in `app/evaluation/**` (criterion 6
+source scan), a zero probability on the realized outcome raises
+`ValueError` (criterion 6; the smallest scored component is the
+criterion-6 golden 0.12816022966803042), and the scoreline variant is
+structurally absent (criterion 8 AST pin: no `app.models`/
+`app.simulation` import); (b) the populations match the registration
+exactly — 60 = 3 + 27 + 30, primary 30, secondary 57, refusals
+accounting-only, no metric container for n = 60, model/baseline
+same-`n` symmetry, the 3 MISSING baselines ≡ the 3 refusal targets
+(criteria 3–4); (c) the bins ship with the registered edges and pooled
+pairs (criterion 10), empty bins report `n = 0` with `None` fields, the
+draw aggregate is `realized_draw_rate − mean_predicted_draw_probability`
+with the in-test hand count of exactly 14 draws among the 57 (criterion
+11), and the overdispersion diagnostic ships n = 114 with the ddof = 0
+denominator pinned against ddof = 1 (criterion 12); (d) the result
+surface carries only absolute model/baseline values with `n` — the
+pinned banned-identifier scan over `app/evaluation/**` sources and every
+evaluation dataclass field has zero hits, and no interval field exists
+anywhere (criterion 13); (e) the single prefix exemption
+(`app/evaluation/`) is the only scoring-vocabulary exemption and every
+other guard runs unweakened inside the package, including the
+comparative-token, accuracy-trio, and `FIELD_BAN` scans (criterion 22);
+the four honest-negation sentences (S1–S4) are pinned verbatim in
+`docs/EVALUATION.md`; (f) the record contract ships as the §11(d)
+`evaluations` table (`SCHEMA_VERSION` 1 → 2 — the sanctioned bump;
+criterion 17) with `EVALUATION_VERSION = 1`, content-hashed write-once
+idempotence, and no clock anywhere — no time field, no time import, no
+ISO-datetime form in any payload (criterion 16) — and evaluation writes
+never alter forecasts or `verify_all` (criteria 15, 18). Golden metric
+literals were pinned in `tests/test_evaluation.py` FIRST, from the first
+green run (re-derive, never widen), and the golden values re-derive
+bit-exact under three independent arithmetic implementations (builder,
+tester/reviewer, conductor). §13's registrations are unchanged by this
+flip; §§1–12 remain untouched.

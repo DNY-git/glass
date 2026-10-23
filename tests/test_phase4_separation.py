@@ -785,11 +785,11 @@ def test_new_package_import_allowlists() -> None:
 
 
 def test_hygiene_amendment_entries_pinned_and_scan_clean() -> None:
-    # Criterion 19: AMENDMENT A1 pinned — exactly thirteen keys (the seven
+    # Criterion 19: AMENDMENT A1 pinned — exactly fourteen keys (the seven
     # Phase 1-4 values untouched, append-only; A3/Phase 5: 7 -> 10;
     # A2/Phase 6: 10 -> 11 for app.features + PURE_PACKAGES; A2/Phase 7:
-    # 11 -> 12 for app.decisions; A3', Phase 9: 12 -> 13 for the
-    # app.backtesting entry + PURE_PACKAGES),
+    # 11 -> 12 for app.decisions; A3', Phase 9: 12 -> 13 (backtesting);
+    # A6, Phase 11: 13 -> 14 (app.evaluation + PURE_PACKAGES six-set)),
     # the two Phase 4 values exactly as sanctioned; and hygiene.scan_file
     # over every .py under app/ completes with zero violations and no
     # KeyError — proof no amendment relaxed any check.
@@ -800,7 +800,7 @@ def test_hygiene_amendment_entries_pinned_and_scan_clean() -> None:
         "app.ingestion": {"app.domain", "app.validation", "app.ingestion"},
         "app.models": {"app.domain", "app.models"},
     }
-    assert len(hygiene.ALLOWED_APP_IMPORTS) == 13
+    assert len(hygiene.ALLOWED_APP_IMPORTS) == 14
     assert set(hygiene.ALLOWED_APP_IMPORTS) == set(expected_legacy) | {
         "app.scenarios",
         "app.simulation",
@@ -810,6 +810,7 @@ def test_hygiene_amendment_entries_pinned_and_scan_clean() -> None:
         "app.features",
         "app.decisions",
         "app.backtesting",
+        "app.evaluation",
     }
     for package, allowed in expected_legacy.items():
         assert hygiene.ALLOWED_APP_IMPORTS[package] == allowed
