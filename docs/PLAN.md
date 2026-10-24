@@ -137,8 +137,9 @@ Testing, in layers:
 3. Suite level, every phase: the health script runs the suite twice and
    asserts the summaries match (timings stripped); the monitor repeats
    this at every sweep.
-4. End to end (Phase 12): the full offline pipeline is run twice with the
-   same seed and the outputs are diffed for byte identity.
+4. End to end (Phase 12 — IMPLEMENTED): the full offline pipeline is
+   run twice with the same seed and the outputs are diffed for byte
+   identity.
 5. Static guards (temporal-integrity phase, reusable later): stdlib AST
    scans assert that pure calculation modules contain no `datetime.now`,
    `time.time`, `os.environ`, or unseeded `random` usage.

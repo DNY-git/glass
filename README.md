@@ -15,9 +15,36 @@ history, never the current state of this repository.
 
 ## Current state
 
-**Phase 11 (Forecast evaluation), built and reviewed (PASS, 2026-10-23,
-first pass, criteria 1–23, after tester PASS ×23); checkpoint pending.**
-HANDOFF Part IX item 11 ships as a **pure `app/evaluation/` package**
+**Phase 12 (Integration and verification), built and reviewed (PASS,
+2026-10-24, first pass, criteria 1–11, after tester PASS ×11);
+checkpoint pending.** HANDOFF Part IX item 12 ships as **tests only** —
+zero production code (`git diff 02b86cd -- app/`
+empty; no new `app/` package) and **zero amendments** (no existing test
+file modified — the first phase since Phase 2): one new
+`tests/test_integration.py` (434 lines, 10 tests) proves, in one
+composed pass, the end-to-end offline pipeline — checked-in fixture
+files → ingestion → walk-forward harness → evaluation → evaluation
+record → both-table sqlite store → verified read-back — and proves
+**determinism replay** in-process, **across real processes** under
+`PYTHONHASHSEED` 0 and 424242 (two subprocess runs print byte-identical
+canonical JSON equal to the in-process pins), and on the only seeded
+leg (the simulation replay twice with `REPLAY_SEED = 20261017` —
+Phase 4's registered golden seed — and `DEFAULT_N_SIMS = 10_000`). The
+replay **consumes** the Phase 9/11 pins and recomputes nothing: a
+digest or hash mismatch is RED, never a re-pin (ADV-12.2). The new
+golden `GOLDEN_RECORD_HASH` is a deterministic re-render of the pinned
+values, CPython-3.12.3-local (re-derive on interpreter/spec change).
+A composite poison appended at the ingestion input freezes every frozen
+artifact hash across the whole chain (e2e cutoff-at-source), and
+write-once holds across both tables in one store. **Evaluated n remains
+exactly 30 / 57; no accuracy claim, delta, or verdict is added, and
+zero statistics ship (no §14).** `app/storage/forecasts_db.py` is 428
+lines — declared growth; a split is deferred to a future serving brief
+(ADV-12.6). **188 tests.** See `docs/KNOWN-LIMITATIONS.md` Phase 12 for
+the honest list, including the D1–D2 brief-prose corrections.
+
+**Phase 11 (Forecast evaluation), committed at 02b86cd** — HANDOFF Part
+IX item 11 ships as a **pure `app/evaluation/` package**
 (four modules, 639 lines) — the evidence gate: the first-ever scoring
 of the frozen walk-forward predictions against realized results,
 digest-gated (the golden run digest is re-derived and asserted **before
@@ -199,14 +226,15 @@ maximum likelihood inside `fit` (cutoff enforced inside the
 calculation), with analytic scoreline matrices (truncation mass always
 reported) and outcome probabilities exact under any truncation.
 Deterministic and stdlib-only by construction (no third-party
-dependency ships). Phases 1–10 are committed at **45ed27e**
+dependency ships). Phases 1–11 are committed at **45ed27e**
 (Foundation), **1c5067b** (Domain and data), **a5d7f56** (Core
 statistics), **f208e43** (Simulation and scenarios), **44b43ea**
 (Forecasts and API), **cfde3a6** (Feature engine), **1e1c1ac**
 (Decision analysis), **ea92667** (Temporal integrity), **80b8f79**
-(Backtesting), and **8abe1ca** (Operational reliability). The local,
+(Backtesting), **8abe1ca** (Operational reliability), and **02b86cd**
+(Forecast evaluation). The local,
 offline, deterministic test loop is
-operational: 178 tests, all green. See `docs/ROADMAP.md` for phase
+operational: 188 tests, all green. See `docs/ROADMAP.md` for phase
 status and `docs/PROGRESS-LOG.md` for the record.
 
 ## Requirements
@@ -248,22 +276,26 @@ From the repository root:
 .venv/bin/python -m pytest -q
 ```
 
-Verified output (2026-10-23, Phase 11 recorded clean-environment runs,
-×2 — `env -u PYTEST_ADDOPTS .venv/bin/python -m pytest -q`):
-`178 passed in 149.59s` and `178 passed in 146.96s` at the phase's
-recorded machine loads. Zero skips, zero
+Verified output (2026-10-24, Phase 12 recorded clean-environment run —
+`env -u PYTEST_ADDOPTS .venv/bin/python -m pytest -q`):
+`188 passed in 271.93s (0:04:31)` at machine load 3.28 → 4.53. Zero
+skips, zero
 xfails — no test in this suite
-may use skip or xfail (constitution). **Runs take roughly 2–8 minutes
-depending on machine load** (Phases 10–11 recorded clean-env runs of
-118–514 s at load ~0.97–12 and 149.59/146.96 s — a load-driven watch
-item; outcomes identical across every recorded execution) — the health test spawns the health
+may use skip or xfail (constitution). **Runs take roughly 4–5 minutes
+at load ~3–6** (Phase 12 recorded 271.93 s here and 274.61 s offline;
+a docs-step re-run as load climbed to 8.2 took 318.76 s; Phases 10–11
+recorded clean-env runs of 118–514 s at load ~0.97–12 and
+149.59/146.96 s — a load-driven watch item; outcomes identical across
+every recorded execution) — the health test spawns the health
 script, which runs
 the non-health suite three times internally (Phase 10's
 run-structure rework: five inner runs → three, every check
 preserved), the backtesting
 tests execute the full 60-target walk-forward harness ~8 times per
-suite run, and the evaluation tests re-derive that same run once via a
-module-scoped fixture (full harness everywhere — no subsetting, no test-side
+suite run, the evaluation tests re-derive that same run once via a
+module-scoped fixture, and the Phase 12 integration tests add one
+composed pass plus one in-process second pass, one poisoned-pool pass,
+and the cross-process pair (full harness everywhere — no subsetting, no test-side
 timeout). If your
 shell
 inherits a stray `PYTEST_ADDOPTS` (e.g. from
@@ -277,8 +309,9 @@ Fully offline verification (e.g. under a fresh network namespace):
 unshare -rn bash -c 'ip link set lo up && env -u PYTEST_ADDOPTS .venv/bin/python -m pytest -q'
 ```
 
-Verified (Phase 11, recorded offline lo-up runs, ×2): `178 passed in
-190.38s` and `178 passed in 182.99s` (Phase 10's recorded offline run:
+Verified (Phase 12, recorded offline lo-up run): `188 passed in
+274.61s (0:04:34)` at load 3.89 → 5.11 (Phase 11's recorded offline
+runs: `178 passed in 190.38s` and `178 passed in 182.99s`; Phase 10's:
 `155 passed in 502.50s` at load 9.80). The
 loopback step is
 required — a plain `unshare -rn` (interface down) fails the six
@@ -294,13 +327,14 @@ From the repository root:
 bash scripts/health-check.sh
 ```
 
-Verified (Phase 11, recorded runs of this phase): ran to completion
-inside the untouched 800 s valve
-(Phase 10 recorded walls 238–335 s
-at machine load ~6.5–10.7; the pre-rework five-run script wall was
-~627 s at load ~8.9–10.4); compile clean (covering `app` and
+Verified (2026-10-24, Phase 12 recorded run): ran to completion
+inside the untouched 800 s valve — **exit 0, wall 190 s at load
+~4.0–4.2** (Phase 10 recorded walls 238–335 s at machine load
+~6.5–10.7; the pre-rework five-run script wall was ~627 s at load
+~8.9–10.4); compile clean (covering `app` and
 `tests`); its own pytest invocations report
-`172 passed, 6 deselected` — the 6 deselected are the 3 health tests
+`182 passed, 6 deselected` ×2 (59.66 s / 59.21 s; the third run is
+silent as designed) — the 6 deselected are the 3 health tests
 plus the 3 `tests/test_operational.py` source pins whose names contain
 `health_script`, deselected on purpose by the recursion guard and
 executed in every direct suite run: the script
@@ -308,16 +342,17 @@ exports a
 `PYTEST_ADDOPTS` recursion guard so its internal suite runs never
 re-execute the tests that spawn the script; skips/xfails `none`;
 determinism comparison
-`OK: 172 passed, 6 deselected`; `pip check` clean ("No broken
-requirements found."). Expect roughly **four to six minutes** at
-moderate load — the
+`OK: 182 passed, 6 deselected`; `pip check` clean ("No broken
+requirements found."). Expect roughly **three to three-and-a-half
+minutes** at moderate load — the
 script runs the non-health suite three times internally (the Phase 10
 AMENDMENT A1 rework: five inner runs → three with capture-once
 derivation; every check preserved, only redundant executions
 eliminated). The health
 test's timeout valve remains **800 s** (the Phase 10 AMENDMENT A2
 evidence-based DOWN-tune: 800 ≈ 2.39× the worst post-restructure
-script wall, 335 s at load 10.06 — see
+script wall, 335 s at load 10.06; at the Phase 12 recorded 190 s wall
+the margin is ~4× — see
 `docs/KNOWN-LIMITATIONS.md` Phase 1 item 2 and Phase
 10).
 
@@ -335,7 +370,7 @@ run of `.venv/bin/python -m pytest -q` (Phase 1 criterion 10). See
     │                            # api/, scenarios/, simulation/, features/,
     │                            # decisions/, backtesting/, evaluation/
     ├── fixtures/                # synthetic OpenFootball-shaped JSON (Phase 2)
-    ├── tests/                   # 178 tests, 1:1 with acceptance criteria
+    ├── tests/                   # 188 tests, 1:1 with acceptance criteria
     ├── scripts/health-check.sh  # mechanical health sweep
     ├── pytest.ini               # testpaths=tests, --strict-markers
     ├── conftest.py              # repo root importability for bare pytest

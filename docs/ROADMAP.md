@@ -27,8 +27,8 @@ Developer acceptance is recorded per BLOCK, not per phase.
 | 8     | Temporal integrity              | committed   |
 | 9     | Backtesting                     | committed   |
 | 10    | Operational reliability         | committed   |
-| 11    | Forecast evaluation             | in progress |
-| 12    | Integration and verification    | planned   |
+| 11    | Forecast evaluation             | committed   |
+| 12    | Integration and verification    | in progress |
 | 13    | Consolidation and research readiness | planned |
 
 Status notes:
@@ -226,7 +226,10 @@ Status notes:
   (recorded 2026-10-22) rides the Phase 10 checkpoint commit unedited;
   Block 4 acceptance belongs to the developer at the Phases 10–12
   boundary** (recorded per BLOCK, not per phase).
-- Phase 11 is `in progress` (2026-10-23): built and passed independent
+- Phase 11 is `committed`: checkpoint hash **02b86cd** (full hash
+  02b86cdd266e9bef2192004228e9432f811e6f16; `phase 11: forecast
+  evaluation — log loss, Brier, RPS, calibration, idempotent records`;
+  2026-10-23 15:11:20 +0100, master). Built and passed independent
   review (**PASS, 2026-10-23, first pass, criteria 1–23**, after
   tester PASS ×23 with the golden metric values independently
   re-derived bit-exact, and recorded clean-env and offline suite
@@ -255,13 +258,50 @@ Status notes:
   and flipped to implemented-and-tested; `docs/EVALUATION.md` created
   (every number a pinned test literal); glass-quant consulted
   2026-10-22 (rulings ADV-1–ADV-14 binding); zero developer
-  questions. Checkpoint hash **PENDING** — the git agent makes the
-  checkpoint commit; this agent then replaces PENDING and flips the
-  row to `committed`, as in Phases 4–10. **Block table untouched;
+  questions. Hash recorded in docs/PROGRESS-LOG.md per the Phase
+  1–10 convention. **Block table untouched;
   Block 1/2/3 rows untouched — the Block 3 acceptance row (recorded
   2026-10-22) rides this checkpoint commit unedited; Block 4
   acceptance belongs to the developer at the Phases 10–12 boundary**
   (recorded per BLOCK, not per phase).
+- Phase 12 is `in progress`: checkpoint hash **PENDING** (the git
+  agent replaces PENDING with the checkpoint hash after the commit
+  and flips this row `in progress` → `committed`, as in Phases 4–11).
+  Built and passed independent review (**PASS, 2026-10-24, first
+  pass, criteria 1–11**, after tester PASS ×11 with an independent
+  golden re-derivation and an instrumented cross-process probe);
+  suite **188 passed** (direct clean-env 271.93 s at load
+  3.28 → 4.53; offline lo-up 274.61 s at load 3.89 → 5.11; health
+  script exit 0, wall 190 s, inner `182 passed, 6 deselected` ×2,
+  determinism `OK:`, skips none, pip clean, inside the untouched
+  800 s valve). HANDOFF Part IX item 12 ships as **tests only** —
+  zero production code (`git diff 02b86cd -- app/` empty; no new
+  `app/` package) and **zero amendments** (the
+  first phase since Phase 2; no existing test file modified; the
+  standing guards held with no re-point): `tests/test_integration.py`
+  (NEW, 434 lines, 10 tests) proves the end-to-end offline
+  composition (fixture files → ingestion → walk-forward → evaluation
+  → record → both-table store → verified read-back) and the
+  determinism replay (in-process double-run, cross-process under
+  `PYTHONHASHSEED` 0/424242, the seeded simulation leg twice),
+  **consuming** the Phase 9/11 pins and recomputing nothing (a
+  mismatch is RED, never a re-pin). New golden
+  `GOLDEN_RECORD_HASH` is a CPython-3.12.3-local deterministic
+  re-render (consumption framing); evaluated n remains exactly
+  30/57; `app/storage/forecasts_db.py` is 428 lines — declared
+  growth, split deferred to a future serving brief (ADV-12.6); zero
+  statistics shipped (no §14; `docs/STATISTICAL-ASSUMPTIONS.md` and
+  `docs/EVALUATION.md` byte-identical). glass-quant consulted
+  2026-10-23 (rulings ADV-12.1–ADV-12.11 binding); D1–D2 brief-prose
+  corrections adjudicated 2026-10-24 (no test changes); zero
+  developer questions. Hash will be recorded in docs/PROGRESS-LOG.md
+  per the Phase 1–11 convention once the git agent commits. **Block
+  table untouched; Block 1/2/3 rows
+  untouched — the Block 3 acceptance row (recorded 2026-10-22) rides
+  this checkpoint commit unedited; NO Block 4 acceptance row —
+  developer acceptance belongs to the developer at the Phases 10–12
+  boundary after the Phase 12 commit and monitor sweep** (recorded
+  per BLOCK, not per phase).
 
 ## Block acceptance record
 

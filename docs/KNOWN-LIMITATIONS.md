@@ -4,8 +4,8 @@ The honest list. Updated every phase (constitution; HANDOFF Part IX item
 13 formalizes this at Phase 13, but the discipline starts now). Nothing
 here is hidden behavior — each item is also recorded where it was found.
 
-Entry below reflects the state as of Phase 11 (Forecast evaluation),
-2026-10-23.
+Entry below reflects the state as of Phase 12 (Integration and
+verification), 2026-10-24.
 
 ## Phase 1
 
@@ -1384,11 +1384,129 @@ Entry below reflects the state as of Phase 11 (Forecast evaluation),
     consequence for the phase: the brief's own file list already banned
     creating or modifying any `conftest.py`, and none was touched.
 
-## Not yet applicable (as of Phase 11)
+## Phase 12
+
+1. **Zero production code and zero amendments — the first phase since
+   Phase 2 with zero amendments.** `tests/test_integration.py` (NEW,
+   434 lines, 10 tests) is the only new file; `git diff 02b86cd --
+   app/` is empty (0 bytes), no existing test file is modified, and
+   `scripts/`, `pytest.ini`, `conftest.py`, and `fixtures/` are
+   untouched. Every standing guard held with **no re-point**:
+   `POISON_REGISTRY` keeps exactly its 7 pinned keys (each resolving),
+   `MATCHES_ENTRY_POINTS` stays the 5-tuple (no new public
+   `matches`-parameter function exists), `PHASE10_CHECKPOINT` stays
+   `8abe1ca`, and the criterion-8 knob scan is unchanged. The phase
+   ships no production function, no route, no CLI, and no script — the
+   end-to-end pipeline and the replay are **verification, not surface**
+   (ADV-12.3); criterion 9 pins the zero-surface claim mechanically.
+
+2. **The replay CONSUMES the Phase 9/11 pins — there is no second
+   scoring path, and a mismatch is RED, never a re-pin (ADV-12.2).**
+   The composed run asserts the golden run digest
+   `150b9796…bbef2f` before any evaluation call and then asserts
+   exact-equality against the re-declared Phase 11 literals: the 12
+   `GOLDEN_METRICS` values (model/baseline × log loss/Brier/RPS ×
+   primary 30/secondary 57), all 10 bin rows, both dominant-bin shares,
+   both draw aggregates, the overdispersion diagnostic (n = 114, mean
+   149/114, ddof = 0 variance 0.967, ddof = 1 0.9757 asserted ≠), and
+   the accounting (60 = 3 + 27 + 30). No metric is recomputed by a
+   different formula, no population is re-subset or re-binned, and no
+   delta or verdict is produced. `GOLDEN_RECORD_HASH =
+   ef46a36622b1ceb7f2bd85e730770d05c0ae880525b76657ca1934c7d16dfa47`
+   is a **new golden only in the consumption sense**: a deterministic
+   re-render of the already-pinned Phase 11 values through sanctioned
+   code, derived from the first green run as
+   `sha256(record.payload)` and independently re-derived at this docs
+   step. It is **CPython-3.12.3-local** (Phase 4 golden discipline):
+   re-derive on interpreter or spec change, never widen, never delete.
+   The payload's metric fields assert-equal the Phase 11 pins
+   (assert-equality, never recomputation); a digest or hash mismatch
+   fails the suite — it never re-pins anything.
+
+3. **Cross-process determinism is pinned on this interpreter and two
+   explicit hash seeds — and that is a provenance claim, never
+   validation.** `test_cross_process_determinism_distinct_hash_seeds`
+   spawns two real `sys.executable -c` subprocesses with
+   `PYTHONHASHSEED=0` and `PYTHONHASHSEED=424242`, each running the
+   full fixture-files-to-record chain offline and printing one
+   canonical JSON line; the lines are byte-identical to each other and
+   equal to the in-process pins (run digest, accounting
+   `[60, 57, 3, 27, 30]`, payload sha256, record hash). This is the
+   cross-process bit-identity claim no in-process per-module pin can
+   make (PLAN §5 layer 4); it is interpreter-local evidence — re-probe
+   on interpreter change. "Determinism", "replay", and "byte-identical"
+   are the phase's vocabulary; "validated", "accurate", and "beating"
+   occur nowhere. The only seeded leg is the simulation replay
+   (`REPLAY_SEED = 20261017`, Phase 4's registered `GOLDEN_SEED`;
+   `n_sims = DEFAULT_N_SIMS = 10_000` imported, never re-literal'd) —
+   replayed twice with frozen-dataclass equality and byte-identical
+   canonical JSON; its result feeds no metric (§7e, analytic-first).
+
+4. **`app/storage/forecasts_db.py` is 428 lines — declared growth, no
+   split (ADV-12.6).** It is now the largest `app/` file. The
+   write-once-critical surface is ringed by exact pins; a split would
+   break pinned surfaces for zero analytical gain and belongs to a
+   future serving brief. Precedent: the accepted 664-line
+   `tests/test_backtesting.py`. No cap, no refactor, no "while we're
+   here".
+
+5. **Evaluated n remains exactly 30 (primary) / 57 (secondary) —
+   unchanged, and no quality claim is added.** Phase 12 scores nothing
+   new: it re-renders the same frozen predictions and the same realized
+   results. No accuracy vocabulary, no model-vs-baseline delta, ratio,
+   percentage, or verdict (§13(d)'s forever-bans), no confidence
+   interval, and no new statistic ships. **Zero statistics ship, so
+   there is NO §14**: `docs/STATISTICAL-ASSUMPTIONS.md` is
+   byte-untouched at 1569 lines, still ends at §13, and contains no
+   `## 14` header. `docs/EVALUATION.md` is likewise byte-identical
+   (220 lines): its §6 consumption sentence (*"Phase 12 consumes this
+   phase's records and recomputes nothing; every evaluation entry
+   point stays re-runnable and read-only"*) and S1–S4 are pinned
+   verbatim by criterion 10.
+
+6. **Runtime is load-labeled only — no SLA, and the 800 s valve is
+   untouched.** Recorded executions of this phase (2026-10-24):
+   direct clean-env suite **188 passed in 271.93 s** (load
+   3.28 → 4.53) and offline lo-up **188 passed in 274.61 s** (load
+   3.89 → 5.11); health script **exit 0, wall 190 s** (load
+   ~4.0–4.2) with inner runs `182 passed, 6 deselected` ×2
+   (59.66 s / 59.21 s), determinism `OK:`, skips `none`, pip clean.
+   A docs-step re-run after the edits reported **188 passed in
+   318.76 s** as load climbed 2.17 → 8.20 — the same outcome, slower
+   at higher load. The 800 s health-test valve
+   (`tests/test_health_script.py:21`, AMENDMENT A2 (Phase 10)) was
+   not changed — at the recorded 190 s wall the margin is ~4×. These
+   are observations at recorded loads, never a performance guarantee;
+   the load watch stays a watch, and any future trip re-scopes the
+   mechanism with fresh evidence, never weakens, skips, or xfails.
+
+7. **Pipeline stages 3 and 10 remain unbuilt — documented gaps, not
+   pre-built here.** `app/state/` (PRE-MATCH STATE) and
+   `app/improvement/` (MODEL IMPROVEMENT) remain PLANNED. Phase 12 is
+   HANDOFF IX-12, not stage 10: no tuning loop, no variant, no re-fit
+   machinery exists, and the single-model-spec surface stays pinned
+   closed. Their completion is Phase 13's work (a data/consolidation
+   decision), not this phase's.
+
+8. **D1–D2 (2026-10-24) were brief-prose corrections, not test
+   changes.** D1: the brief's original simulation-serialization
+   expression (`json.dumps(asdict(result), sort_keys=True)`) raises
+   `TypeError` because `SimulationResult` carries the pinned
+   `ConvergenceStatus` enum; the shipped test-side form adds compact
+   separators and `default=lambda value: value.value`. D2: the
+   brief's `188 passed, 6 deselected` inner-run prediction was
+   arithmetically inconsistent; the name-based recursion guard
+   deselects 6, so inner runs report `182 passed, 6 deselected`
+   (182 + 6 = 188). Both were adjudicated by the architect against the
+   tree; the shipped tests stand unchanged, and neither is
+   developer-territory.
+
+## Not yet applicable (as of Phase 12)
 
 Forecast, storage, API, feature, decision-report, temporal-integrity,
-backtesting, evaluation, and operational-reliability limitations are
-now listable and listed above (pipeline
+backtesting, evaluation, operational-reliability, and
+integration/verification limitations are now listable and listed above
+(pipeline
 stage 6 FORECAST DISTRIBUTIONS, its durable write-once sqlite store,
 the read-only serving surface, pipeline stage 4 FEATURE EXTRACTION —
 `app/features/` — pipeline stage 8 DECISION ANALYSIS —
@@ -1397,17 +1515,20 @@ no module — pipeline stage 9's backtesting machinery —
 `app/backtesting/`, consumed by `app/evaluation/` since Phase 11 —
 Phase 11's evaluation layer — `app/evaluation/`, the first scored
 population (n = 30/57) with its limitations in the Phase 11 section
-above and in `docs/EVALUATION.md` — and Phase 10's
+above and in `docs/EVALUATION.md` — Phase 10's
 operational-reliability content — the health script's 3-run structure,
 the valve discipline, the corrupted-store and interrupted-batch pins —
-tests, script, and docs, no module — all
+tests, script, and docs, no module — and Phase 12's integration and
+verification — the end-to-end offline composition and determinism
+replay — tests only, `tests/test_integration.py`, no module — all
 exist). Still not yet listable: pre-match-state and model-improvement
 limitations — pipeline stages 3 and 10 are unbuilt (`app/state/` and
 `app/improvement/` remain PLANNED) — and there are no pre-match
 snapshots and no improvement loop to mis-trust yet. "Temporal
 integrity" itself is
 deliberately NOT listed here: Phase 8's defenses are shipped tests and
-documentation, listed above. Model-calibration and predictive
+documentation, listed above; Phase 12's integration and verification
+is likewise tests-only and listed above. Model-calibration and predictive
 limitations are no longer hypothetical: they were introduced by Phase
 11 and are documented in `docs/EVALUATION.md` (pinned numbers, side-by-
 side absolute results, provenance) and in the Phase 11 section above.

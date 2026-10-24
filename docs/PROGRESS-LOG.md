@@ -1469,7 +1469,7 @@ No phases completed yet. (Update: Phase 1 committed at 45ed27e — 2026-10-16.)
   PENDING in docs/ROADMAP.md with 8abe1ca and flips ROADMAP Phase 10
   `in progress` → `committed`, as in Phases 4–9.
 
-## 2026-10-23 — Phase 11 (Forecast evaluation) — built, reviewed PASS (first pass); checkpoint PENDING
+## 2026-10-23 — Phase 11 (Forecast evaluation) — built, reviewed PASS (first pass); checkpoint 02b86cd
 
 - Brief of record: `docs/briefs/phase-11.md` (452 lines incl. the C1–C10
   adjudication record; glass-architect, 2026-10-22/23). HANDOFF Part IX
@@ -1677,9 +1677,184 @@ No phases completed yet. (Update: Phase 1 committed at 45ed27e — 2026-10-16.)
   surface beyond the one declared table; any environment knob).
   `SCHEMA_VERSION` now exactly **2** (the §11(d) sanction); no
   committed DB.
-- Checkpoint hash: **PENDING** — the git agent makes the checkpoint
-  commit (on green tests; the docs-step suite of record: 178 passed,
-  clean-env ×2 at 149.59s/146.96s); this agent then replaces PENDING
-  in docs/ROADMAP.md and docs/PROGRESS-LOG.md with the recorded hash
-  and flips ROADMAP Phase 11 `in progress` → `committed`, as in
-  Phases 4–10.
+- Checkpoint hash: **02b86cd** (full hash
+  02b86cdd266e9bef2192004228e9432f811e6f16; `phase 11: forecast
+  evaluation — log loss, Brier, RPS, calibration, idempotent records`;
+  2026-10-23 15:11:20 +0100, master; 27 files, +3165/−175; the
+  git agent's pre-commit clean-env run: **178 passed in 143.57s**
+  — green, no commits on red; the docs agent then replaces PENDING
+  in docs/ROADMAP.md with 02b86cd and flips ROADMAP Phase 11
+  `in progress` → `committed`, as in Phases 4–10.
+
+## 2026-10-24 — Phase 12 (Integration and verification) — built, reviewed PASS (first pass); checkpoint PENDING
+
+- Brief of record: `docs/briefs/phase-12.md` (156 lines incl. the
+  D1–D2 adjudication record; glass-architect, 2026-10-23/24). HANDOFF
+  Part IX item 12 — *"Integration and verification — end-to-end
+  offline pipeline, determinism replay (same seed twice, identical
+  output)"* — delivered as exactly two artifacts (ADV-12.1): **(i)**
+  one end-to-end offline pipeline artifact (fixture files → ingestion
+  → domain → fit → forecast → storage → backtest → evaluation →
+  records, ONE pass) and **(ii)** a determinism replay (same inputs +
+  seed, twice, byte-identical outputs). Scope anchors: NOT stage-10
+  model improvement (`app/improvement/` stays PLANNED), NOT IX-13
+  consolidation (Phase 13 pre-builds nothing), NOT API/serving work
+  (ADV-12.5 — no route, not even the optional read-only GET).
+  **glass-quant was consulted** (mandatory; run at conductor top
+  level, 2026-10-23): rulings **ADV-12.1–ADV-12.11 binding** (scope
+  pinned; consumption-never-recompute; tests-only form; why-not-
+  redundant; API out; `forecasts_db.py` declared growth; vocabulary/
+  honesty; forever-bans; runtime quantified; the must-NOT list;
+  ZERO developer questions). Block table and the Block 1/2/3
+  acceptance rows verified untouched; **no Block 4 acceptance row
+  added**.
+- Build: **TESTS-ONLY, one new file, ZERO amendments to any existing
+  file** — the first phase since Phase 2 with zero amendments (and
+  zero production code). `tests/test_integration.py` **NEW, 434
+  lines, 10 tests** (inside the brief's 440-line hard cap; the ≤ 400
+  figure was a projection), a module-scoped `pipeline` fixture
+  (Phase 9 pattern; `tmp_path_factory` store) and criteria 1–10
+  mapping 1:1, in order: one-pass composition + verified read-back;
+  consumption of the pinned metrics/bins/diagnostics; in-process
+  double-run byte identity; cross-process determinism under distinct
+  hash seeds; the seeded simulation leg replayed twice; composite
+  poison at the ingestion input; both-table write-once in one store;
+  the new record-hash golden + payload consumption; the zero-surface
+  pin; the docs-honesty pin. No skip/xfail; no harness subsetting; no
+  test-side timeout (E2); no script, CLI, route, or production
+  function.
+- **Zero-amendment proof (reviewer checklist (i), re-verified at this
+  docs step):** `git diff 02b86cd -- app/` is **empty (0 bytes)**; no
+  existing test file is modified (`git diff --name-only 02b86cd --
+  tests/` is empty; `tests/test_integration.py` is the only untracked
+  test file); `scripts/`, `pytest.ini`, `conftest.py`, and
+  `fixtures/` are untouched; `docs/EVALUATION.md` and
+  `docs/STATISTICAL-ASSUMPTIONS.md` are **byte-identical** (0-byte
+  diff; 220 and 1569 lines respectively; still no §14, ends at §13).
+  Every standing guard held with **no re-point**: `POISON_REGISTRY`
+  exactly 7 keys, each resolving; `MATCHES_ENTRY_POINTS` the 5-tuple;
+  `PHASE10_CHECKPOINT = "8abe1ca"`; the criterion-8 knob scan
+  unchanged; the health valve 800 s untouched.
+- **`GOLDEN_RECORD_HASH` — first-green-run derivation, consumption
+  framing (ADV-12.2):**
+  `ef46a36622b1ceb7f2bd85e730770d05c0ae880525b76657ca1934c7d16dfa47`
+  = `sha256(record.payload.encode("utf-8"))` over the composed
+  evaluation record; independently re-derived at this docs step and
+  byte-identical. The literal appears nowhere at HEAD — derived from
+  the first green run, never pre-supplied; the comment frames it as a
+  deterministic re-render of the Phase 11-pinned values through
+  sanctioned code (consumption), **CPython-3.12.3-local** (Phase 4
+  golden discipline: re-derive on interpreter/spec change, never
+  widen, never delete). The payload's metric fields assert-equal the
+  Phase 11 `GOLDEN_METRICS` literals — **no second scoring path
+  exists; a digest or hash mismatch is RED, never a re-pin**.
+- **Determinism replay — the cross-process claim:** two real
+  `sys.executable -c` subprocesses (`cwd=REPO_ROOT`, stdlib + `app.*`
+  only) run the full chain offline under `PYTHONHASHSEED=0` and
+  `PYTHONHASHSEED=424242`; each prints one canonical JSON line, and
+  the two lines are **byte-identical to each other AND equal to the
+  in-process pins** (`run_digest`, accounting `[60, 57, 3, 27, 30]`,
+  payload sha256, record hash); both exit 0 with empty stderr. The
+  only seeded leg is replayed twice: `REPLAY_SEED = 20261017` is
+  Phase 4's registered `GOLDEN_SEED` literal
+  (`tests/test_simulation.py:65`), and `n_sims = DEFAULT_N_SIMS =
+  10_000` is imported from `app.simulation`, never re-literal'd —
+  frozen-dataclass equality plus byte-identical canonical JSON
+  (`default=lambda value: value.value`, D1), echoes asserted; the
+  result feeds no metric (§7e, analytic-first).
+- **Composite poison (e2e cutoff-at-source):** tmp copies of both
+  fixture files carry 3 poisoned future matches (existing teams,
+  extreme scores, one ON the final fixture date 2025-10-11 and two
+  strictly after); the poisoned pool is 63 matches → 60 predictions;
+  after test-side filtering to the original 60 natural keys, all 57
+  filtered predictions' `content_hash` values and the filtered
+  ordered-pair digest equal the clean run's (`GOLDEN_RUN_DIGEST`),
+  the filtered baselines equal the clean baselines field-for-field,
+  and the re-evaluated result + record hash equal the clean ones
+  exactly. The tester's independent mid-season control additionally
+  changed 15 later predictions and none earlier (recorded as a probe,
+  not a shipped test). Both tables' write-once behavior was exercised
+  in one store (idempotent `False` with zero INSERTs; raw
+  UPDATE/DELETE → `sqlite3.IntegrityError`; `SCHEMA_VERSION == 2`).
+- Runtime (load-labeled; **no SLA**): direct clean-env suite **188
+  passed in 271.93 s** (load 3.28 → 4.53); offline lo-up **188 passed
+  in 274.61 s** (load 3.89 → 5.11); health script **exit 0, wall
+  190 s** (load ~4.0–4.2), inner runs **`182 passed, 6 deselected`
+  ×2** (59.66 s / 59.21 s; the silent third as designed), determinism
+  **`OK:`**, skips/xfails `none`, pip clean, all nine headers, inside
+  the **untouched 800 s valve** (~4× margin at the recorded wall).
+  These sit in the tester/conductor band (241.53/284.16 s at load
+  ~3.7–5.6; offline 277.60 s) and match the brief's +15–30 s
+  prediction; the docs-step re-run after these edits reported **188
+  passed in 318.76 s** as load climbed 2.17 → 8.20 (load-labeled; no
+  SLA). No valve change, no harness subsetting, no test-side
+  timeout.
+- **D1–D2 adjudication (2026-10-24, glass-architect; Phase 9 A3' /
+  Phase 11 C1–C10 precedent):** both **brief-prose corrections**, not
+  test changes. **D1** — the brief's original expression
+  `json.dumps(asdict(result), sort_keys=True)` raises
+  `TypeError: Object of type ConvergenceStatus is not JSON
+  serializable` (the result carries the pinned enum); the shipped
+  test-side helper uses compact separators +
+  `default=lambda value: value.value`. **D2** — the brief's
+  `188 passed, 6 deselected` inner-run prediction was arithmetically
+  inconsistent (188 + 6 ≠ 188); the name-based guard deselects 6, so
+  inner runs report `182 passed, 6 deselected` (182 + 6 = 188;
+  Phase 11 precedent 178 → 172 + 6). Both were reproduced against
+  the tree before ratification; shipped tests stand unchanged; no
+  behavior, contract, statistic, population, seed, or developer
+  decision changed. Zero developer questions (ADV-12.11).
+- Review history: tester verdict **PASS ×11** (criteria 1–10 + the
+  suite gate) with an independent re-derivation of the golden values
+  and an instrumented cross-process probe; reviewer verdict **PASS
+  (2026-10-24, FIRST pass)** with the zero-amendment byte-audit
+  (`git diff 02b86cd` over app/, tests/, scripts/, pytest.ini,
+  conftest.py, fixtures/ all empty; evidence documents empty),
+  consumption literals byte-matched to their Phase 11 sources,
+  `GOLDEN_RECORD_HASH` carrying its first-green-run comment, no
+  skip/xfail/subsetting/timeout, and docs vocabulary clean. Zero fix
+  cycles — first pass, as in Phases 4–11.
+- Docs (this step): `docs/KNOWN-LIMITATIONS.md` — intro flipped to
+  Phase 12; new **Phase 12** section (8 items: zero production
+  code/zero amendments; replay-as-consumption + the new golden;
+  cross-process identity + the seeded sim leg; `forecasts_db.py`
+  428-line declared growth / split deferred (ADV-12.6); evaluated n
+  unchanged at 30/57, no §14, EVALUATION.md byte-identical;
+  load-labeled runtime + untouched valve; stages 3/10 remain
+  unbuilt; the D1–D2 brief-prose record); "Not yet applicable"
+  refreshed to Phase 12 (integration/verification LEAVES the list —
+  tests only, no module; stages 3 and 10 remain; prior n = 0
+  statements are historical and never rewritten).
+  `docs/ROADMAP.md` — Phase 12 `in progress`, PENDING-hash
+  convention (**block table byte-identical; rows 1–11 and the Block
+  1/2/3 acceptance rows untouched; NO Block 4 row**). `README.md`
+  (Phase 12 state, 188 tests, honest load-labeled run-time note,
+  commit hashes through 02b86cd). `docs/ARCHITECTURE.md`
+  (integration/verification IMPLEMENTED as tests-only — no new
+  module, stage map unchanged, stages 3 and 10 remain PLANNED; 27 →
+  28 test modules, 178 → 188 tests). `docs/PLAN.md` — §5 layer 4
+  marked implemented (Phase 12); nothing else. `docs/HEALTH-LOG.md`
+  untouched by this agent (monitor-owned; the monitor appends its
+  sweep and the ADV-12.6 declared-growth line rides its Rule-6
+  disposition).
+- **Dirty-docs riding note:** the three Phase 11 protocol records
+  (docs/HEALTH-LOG.md, docs/PROGRESS-LOG.md, docs/ROADMAP.md —
+  appended/flipped at the Phase 11 docs step; the monitor's WARN
+  carried them) plus `docs/briefs/phase-12.md` and this phase's docs
+  ride **the Phase 12 checkpoint commit** — the standard riding note,
+  Phases 1–11 pattern.
+- **Block 4 boundary note:** Block 4's three phases (10–12) are now
+  built and reviewed; the Phase 12 checkpoint is pending. **Developer
+  acceptance belongs to the developer at the Phases 10–12 boundary,
+  AFTER the Phase 12 commit and its monitor sweep** — recorded per
+  BLOCK by the conductor, not by this phase. No Block 4 acceptance
+  row was added.
+- pytest unchanged: 9.1.1; Python 3.12.3; stdlib-only dependencies
+  (refused: any third-party package; any numeric/ML stack; plotting;
+  any API change; any new production function; any new schema
+  surface; any environment knob). `SCHEMA_VERSION` remains exactly 2;
+  no committed DB.
+- Checkpoint hash: **PENDING** — the git agent replaces PENDING with
+  the checkpoint hash after the commit; the docs agent then flips
+  `docs/ROADMAP.md` Phase 12 `in progress` → `committed`, as in
+  Phases 4–11.

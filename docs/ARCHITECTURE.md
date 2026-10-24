@@ -1,6 +1,6 @@
 # ARCHITECTURE — SPORTS LOOKING GLASS
 
-Status as of 2026-10-23 (Phases 9–11): **pipeline stages 1–2, 4–8 and the
+Status as of 2026-10-24 (Phases 9–12): **pipeline stages 1–2, 4–8 and the
 cross-cutting layers exist** — `app/domain/` (immutable models,
 match collection, canonical state), `app/ingestion/` (stage 1 DATA),
 `app/validation/` (stage 2 VALIDATION), `app/features/` (stage 4
@@ -66,9 +66,13 @@ schema bump (**`SCHEMA_VERSION` 1 → 2**: the write-once `evaluations`
 table + the write-only `insert_evaluation_record`; storage's read
 paths untouched; no committed DB). `app/improvement/` (stage 10)
 remains **PLANNED** — Phase 10 was HANDOFF Part IX item 10, not
-pipeline stage 10 — and Phase 12 (Integration and verification,
-HANDOFF Part IX item 12) remains **PLANNED**: it CONSUMES Phase 11's
-records and recomputes nothing.
+pipeline stage 10. Phase 12 (Integration and verification, HANDOFF
+Part IX item 12) added **no module** either: its end-to-end offline
+pipeline composition and determinism replay exist as **tests only**
+(`tests/test_integration.py`, NEW, 434 lines,
+10 tests) — zero production code under `app/` at that phase; it
+CONSUMES Phase 11's records and recomputes nothing (a mismatch is
+RED, never a re-pin).
 `app/state/` (stage 3 PRE-MATCH STATE)
 remains **planned**: stage 4
 legitimately precedes stage 3 per roadmap order, features compute
@@ -105,9 +109,9 @@ the **only module in the codebase permitted to import `random`**
 (AST-enforced with probes). It is deliberately **not one of the ten
 pipeline stages**: it consumes exactly one frozen `ScorelineMatrix`
 per call, never replaces the analytic `outcome_probs` as the reported
-single-match probability, and exists for Phase 12 replay machinery and
-future aggregate quantities with no closed form (see
-`docs/STATISTICAL-ASSUMPTIONS.md` §7). And `app/storage/` (local
+single-match probability, and exists for Phase 12's tests-only
+same-seed replay and future aggregate quantities with no closed form
+(see `docs/STATISTICAL-ASSUMPTIONS.md` §7). And `app/storage/` (local
 persistence, idempotency; sqlite via stdlib, default backend) —
 deferred by the Phase 2 brief (design decision 1) — was **confirmed
 instantiated at Phase 5** (brief design decision 1): the immutable
@@ -160,7 +164,7 @@ verb, routers containing no logic.
     │   ├── evaluation/          # EXISTS (Phase 11) — stage 9: log loss, Brier, RPS, calibration (pure; digest-gated; idempotent evaluation records)
     │   ├── improvement/         # PLANNED — stage 10: protected tuning loop
     │   └── api/                 # EXISTS (Phase 5) — read-only stdlib http.server on 127.0.0.1; no logic, no generation
-    ├── tests/                   # EXISTS (Phase 11): 178 tests, 1:1 with criteria
+    ├── tests/                   # EXISTS (Phases 1–12): 188 tests, 1:1 with criteria
     ├── fixtures/                # EXISTS (Phase 2): synthetic OpenFootball-shaped JSON
     ├── data/                    # NOT CREATED — git-ignored working data; the DB path is caller-passed, no data/ dir in-repo
     ├── scripts/health-check.sh  # EXISTS (bootstrap + Phase 1 recursion guard + Phase 10 A1 rework: 3 inner runs, capture-once derivation; compile covers app + tests)
@@ -169,7 +173,7 @@ verb, routers containing no logic.
                                  # HEALTH-LOG, ARCHITECTURE, KNOWN-LIMITATIONS,
                                  # DATA-SOURCES, STATISTICAL-ASSUMPTIONS, briefs/
 
-## Instantiation status (2026-10-23, Phase 11)
+## Instantiation status (2026-10-24, Phase 12)
 
 | Item | Status |
 |------|--------|
@@ -188,7 +192,7 @@ verb, routers containing no logic.
 | `app/evaluation/` (metrics.py, calibration.py, evaluate.py + `__init__.py`; 639 lines) | Exists (Phase 11) — IX-11 **the evidence gate**: single public entry `evaluate_predictions(predictions, baselines, matches, *, run_digest, expected_run_digest)` — the digest gate runs BEFORE any metric computes (golden run digest asserted; tampered digest refuses with zero metric calls), the one-line natural-key join refuses 0 and >1 matches, the flag predicate is deliberately duplicated from the byte-pinned harness (drift guarded by the 27/30 count pins), populations (primary 30 clean / secondary 57; the 3 refusals accounting-only; 60 = 3 + 27 + 30), per-match contributions; `log_loss`/`brier`/`rps` (natural-log log loss with **no ε-clamp of any spelling** — hard refusal on zero probability on the realized outcome; full-sum Brier; ½-scaled ordinal RPS — the scoreline variant structurally impossible: no `app.models`/`app.simulation` import, AST-pinned); 5-bin pooled calibration tables, draw aggregate, and the ddof=0 overdispersion diagnostic — **descriptive only**; model/baseline **absolute** side-by-side with `n` (a pinned banned-identifier scan enforces no delta/verdict surface); frozen `EvaluationRecord` (`EVALUATION_VERSION = 1`, canonical-JSON payload, sha256 content hash, **no clock anywhere**) inserted write-once by `app.storage.insert_evaluation_record` — records never alter forecasts; pure — stdlib `{dataclasses, hashlib, json, math, typing}` + `app.domain`/`app.forecasts`/`app.backtesting` only, in `PURE_PACKAGES` (AST-enforced); imports no storage/API (one-way: storage imports the record types); IX-12 consumes its records and recomputes nothing |
 | `app/simulation/` (constants.py, simulate.py) | Exists (Phase 4) — **cross-cutting Monte Carlo module, not one of the ten pipeline stages**: `simulate(fitted, home, away, *, seed, n_sims=10_000, scenario=None)` with required keyword-only int `seed` (fresh `random.Random(seed)` per call, `random()`-only draws, categorical sampling over the truncated renormalized matrix), frozen `SimulationResult` (raw counts, exact `analytic_outcome`, `mc_stderr` = simulation noise only, dropped mass, flags riding through); `SIM_VERSION = "sim-categorical-v1"`; **the only module permitted to import `random`** (AST-enforced with probes); refuses a scenario whose baseline ≠ the given fitted object (value equality) |
 | `fixtures/openfootball/` (3 synthetic JSON files) | Exists (Phase 2) — 60 valid matches + 12-record defect sample, fictional teams, `"synthetic": true` marker |
-| `pytest.ini`, root `conftest.py`, `tests/` (27 modules, 178 tests), `scripts/health-check.sh` | Exists (Phases 1–11; health-check.sh reworked at Phase 10 by AMENDMENT A1 — three inner pytest executions with capture-once derivation, five until Phase 10, every check preserved; compile checks extended `app` → `app tests`; `tests/test_evaluation.py` added at Phase 11) |
+| `pytest.ini`, root `conftest.py`, `tests/` (28 modules, 188 tests), `scripts/health-check.sh` | Exists (Phases 1–12; health-check.sh reworked at Phase 10 by AMENDMENT A1 — three inner pytest executions with capture-once derivation, five until Phase 10, every check preserved; compile checks extended `app` → `app tests`; `tests/test_evaluation.py` added at Phase 11; `tests/test_integration.py` added at Phase 12 — tests-only end-to-end verification) |
 | `.venv/` (Python 3.12.3, pip 26.2.1, pytest 9.1.1) | Exists, git-ignored |
 | `data/` | **Not created** — git-ignored working data; the sqlite DB path is caller-passed (storage tests use `tmp_path` exclusively), no `data/` directory is created in-repo (Phase 5 brief design decision 1) |
 | Remaining `app/` subpackages (state, improvement) | **Do not exist — planned, phase by phase** (stage 4 `features` removed from this list at Phase 6 — it exists; stage 8 `decisions` removed at Phase 7 — it exists; the stage-9 backtesting harness removed at Phase 9 — `app/backtesting/` exists; stage-9 `evaluation` removed at Phase 11 — `app/evaluation/` exists) |
@@ -203,7 +207,11 @@ accounting — consumed by the evaluation layer since Phase 11; the
 harness itself still computes no metrics),** an **evaluation layer
 (stage 9 — `app/evaluation/`'s digest-gated log loss, Brier, RPS,
 calibration, and idempotent no-clock evaluation records — first scored
-population 30/57; every number pinned in tests),** **durable immutable forecast
+population 30/57; every number pinned in tests),** a **tests-only
+end-to-end verification layer (Phase 12 — `tests/test_integration.py`:
+one composed fixture-files-to-records pass, in-process and cross-process
+determinism replay, a composite ingestion-input poison, both-table
+write-once — zero production code),** **durable immutable forecast
 snapshots (the system's first durable artifacts), and a read-only
 localhost API
 over them** in the repository today.
