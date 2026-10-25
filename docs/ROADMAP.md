@@ -28,8 +28,8 @@ Developer acceptance is recorded per BLOCK, not per phase.
 | 9     | Backtesting                     | committed   |
 | 10    | Operational reliability         | committed   |
 | 11    | Forecast evaluation             | committed   |
-| 12    | Integration and verification    | in progress |
-| 13    | Consolidation and research readiness | planned |
+| 12    | Integration and verification    | committed   |
+| 13    | Consolidation and research readiness | in progress |
 
 Status notes:
 - Phase 1 is `committed`: checkpoint hash **45ed27e** — `phase 1:
@@ -264,13 +264,13 @@ Status notes:
   2026-10-22) rides this checkpoint commit unedited; Block 4
   acceptance belongs to the developer at the Phases 10–12 boundary**
   (recorded per BLOCK, not per phase).
-- Phase 12 is `in progress`: checkpoint hash **PENDING** (the git
-  agent replaces PENDING with the checkpoint hash after the commit
-  and flips this row `in progress` → `committed`, as in Phases 4–11).
-  Built and passed independent review (**PASS, 2026-10-24, first
-  pass, criteria 1–11**, after tester PASS ×11 with an independent
-  golden re-derivation and an instrumented cross-process probe);
-  suite **188 passed** (direct clean-env 271.93 s at load
+- Phase 12 is `committed`: checkpoint hash **de74da9** (full hash
+  de74da989b33fcce5a6c9e503d772f4d2425af84; `phase 12: end-to-end
+  pipeline integration and determinism replay`; 2026-10-24 08:11:21
+  +0100, master). Built and passed independent review (**PASS,
+  2026-10-24, first pass, criteria 1–11**, after tester PASS ×11 with
+  an independent golden re-derivation and an instrumented cross-process
+  probe); suite **188 passed** (direct clean-env 271.93 s at load
   3.28 → 4.53; offline lo-up 274.61 s at load 3.89 → 5.11; health
   script exit 0, wall 190 s, inner `182 passed, 6 deselected` ×2,
   determinism `OK:`, skips none, pip clean, inside the untouched
@@ -294,14 +294,37 @@ Status notes:
   `docs/EVALUATION.md` byte-identical). glass-quant consulted
   2026-10-23 (rulings ADV-12.1–ADV-12.11 binding); D1–D2 brief-prose
   corrections adjudicated 2026-10-24 (no test changes); zero
-  developer questions. Hash will be recorded in docs/PROGRESS-LOG.md
-  per the Phase 1–11 convention once the git agent commits. **Block
-  table untouched; Block 1/2/3 rows
+  developer questions. Hash recorded in docs/PROGRESS-LOG.md per the
+  Phase 1–11 convention. **Block table untouched; Block 1/2/3 rows
   untouched — the Block 3 acceptance row (recorded 2026-10-22) rides
   this checkpoint commit unedited; NO Block 4 acceptance row —
   developer acceptance belongs to the developer at the Phases 10–12
   boundary after the Phase 12 commit and monitor sweep** (recorded
   per BLOCK, not per phase).
+
+- Phase 13 is `in progress`: checkpoint hash **PENDING** (the git
+  agent replaces PENDING with the checkpoint hash after the commit
+  and flips this row `in progress` → `committed`, as in Phases 4–12).
+  Built as **documentation only** — zero production code, zero test
+  files, zero amendments, zero new statistics (`git diff de74da9 --
+  app/ tests/` empty); the evidence mechanism is the traceability
+  audit. Brief of record: `docs/briefs/phase-13.md`
+  (glass-architect, 2026-10-24); glass-quant consulted 2026-10-24
+  (rulings ADV-13.1–ADV-13.11 binding); zero developer questions.
+  `docs/KNOWN-LIMITATIONS.md` completed (Phase 13 section appended,
+  "Not yet applicable" finalized), the larger-n calibration
+  pre-registration recorded (procedure only; computes nothing; not
+  run; the numeric minimum-n trigger is a future brief's), and the
+  research-readiness statement R1–R12 written; eight of the ten
+  stages exist — stage 3 (`app/state/`) and stage 10
+  (`app/improvement/`) remain planned; `docs/STATISTICAL-ASSUMPTIONS.md`
+  and `docs/EVALUATION.md` byte-identical (no §14); suite 188 passed.
+  **Block table untouched; rows 1–12 untouched (the Phase 12 row flip
+  and Block 4 row pre-date this phase and ride unedited); the Block 4
+  acceptance row (recorded 2026-10-24) rides this checkpoint commit
+  unedited; NO Block 5 acceptance row — Block 5 acceptance belongs to
+  the developer at the final boundary after the Phase 13 commit and
+  monitor sweep** (recorded per BLOCK, not per phase).
 
 ## Block acceptance record
 
@@ -310,6 +333,7 @@ Status notes:
 | 1     | yes (recorded)        | 2026-10-17 | Phases 1–3 committed at 45ed27e, 1c5067b, a5d7f56; all three reviewer verdicts PASS. Acceptance reported by the conductor at the Phase 4 boundary and recorded here per the constitution — the Phase 4 brief flagged the then-empty table as constitutionally required (docs/briefs/phase-4.md, "State verified before writing this brief"). |
 | 2     | yes (recorded)        | 2026-10-19 | Phases 4–6 committed at f208e43, 44b43ea, cfde3a6 — simulation and bounded scenarios, forecasts with write-once storage and read-only API, feature engine; all three reviewer verdicts PASS, suite 103 passed with zero skip/xfail. Acceptance reported by the developer at the Phase 7 boundary ("Accept, start Block 3") and recorded here per the constitution. |
 | 3     | yes (recorded)        | 2026-10-22 | Phases 7–9 committed at 1e1c1ac, ea92667, 80b8f79 — decision reports with anti-ensemble scenario comparison and the no-scoring boundary, temporal-integrity defenses (poison registry, vocabulary guards), chronological backtesting harness with per-fixture baselines; all three reviewer verdicts first-pass PASS, suite 147 passed with zero skip/xfail. Phase 9's declared amendments included the A4 evidence-based health-check valve re-scope (300 → 1500 s, after a verbatim-reproduced trip) and the sanctioned `scripts/health-check.sh` determinism fix; the harness is machinery only, evaluated n = 0 until Phase 11. Acceptance reported by the developer at the Phase 10 boundary ("Accept, start Block 4") and recorded here per the constitution. |
+| 4     | yes (recorded)        | 2026-10-24 | Phases 10–12 committed at 8abe1ca, 02b86cd, de74da9 — operational reliability (health-check run structure 5 → 3 inner runs, evidence-based valve re-tune 1500 → 800 s, corruption and atomicity tests), forecast evaluation (the evidence gate: log loss, Brier, RPS, pooled calibration, idempotent evaluation records), and end-to-end pipeline integration with determinism replay; all three reviewer verdicts first-pass PASS, suite 155 → 188 passed with zero skip/xfail. Phase 11 discharged the evidence gate with the first evaluated n > 0 (30 primary / 57 secondary, 3 refusals excluded and counted), §13 pre-registered, no confidence intervals and no accuracy, beating, or verdict claims. Phase 12 was zero-amendment and zero-production-code (`tests/test_integration.py`, 434 lines, 10 tests; cross-process determinism under `PYTHONHASHSEED` 0/424242; `GOLDEN_RECORD_HASH` ef46a366…). All three post-checkpoint monitor sweeps were WARN-only, carrying the dirty protocol-docs hygiene item (the three dirty protocol docs ride the Phase 13 checkpoint), the declared >400-line inventory including `app/storage/forecasts_db.py` at 428 lines with the split deferred, and the load-driven runtime watch item. Acceptance reported by the developer at the Phase 13 boundary ("Accept, start Block 5") and recorded here per the constitution. |
 
 ## Postponed
 

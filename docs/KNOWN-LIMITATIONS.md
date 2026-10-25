@@ -4,8 +4,8 @@ The honest list. Updated every phase (constitution; HANDOFF Part IX item
 13 formalizes this at Phase 13, but the discipline starts now). Nothing
 here is hidden behavior — each item is also recorded where it was found.
 
-Entry below reflects the state as of Phase 12 (Integration and
-verification), 2026-10-24.
+Entry below reflects the state as of Phase 13 (Consolidation and
+research readiness), 2026-10-24.
 
 ## Phase 1
 
@@ -1501,47 +1501,120 @@ verification), 2026-10-24.
    tree; the shipped tests stand unchanged, and neither is
    developer-territory.
 
-## Not yet applicable (as of Phase 12)
+## Phase 13
 
-Forecast, storage, API, feature, decision-report, temporal-integrity,
-backtesting, evaluation, operational-reliability, and
-integration/verification limitations are now listable and listed above
-(pipeline
-stage 6 FORECAST DISTRIBUTIONS, its durable write-once sqlite store,
-the read-only serving surface, pipeline stage 4 FEATURE EXTRACTION —
-`app/features/` — pipeline stage 8 DECISION ANALYSIS —
-`app/decisions/` — Phase 8's temporal-integrity defenses — test-side,
-no module — pipeline stage 9's backtesting machinery —
-`app/backtesting/`, consumed by `app/evaluation/` since Phase 11 —
-Phase 11's evaluation layer — `app/evaluation/`, the first scored
-population (n = 30/57) with its limitations in the Phase 11 section
-above and in `docs/EVALUATION.md` — Phase 10's
-operational-reliability content — the health script's 3-run structure,
-the valve discipline, the corrupted-store and interrupted-batch pins —
-tests, script, and docs, no module — and Phase 12's integration and
-verification — the end-to-end offline composition and determinism
-replay — tests only, `tests/test_integration.py`, no module — all
-exist). Still not yet listable: pre-match-state and model-improvement
-limitations — pipeline stages 3 and 10 are unbuilt (`app/state/` and
-`app/improvement/` remain PLANNED) — and there are no pre-match
-snapshots and no improvement loop to mis-trust yet. "Temporal
-integrity" itself is
-deliberately NOT listed here: Phase 8's defenses are shipped tests and
-documentation, listed above; Phase 12's integration and verification
-is likewise tests-only and listed above. Model-calibration and predictive
-limitations are no longer hypothetical: they were introduced by Phase
-11 and are documented in `docs/EVALUATION.md` (pinned numbers, side-by-
-side absolute results, provenance) and in the Phase 11 section above.
+1. **Phase 13 is documentation only — zero production code, zero test
+   files, zero amendments; the traceability audit is the evidence
+   (ADV-13.1/13.6).** `git diff de74da9 -- app/ tests/ scripts/
+   pytest.ini conftest.py fixtures/` is empty, no new deliverable
+   docs file is created (the phase brief `docs/briefs/phase-13.md` is
+   the only new file), and no existing test, guard, script, config,
+   fixture, or evidence document is amended. The phase ships no
+   production function, no route, no CLI, and no script. Its
+   acceptance mechanism is the **traceability audit**: every number
+   in every new or edited text is matched to an exact pinned literal,
+   its source, and its `n`; every cross-document value is checked
+   against its peers; every new section is scanned against the
+   ADV-13.4 banned vocabulary; the reviewer records the command
+   output. The suite remains **188 tests** across **28 modules**,
+   unchanged.
+
+2. **Larger-n calibration is pre-registered — procedure only; the
+   numeric minimum-n trigger is a future brief's (ADV-13.3).** The
+   registration is recorded here, not in
+   `docs/STATISTICAL-ASSUMPTIONS.md`: no §14 is added, and the
+   evidence documents stay byte-identical (ADV-13.2).
+
+   > **Status: PRE-REGISTRATION — authored 2026-10-24; computes nothing; not run.**
+   >
+   > 1. **Current pinned state.** The evaluated population is 30 clean predictions (primary) and 57 predictions (secondary) from 60 targets = 3 structural refusals + 27 flagged + 30 clean (57 = 27 + 30). All results are on the frozen synthetic fixtures; no real data has been accepted.
+   > 2. **Condition for re-evaluation.** Re-evaluation happens only through a named brief that either adds checked-in fixtures or accepts real data through the loader with provenance and license recorded in `docs/DATA-SOURCES.md`; that brief re-derives and re-pins (never widens), re-asserts the run digest before any metric computes, and leaves this protocol unchanged. `n_sims` is not a trigger. This registration commits to no data acquisition.
+   > 3. **Populations.** PRIMARY = unflagged + `CONVERGED`; SECONDARY = all emitted predictions including flagged; refusals are excluded from every metric and counted only in accounting; `MISSING_NO_HISTORY` baselines are the refusal targets; model and baseline carry the same population and the same `n`; no refusal-inclusive metric container exists; `n` is stated on every number; no post-hoc subsetting.
+   > 4. **Metrics — unchanged §13(a)–(c).** Log loss = `−ln(p_realized)`, natural log, no ε-clamp of any spelling; Brier = the full 3-outcome sum, no halving; RPS = ½-scaled, 3-category ordinal over H < D < A; calibration = exactly 5 equal-width bins with edges 0.0, 0.2, 0.4, 0.6, 0.8, 1.0, last bin inclusive, pooled (p, realized-indicator) pairs, empty bins reported as `n = 0`/`None` and never merged or re-binned; draw aggregate = realized draw rate − mean predicted draw probability per population; overdispersion = ddof = 0, descriptive. The fine-grained scoreline RPS remains rejected. No second scoring path.
+   > 5. **Constraints that do not relax with `n`.** No confidence interval, standard error, bootstrap, significance test, p-value, or chi-square. No delta, ratio, percentage, ranking, improvement, better/worse, or verdict; absolute side-by-side values only; no "beating". Calibration is descriptive only. The synthetic caveat stands until real data is accepted. §13(d)'s bans are permanent.
+   > 6. **What is NOT pre-committed.** No numeric minimum-n threshold; no expected metric value or range; no accuracy target; no pass/fail; no significance level; no CI method; no model-selection, tuning, or variant plan; no improvement promise; no data-acquisition commitment — each would need its own named brief.
+   > 7. **Change control.** Append-only. Any change to these clauses is a named brief. No silent drift.
+
+   The numeric minimum-n trigger is developer-territory and is
+   deliberately absent; the registration fixes procedure only
+   (ADV-13.3).
+
+3. **Research readiness is stated as R1–R12; R12 defines the term and
+   its limits (ADV-13.4).** The twelve sentences, verbatim:
+
+   R1. "As of Phase 13 the evaluated population is exactly 30 clean predictions (primary) and 57 predictions (secondary) from 60 targets = 3 structural refusals + 27 flagged + 30 clean; the 3 refusals are excluded from every metric and appear only in accounting."
+   R2. "These numbers are descriptive evaluations of a small synthetic sample; they are not evidence of predictive skill."
+   R3. "Calibration is descriptive only at this n: 73 of 90 primary pairs (share 0.8111111111111111) and 137 of 171 secondary pairs (share 0.8011695906432749) fall in the [0.2, 0.4) bin."
+   R4. "Model and baseline values appear side by side as absolute quantities with the same formulas, the same population, and the same n; no difference, ratio, percentage, ranking, or verdict between them is computed or claimed."
+   R5. "Calibration bins are counts and frequencies only; no reliability or goodness-of-fit claim follows from them."
+   R6. "No forecast is called validated, accurate, or beating anything."
+   R7. "No confidence interval, standard error, bootstrap, significance test, p-value, or chi-square statistic exists anywhere in the evaluation surface; every reported number is a point value with its n."
+   R8. "Determinism and replay are provenance properties — identical inputs, model version, seed, and config produce identical output — not validation, not accuracy, and not evidence of predictive skill."
+   R9. "All results are on hand-authored synthetic fixtures; real-data behaviour is untested end to end, and the loader's real-file quirks are a documented limitation."
+   R10. "Runtime figures are load-labelled observations, not an SLA or a performance guarantee."
+   R11. "Pipeline stages 3 (PRE-MATCH STATE, app/state/) and 10 (MODEL IMPROVEMENT, app/improvement/) are unbuilt; their absence is a documented architectural gap, not a defect in the existing forecasts."
+   R12. "'Research-ready' here means the documentation, provenance, and reproducibility conditions for research use are met: every number is traceable to a pinned test literal, every known limitation is stated, the evidence documents are closed and pre-registered, and the pipeline is deterministic and replayable. It does not mean the model is validated, accurate, statistically powered, a calibration-quality claim, generalisable, production-ready, or ready for real-data claims."
+
+4. **Stages 3 and 10 remain unbuilt — eight of the ten stages exist
+   (ADV-13.5).** Stage 3 (PRE-MATCH STATE, `app/state/`) and stage 10
+   (MODEL IMPROVEMENT, `app/improvement/`) are the two missing stages,
+   named. G1–G5 record the gap:
+
+   G1. **Stage 3 (PRE-MATCH STATE, `app/state/`) is unbuilt.** No separate as-of-kickoff snapshot artifact exists. This is **not** a leakage gap: the cutoff is enforced inside every history-consuming calculation (strict `date < as_of`), and the poison registry pins `fit` / `build_forecast` / `compute_features` / `run_walk_forward` / `evaluate_predictions`. Forecast immutability is a property of the stored `Forecast`, not of a stage-3 snapshot. Unbuilt, not rejected; building it is a future scope decision.
+   G2. **Stage 10 (MODEL IMPROVEMENT, `app/improvement/`) is unbuilt.** No tuning loop, variant search, model selection, or re-fit machinery exists. It is structurally absent — **not** "protected by a mechanism". Exactly one model spec exists (`poisson-mle-v1`); `run_walk_forward` takes no spec/variant/config/seed loop; the single-model-spec surface is pinned closed. If ever built, its brief must carry a protected-split design (tuning data disjoint from evaluation) before any tuning runs.
+   G3. **Their absence does not weaken the existing evidence; it limits what the system can do.** The evidence is descriptive and small-n either way. No forecast is called validated, accurate, or beating anything.
+   G4. **Phase 12 KNOWN-LIMITATIONS item 7's "Their completion is Phase 13's work" is CLARIFIED:** Phase 13 completes their **documentation**, not the stages. Both remain unbuilt after Phase 13.
+   G5. **`STATISTICAL-ASSUMPTIONS` §2(a) ("model-improvement loop (Phase 12/13, …)") and §11(b)(ii) ("Phase 12/stage-10's protected improvement loop") are stale forward references** — read as historical candidates, not work performed. The register stays **byte-unchanged**; the annotation lives here, never in the evidence document.
+
+   **Honest count: eight of the ten stages exist; stage 3 and stage 10
+   are the two missing stages, named.** Building stages 3 and 10 is
+   developer-territory; Phase 13 records the gap only.
+
+5. **What Phase 13 does not do.** No §14 is added to
+   `docs/STATISTICAL-ASSUMPTIONS.md`; no standalone research-readiness
+   document or other new deliverable docs file is created (the phase
+   brief `docs/briefs/phase-13.md` is the only new file); no new statistic or
+   derived number is computed; no data is acquired, accepted, or
+   simulated; no pipeline stage is built; no API, schema, dependency,
+   script, or config change ships. The numeric minimum-n trigger is
+   deliberately absent and belongs to a future named brief (ADV-13.3);
+   the registration commits to no data acquisition.
+
+6. **Recorded state — load-labelled, no SLA (R10).** The suite is
+   **188 tests** across **28 modules**; the health-test valve is
+   **800 s** (`tests/test_health_script.py:21`, AMENDMENT A2 (Phase
+   10)); `SCHEMA_VERSION = 2` and `EVALUATION_VERSION = 1`. Recorded
+   executions this phase: the full suite reported **188 passed in
+   805.64s** and **188 passed in 795.18s** on two clean-environment
+   runs with identical outcomes at load ~10–11, **188 passed in
+   774.02s** on one offline lo-up run, and **188 passed in 529.88s**
+   on the clone probe; `bash scripts/health-check.sh` exit 0, wall
+   **396.95s** (tester) and **752.68s** (reviewer, load ~13.5), inner
+   `182 passed, 6 deselected` ×2, determinism `OK:`, skips `none`,
+   pip clean, inside the untouched 800 s valve. Runtime figures
+   are load-labelled observations, not an SLA or a performance
+   guarantee.
+
+7. **Historical records are never rewritten.** The Phase 1–12 sections
+   above are byte-identical to `de74da9`; the earlier `n = 0`
+   statements (Phases 7–10) and every forward reference in earlier
+   sections are historical records of those phases and stay as
+   written. The only edits to this file are the intro's Phase line,
+   this appended section, and the finalized "Not yet applicable" tail.
+
+## Not yet applicable — final (as of Phase 13)
+
+The limitations recorded for each implemented phase are listed above.
+Two pipeline stages remain unbuilt and are therefore not listed as
+limitations of running code: **stage 3** (PRE-MATCH STATE,
+`app/state/`) and **stage 10** (MODEL IMPROVEMENT,
+`app/improvement/`). There are no pre-match snapshots and no tuning
+loop to mis-trust; their absence is documented in the Phase 13 section
+above. Earlier `n = 0` statements (Phases 7–10) and forward references
+in earlier sections are historical records of those phases and are
+never rewritten.
+
 Data provenance and format limitations remain in
 `docs/DATA-SOURCES.md`; the model's statistical assumptions and their
-weaknesses are in `docs/STATISTICAL-ASSUMPTIONS.md` (exists since
-Phase 3; §7 covers simulation and scenarios; §8 covers forecasts,
-storage, and serving; §9 covers feature extraction, added at Phase 6;
-§10 covers decision analysis, added at Phase 7; §11 covers the
-temporal-integrity pre-registrations binding Phases 9 and 11, added at
-Phase 8; §12 covers the backtesting baseline definition, scored-
-population accounting, and standing bans, added at Phase 9; §13 covers
-the evaluation pre-registrations — formulas, populations, bins,
-side-by-side legality — added at Phase 11). Earlier-phase statements
-that evaluated n = 0 (Phases 7, 8, 9, and 10 sections above) are
-historical records of those phases and are never rewritten.
+weaknesses are in `docs/STATISTICAL-ASSUMPTIONS.md`; the evaluation
+limitations are in `docs/EVALUATION.md` and the Phase 11 section above.

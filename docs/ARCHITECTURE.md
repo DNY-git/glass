@@ -1,6 +1,6 @@
 # ARCHITECTURE — SPORTS LOOKING GLASS
 
-Status as of 2026-10-24 (Phases 9–12): **pipeline stages 1–2, 4–8 and the
+Status as of 2026-10-24 (Phases 9–13): **pipeline stages 1–2, 4–9 and the
 cross-cutting layers exist** — `app/domain/` (immutable models,
 match collection, canonical state), `app/ingestion/` (stage 1 DATA),
 `app/validation/` (stage 2 VALIDATION), `app/features/` (stage 4
@@ -72,7 +72,16 @@ pipeline composition and determinism replay exist as **tests only**
 (`tests/test_integration.py`, NEW, 434 lines,
 10 tests) — zero production code under `app/` at that phase; it
 CONSUMES Phase 11's records and recomputes nothing (a mismatch is
-RED, never a re-pin).
+RED, never a re-pin). Phase 13 (Consolidation and research readiness,
+HANDOFF Part IX item 13) added **no module** either: it is
+documentation only — the final consolidated documentation state, with
+`docs/KNOWN-LIMITATIONS.md` completed (intro flipped, Phase 13 section
+appended, "Not yet applicable" finalized), the larger-n calibration
+pre-registration recorded, and the research-readiness statement
+R1–R12 written; `docs/STATISTICAL-ASSUMPTIONS.md` and
+`docs/EVALUATION.md` stay byte-identical (no §14). **Eight of the ten
+pipeline stages exist; stage 3 (`app/state/`) and stage 10
+(`app/improvement/`) remain planned.**
 `app/state/` (stage 3 PRE-MATCH STATE)
 remains **planned**: stage 4
 legitimately precedes stage 3 per roadmap order, features compute
@@ -87,7 +96,9 @@ in a planned block below should be read as existing code.
 ## The pipeline (ten stages, mandatory module separation)
 
 From HANDOFF Part IV. Each stage is a distinct module; pure statistical
-code imports no storage, no HTTP, no I/O.
+code imports no storage, no HTTP, no I/O. **Eight of the ten stages
+exist; stage 3 (`app/state/`) and stage 10 (`app/improvement/`) remain
+planned.**
 
 | # | Stage | Responsibility | Module |
 |---|-------|----------------|----------------|
@@ -173,7 +184,7 @@ verb, routers containing no logic.
                                  # HEALTH-LOG, ARCHITECTURE, KNOWN-LIMITATIONS,
                                  # DATA-SOURCES, STATISTICAL-ASSUMPTIONS, briefs/
 
-## Instantiation status (2026-10-24, Phase 12)
+## Instantiation status (2026-10-24, Phase 13)
 
 | Item | Status |
 |------|--------|

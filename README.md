@@ -15,9 +15,28 @@ history, never the current state of this repository.
 
 ## Current state
 
+**Phase 13 (Consolidation and research readiness) — documentation only;
+its checkpoint status is tracked in `docs/ROADMAP.md` and
+`docs/PROGRESS-LOG.md` (no pre-commit hash is claimed here).** HANDOFF
+Part IX item 13 ships as the final consolidated documentation state:
+**zero production code, zero test files, zero amendments, and zero new
+statistics** — `git diff de74da9 -- app/ tests/` empty. It completes
+`docs/KNOWN-LIMITATIONS.md` (intro flipped, Phase 13 section appended,
+"Not yet applicable" finalized), records the larger-n calibration
+**pre-registration** (procedure only; it computes nothing and has not
+been run; the numeric minimum-n trigger is a future brief's), and
+states research readiness as **R1–R12** in
+`docs/KNOWN-LIMITATIONS.md` Phase 13 — R12 defines the term and its
+limits. **Eight of the ten pipeline stages exist; stage 3 (PRE-MATCH
+STATE, `app/state/`) and stage 10 (MODEL IMPROVEMENT,
+`app/improvement/`) remain unbuilt**, documented as G1–G5.
+`docs/STATISTICAL-ASSUMPTIONS.md` and `docs/EVALUATION.md` are
+**byte-identical** to `de74da9` (no §14). **188 tests.** See
+`docs/KNOWN-LIMITATIONS.md` Phase 13 for the honest list.
+
 **Phase 12 (Integration and verification), built and reviewed (PASS,
 2026-10-24, first pass, criteria 1–11, after tester PASS ×11);
-checkpoint pending.** HANDOFF Part IX item 12 ships as **tests only** —
+committed at `de74da9`.** HANDOFF Part IX item 12 ships as **tests only** —
 zero production code (`git diff 02b86cd -- app/`
 empty; no new `app/` package) and **zero amendments** (no existing test
 file modified — the first phase since Phase 2): one new
@@ -226,13 +245,15 @@ maximum likelihood inside `fit` (cutoff enforced inside the
 calculation), with analytic scoreline matrices (truncation mass always
 reported) and outcome probabilities exact under any truncation.
 Deterministic and stdlib-only by construction (no third-party
-dependency ships). Phases 1–11 are committed at **45ed27e**
+dependency ships). Phases 1–12 are committed at **45ed27e**
 (Foundation), **1c5067b** (Domain and data), **a5d7f56** (Core
 statistics), **f208e43** (Simulation and scenarios), **44b43ea**
 (Forecasts and API), **cfde3a6** (Feature engine), **1e1c1ac**
 (Decision analysis), **ea92667** (Temporal integrity), **80b8f79**
-(Backtesting), **8abe1ca** (Operational reliability), and **02b86cd**
-(Forecast evaluation). The local,
+(Backtesting), **8abe1ca** (Operational reliability), **02b86cd**
+(Forecast evaluation), and **de74da9** (Integration and verification).
+Phase 13 is documentation only; its checkpoint is recorded in
+`docs/ROADMAP.md` and `docs/PROGRESS-LOG.md`. The local,
 offline, deterministic test loop is
 operational: 188 tests, all green. See `docs/ROADMAP.md` for phase
 status and `docs/PROGRESS-LOG.md` for the record.

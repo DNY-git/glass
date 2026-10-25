@@ -1686,7 +1686,7 @@ No phases completed yet. (Update: Phase 1 committed at 45ed27e — 2026-10-16.)
   in docs/ROADMAP.md with 02b86cd and flips ROADMAP Phase 11
   `in progress` → `committed`, as in Phases 4–10.
 
-## 2026-10-24 — Phase 12 (Integration and verification) — built, reviewed PASS (first pass); checkpoint PENDING
+## 2026-10-24 — Phase 12 (Integration and verification) — built, reviewed PASS (first pass); checkpoint de74da9
 
 - Brief of record: `docs/briefs/phase-12.md` (156 lines incl. the
   D1–D2 adjudication record; glass-architect, 2026-10-23/24). HANDOFF
@@ -1854,7 +1854,103 @@ No phases completed yet. (Update: Phase 1 committed at 45ed27e — 2026-10-16.)
   any API change; any new production function; any new schema
   surface; any environment knob). `SCHEMA_VERSION` remains exactly 2;
   no committed DB.
-- Checkpoint hash: **PENDING** — the git agent replaces PENDING with
-  the checkpoint hash after the commit; the docs agent then flips
+- Checkpoint hash: **de74da9** (full hash
+  de74da989b33fcce5a6c9e503d772f4d2425af84; `phase 12: end-to-end
+  pipeline integration and determinism replay`; 2026-10-24 08:11:21
+  +0100, master; 9 files, +1050/−63; the git agent's pre-commit
+  clean-env run: **188 passed in 291.98s** — green, no commits on
+  red). One-line summary: the tests-only end-to-end offline pipeline
+  and determinism replay landed as one new 434-line test file with
+  zero production code and zero amendments; the docs agent then flips
   `docs/ROADMAP.md` Phase 12 `in progress` → `committed`, as in
   Phases 4–11.
+
+## 2026-10-24 — Phase 13 (Consolidation and research readiness) — built (docs-only), reviewed PASS (first pass); checkpoint PENDING
+
+- Brief of record: `docs/briefs/phase-13.md` (glass-architect,
+  2026-10-24). HANDOFF Part IX item 13 — *"Consolidation and research
+  readiness — docs consolidation, `docs/KNOWN-LIMITATIONS.md`,
+  research-ready honest reporting"* — delivered as **documentation
+  only**: one DOCS step, no BUILD step. Scope anchors: NOT stage 3
+  (`app/state/` stays unbuilt), NOT stage 10 (`app/improvement/` stays
+  unbuilt), NOT a §14, NOT a standalone research-readiness document.
+  **glass-quant was consulted** (mandatory; run at conductor top
+  level, 2026-10-24): rulings **ADV-13.1–ADV-13.11 binding** (zero
+  statistics; no §14; genuine pre-registration; R1–R12 verbatim; the
+  stages-3/10 gap G1–G5; docs-only integrity + traceability audit;
+  consolidation traps; evidence docs byte-identical; zero-amendment
+  carry; the Block 4 gate; re-run/record unchanged). Block 4
+  acceptance was verified recorded (row 4, 2026-10-24) and rides
+  unedited; **no Block 5 acceptance row was added**.
+- Docs-only proof (re-verified at this step): `git diff de74da9 --
+  app/ tests/ scripts/ pytest.ini conftest.py fixtures/` is **empty**;
+  `git status --porcelain` shows `README.md`, the six edited `docs/`
+  files, and the untracked `docs/briefs/phase-13.md`; no `app/` or
+  `tests/` path appears; no new deliverable docs file is created (the
+  phase brief `docs/briefs/phase-13.md` is the only new file).
+  `docs/STATISTICAL-ASSUMPTIONS.md` and `docs/EVALUATION.md` are
+  **byte-identical** (empty diff; no §14; still ends at §13). The six
+  edited files are `docs/KNOWN-LIMITATIONS.md`, `README.md`,
+  `docs/ARCHITECTURE.md`, `docs/PLAN.md`, `docs/ROADMAP.md`, and
+  `docs/PROGRESS-LOG.md`.
+- Traceability audit result (the phase's test-equivalent, ADV-13.6):
+  the number-table walk matched every number in the six-file edits to
+  an exact pinned literal, its source, and its `n`; the cross-document
+  matrix (`30`/`57`, `60 = 3 + 27 + 30`, shares, draw/overdispersion,
+  provenance strings, structural facts) greps clean across KL Phases
+  11/12/13, EVALUATION §2/§4/§6, SA §13(b), README, ARCHITECTURE, and
+  this log; the banned-vocabulary scan over the new Phase 13 text
+  found zero affirmative hits (the R1–R12 block, the registration's
+  negation clauses, G3's sanctioned negation, G5's quoted locators, and
+  the stage/module identifiers (`MODEL IMPROVEMENT`, `app/improvement/`)
+  are the recorded non-claims); the stage-status check is consistent:
+  ARCHITECTURE, README, ROADMAP, KL Phase 13, and this log state eight
+  of the ten; KL Phase 12 names the two unbuilt stages; PLAN's tree
+  marks `app/state/` and `app/improvement/` as planned (no `EXISTS`) —
+  all consistent. The historical-record check records
+  that the Phase 1–12 KL sections, the Phases 7–10 `n = 0` statements,
+  and the Phase 11/12 forward references are byte-identical. The
+  `GOLDEN_METRICS` literals were not restated; no new percent sign,
+  high-precision decimal, derived quantity, or comparative word was
+  introduced.
+- Recorded: the larger-n calibration **pre-registration** (status line
+  + seven clauses, procedure only; computes nothing; not run; the
+  numeric minimum-n trigger is a future brief's), the
+  research-readiness statement **R1–R12** (R12 defines the term and
+  its limits), and the stages-3/10 gap **G1–G5** (eight of the ten
+  stages exist; Phase 12 item 7 clarified; SA §2(a)/§11(b)(ii)
+  annotated, the register byte-unchanged). `docs/KNOWN-LIMITATIONS.md`
+  is append-only: hunks only in the intro Phase line and from
+  `## Not yet applicable` to EOF; the final NYA title is exact.
+- Recorded executions (load-labelled; **no SLA**): clean-env **188
+  passed in 805.64s** at load 10.30→9.14→5.80 and **188 passed in
+  795.18s** at load 10.72→10.98→9.00 (identical outcomes); offline
+  lo-up **188 passed in 774.02s** at load 11.20→11.65→10.70; clone
+  probe **188 passed in 529.88s**; `bash scripts/health-check.sh` exit
+  0, wall **396.95s** at load 11.26→11.35→11.09 (tester) and **752.68s**
+  at load 11.25→13.57 (reviewer final-tree confirmation), inner `182
+  passed, 6 deselected` (199.86s/117.34s and 217.96s/251.06s),
+  determinism `OK:`, skips/xfails `none`, pip clean, nine headers,
+  inside the untouched **800 s** valve. The reviewer's final-tree
+  clean-env runs also reported 188 passed (two runs, identical
+  outcomes; 218.06s at load 0.76→2.29 and 923.11s at load 1.72→10.43).
+  The **28** test modules are unchanged; no skip/xfail anywhere; no
+  dependency added.
+- **Block 4 gate:** row 4 ("yes (recorded)", 2026-10-24) verified and
+  **unedited**; the block table and phase rows 1–12 are byte-identical;
+  the Phase 13 status cell (`planned` → `in progress`) is the only
+  phase-row change; **no Block 5 acceptance row**.
+- **Dirty-docs riding note:** the three Phase 12 protocol records
+  (`docs/HEALTH-LOG.md`, `docs/PROGRESS-LOG.md`, `docs/ROADMAP.md` —
+  the monitor sweep entry and the two post-commit protocol records it
+  names) plus the untracked `docs/briefs/phase-13.md` and this phase's
+  docs ride **the Phase 13 checkpoint commit** — the standard riding
+  note, Phases 1–12 pattern. `docs/HEALTH-LOG.md` is untouched by this
+  agent (monitor-owned).
+- pytest and Python unchanged; stdlib-only dependencies.
+  `SCHEMA_VERSION` remains exactly 2; `EVALUATION_VERSION = 1`; no
+  committed DB; no `data/` directory.
+- Checkpoint hash: **PENDING** — the git agent replaces PENDING with
+  the checkpoint hash after the commit; the docs agent then flips
+  `docs/ROADMAP.md` Phase 13 `in progress` → `committed`, as in
+  Phases 4–12.
