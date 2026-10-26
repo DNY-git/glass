@@ -1865,7 +1865,7 @@ No phases completed yet. (Update: Phase 1 committed at 45ed27e — 2026-10-16.)
   `docs/ROADMAP.md` Phase 12 `in progress` → `committed`, as in
   Phases 4–11.
 
-## 2026-10-24 — Phase 13 (Consolidation and research readiness) — built (docs-only), reviewed PASS (first pass); checkpoint PENDING
+## 2026-10-24 — Phase 13 (Consolidation and research readiness) — built (docs-only), reviewed PASS (first pass); checkpoint 98e2d19
 
 - Brief of record: `docs/briefs/phase-13.md` (glass-architect,
   2026-10-24). HANDOFF Part IX item 13 — *"Consolidation and research
@@ -1950,7 +1950,9 @@ No phases completed yet. (Update: Phase 1 committed at 45ed27e — 2026-10-16.)
 - pytest and Python unchanged; stdlib-only dependencies.
   `SCHEMA_VERSION` remains exactly 2; `EVALUATION_VERSION = 1`; no
   committed DB; no `data/` directory.
-- Checkpoint hash: **PENDING** — the git agent replaces PENDING with
-  the checkpoint hash after the commit; the docs agent then flips
-  `docs/ROADMAP.md` Phase 13 `in progress` → `committed`, as in
-  Phases 4–12.
+- Checkpoint hash: **98e2d19** (full hash
+  98e2d19b17b6cc20c4e895aa3445137f651172b7; "phase 13: documentation
+  consolidation and research readiness"; 2026-10-25 14:40:09 +0100,
+  master; 8 files, +524/−68; 188 passed at commit). The docs agent
+  then flips `docs/ROADMAP.md` Phase 13 `in progress` → `committed`,
+  as in Phases 4–12.

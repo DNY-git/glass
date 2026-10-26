@@ -29,7 +29,7 @@ Developer acceptance is recorded per BLOCK, not per phase.
 | 10    | Operational reliability         | committed   |
 | 11    | Forecast evaluation             | committed   |
 | 12    | Integration and verification    | committed   |
-| 13    | Consolidation and research readiness | in progress |
+| 13    | Consolidation and research readiness | committed   |
 
 Status notes:
 - Phase 1 is `committed`: checkpoint hash **45ed27e** — `phase 1:
@@ -302,11 +302,12 @@ Status notes:
   boundary after the Phase 12 commit and monitor sweep** (recorded
   per BLOCK, not per phase).
 
-- Phase 13 is `in progress`: checkpoint hash **PENDING** (the git
-  agent replaces PENDING with the checkpoint hash after the commit
-  and flips this row `in progress` → `committed`, as in Phases 4–12).
-  Built as **documentation only** — zero production code, zero test
-  files, zero amendments, zero new statistics (`git diff de74da9 --
+- Phase 13 is `committed`: checkpoint hash **98e2d19** (full hash
+  98e2d19b17b6cc20c4e895aa3445137f651172b7; `phase 13: documentation
+  consolidation and research readiness`; 2026-10-25 14:40:09 +0100,
+  master; 8 files, +524/−68; 188 passed at commit). Built as
+  **documentation only** — zero production code, zero test files,
+  zero amendments, zero new statistics (`git diff de74da9 --
   app/ tests/` empty); the evidence mechanism is the traceability
   audit. Brief of record: `docs/briefs/phase-13.md`
   (glass-architect, 2026-10-24); glass-quant consulted 2026-10-24
@@ -319,12 +320,15 @@ Status notes:
   stages exist — stage 3 (`app/state/`) and stage 10
   (`app/improvement/`) remain planned; `docs/STATISTICAL-ASSUMPTIONS.md`
   and `docs/EVALUATION.md` byte-identical (no §14); suite 188 passed.
-  **Block table untouched; rows 1–12 untouched (the Phase 12 row flip
-  and Block 4 row pre-date this phase and ride unedited); the Block 4
-  acceptance row (recorded 2026-10-24) rides this checkpoint commit
-  unedited; NO Block 5 acceptance row — Block 5 acceptance belongs to
-  the developer at the final boundary after the Phase 13 commit and
-  monitor sweep** (recorded per BLOCK, not per phase).
+  The phase is complete as documentation only: zero production code,
+  zero test files, zero amendments, zero new statistics, evidence docs
+  byte-identical, no §14. **Block table untouched; rows 1–12 untouched
+  (the Phase 12 row flip and Block 4 row pre-date this phase and ride
+  unedited); the Block 4 acceptance row (recorded 2026-10-24) rides
+  this checkpoint commit unedited; NO Block 5 acceptance row — Block 5
+  acceptance belongs to the developer at the final boundary after the
+  Phase 13 commit and monitor sweep** (recorded per BLOCK, not per
+  phase).
 
 ## Block acceptance record
 
