@@ -1,0 +1,103 @@
+{
+ "api_contract":{
+  "base":"http://127.0.0.1:8765",
+  "bind":"127.0.0.1 (localhost-only, read-only; no CORS headers)",
+  "body_encoding":"byte-deterministic JSON (sort_keys, compact separators, UTF-8)",
+  "errors":{
+   "integrity_error":500,
+   "malformed_path":400,
+   "unimplemented_method":501,
+   "unknown_fixture":404,
+   "unknown_route":404,
+   "write_method":405
+  },
+  "launch":"No CLI is included. create_server(db_path, host=\"127.0.0.1\", port=0) defaults to an ephemeral port; 8765 is a suggested local convention \u2014 bind it in a small launcher.",
+  "routes":[
+   "GET /health",
+   "GET /forecasts/{competition}/{season}/{date}/{home}/{away}"
+  ]
+ },
+ "disclaimer":"In-sample analytic estimate from the fitted model; pending chronological evaluation against realized results (Phases 9 and 11). Not evidence of accuracy.",
+ "evaluation_version":1,
+ "fixture_file_sha256s":[
+  [
+   "season-1.json",
+   "f779fc0a952e00ecd904c8019b288c43326635cb5c5a698f2f74870b11d57e39"
+  ],
+  [
+   "season-2.json",
+   "5a9da621c678933b0a5f0320a79c8c245783b34bbaf59a73e0fd7d7609d916a9"
+  ]
+ ],
+ "forecast_version":"forecast-poisson-mle-v1",
+ "honest_limits":[
+  "synthetic fixtures only (Obsidian Coast League, 2 seasons, 60 matches)",
+  "evaluated n = 30 primary / 57 secondary",
+  "runtime wall-times are load-labelled, not an SLA",
+  "'research-ready' = documented, traceable, deterministic, pre-registered \u2014 not validated, accurate, or complete"
+ ],
+ "model_version":"poisson-mle-v1",
+ "record_content_hash":"ef46a36622b1ceb7f2bd85e730770d05c0ae880525b76657ca1934c7d16dfa47",
+ "replay_seed":20261017,
+ "repo_commit":"b8cc13d",
+ "run_digest":"150b9796dde5ae4dbf2e3a7665c7cf55062323c33acad41d5d90c44481bbef2f",
+ "schema_version":2,
+ "stage_map":{
+  "built":[
+   {
+    "name":"DATA",
+    "path":"app/ingestion/",
+    "stage":1
+   },
+   {
+    "name":"VALIDATION",
+    "path":"app/validation/",
+    "stage":2
+   },
+   {
+    "name":"FEATURE EXTRACTION",
+    "path":"app/features/",
+    "stage":4
+   },
+   {
+    "name":"STATISTICAL MODELS",
+    "path":"app/models/",
+    "stage":5
+   },
+   {
+    "name":"FORECAST DISTRIBUTIONS",
+    "path":"app/forecasts/",
+    "stage":6
+   },
+   {
+    "name":"SCENARIO EXPLORATION",
+    "path":"app/scenarios/",
+    "stage":7
+   },
+   {
+    "name":"DECISION ANALYSIS",
+    "path":"app/decisions/",
+    "stage":8
+   },
+   {
+    "name":"OUTCOME EVALUATION",
+    "path":"app/backtesting/ + app/evaluation/",
+    "stage":9
+   }
+  ],
+  "unbuilt":[
+   {
+    "documented_as":"G1-G5 in docs/KNOWN-LIMITATIONS.md",
+    "name":"PRE-MATCH STATE",
+    "path":"app/state/",
+    "stage":3
+   },
+   {
+    "documented_as":"G1-G5 in docs/KNOWN-LIMITATIONS.md",
+    "name":"MODEL IMPROVEMENT",
+    "path":"app/improvement/",
+    "stage":10
+   }
+  ]
+ }
+}

@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+:root {
+  --lg-accent: #4f46e5; /* indigo-600 — interactive elements only */
+}
+
+html {
+  font-feature-settings: "tnum" 1; /* tabular figures everywhere numbers render */
+}
+
+body {
+  @apply bg-slate-50 text-slate-800 antialiased;
+}
+
+/* Hashes and digests: monospace, wrappable */
+.hash {
+  @apply font-mono text-xs break-all text-slate-500;
+}

@@ -1,0 +1,131 @@
+{
+ "accounting":{
+  "n_clean":30,
+  "n_flagged":27,
+  "n_predictions":57,
+  "n_refusals":3,
+  "n_targets":60,
+  "refusal_keys":[
+   [
+    "Obsidian Coast League",
+    "2024-25",
+    "2024-08-10",
+    "Coralgate Athletic",
+    "Thistledown Wanderers"
+   ],
+   [
+    "Obsidian Coast League",
+    "2024-25",
+    "2024-08-10",
+    "Quarryhill Zenith",
+    "Harbourlight Comets"
+   ],
+   [
+    "Obsidian Coast League",
+    "2024-25",
+    "2024-08-10",
+    "Silverpine Rovers",
+    "Emberfield Kestrels"
+   ]
+  ]
+ },
+ "note":"Descriptive statistics only: no confidence intervals, no deltas, no verdicts, no comparative claims.",
+ "overdispersion":{
+  "mean":1.3070175438596492,
+  "n":114,
+  "variance":0.9671437365343182
+ },
+ "primary":{
+  "baseline":{
+   "brier":0.6513262608006456,
+   "log_loss":1.0756660244986818,
+   "rps":0.2350484286002546
+  },
+  "calibration":{
+   "bins":[
+    {
+     "mean_p":0.1922355541990161,
+     "n":2,
+     "realized_frequency":0.5
+    },
+    {
+     "mean_p":0.3068857322030056,
+     "n":73,
+     "realized_frequency":0.3013698630136986
+    },
+    {
+     "mean_p":0.48085802938550376,
+     "n":15,
+     "realized_frequency":0.4666666666666667
+    },
+    {
+     "mean_p":null,
+     "n":0,
+     "realized_frequency":null
+    },
+    {
+     "mean_p":null,
+     "n":0,
+     "realized_frequency":null
+    }
+   ],
+   "n_matches":30,
+   "n_pairs":90
+  },
+  "draw_deficit":-0.03437540133650058,
+  "model":{
+   "brier":0.657717020755589,
+   "log_loss":1.0893088945036264,
+   "rps":0.23748019128548054
+  },
+  "n_draw_contributions":7,
+  "n_matches":30
+ },
+ "run_digest":"150b9796dde5ae4dbf2e3a7665c7cf55062323c33acad41d5d90c44481bbef2f",
+ "secondary":{
+  "baseline":{
+   "brier":0.6659747894436246,
+   "log_loss":1.10026212693129,
+   "rps":0.2385794979516648
+  },
+  "calibration":{
+   "bins":[
+    {
+     "mean_p":0.16572509513274955,
+     "n":6,
+     "realized_frequency":0.6666666666666666
+    },
+    {
+     "mean_p":0.30851337436509413,
+     "n":137,
+     "realized_frequency":0.32116788321167883
+    },
+    {
+     "mean_p":0.4853685454016753,
+     "n":27,
+     "realized_frequency":0.3333333333333333
+    },
+    {
+     "mean_p":0.6343664153403693,
+     "n":1,
+     "realized_frequency":0.0
+    },
+    {
+     "mean_p":null,
+     "n":0,
+     "realized_frequency":null
+    }
+   ],
+   "n_matches":57,
+   "n_pairs":171
+  },
+  "draw_deficit":-0.025271786352718206,
+  "model":{
+   "brier":0.7110877726071556,
+   "log_loss":1.172910978563622,
+   "rps":0.2599049808350038
+  },
+  "n_draw_contributions":14,
+  "n_matches":57
+ }
+}

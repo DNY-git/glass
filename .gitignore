@@ -4,4 +4,9 @@ __pycache__/
 .pytest_cache/
 .env
 *.log
-data/
+/data/
+
+# UI starter generated files
+ui-kit/starter/node_modules/
+ui-kit/starter/.next/
+ui-kit/starter/out/
